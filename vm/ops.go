@@ -18,13 +18,29 @@ const (
   TXOP_end
 )
 
-var TXCODE_noop = &ExecCode { TXOP_noop, func(st *State) { st.Advance() } }
-var TXCODE_end = &ExecCode { TXOP_end, nil }
-var TXCODE_literal = &ExecCode { TXOP_literal, func(st *State) {
+var TXCODE_noop           = &ExecCode { TXOP_noop, txNoop }
+var TXCODE_print_raw      = &ExecCode { TXOP_print_raw, txPrintRaw }
+var TXCODE_end            = &ExecCode { TXOP_end, txNoop }
+var TXCODE_literal        = &ExecCode { TXOP_literal, txLiteral }
+var TXCODE_fetch_s        = &ExecCode { TXOP_fetch_s, txFetchSymbol }
+var TXCODE_fetch_field_s  = &ExecCode { TXOP_fetch_field_s, txFetchField }
+var TXCODE_nil            = &ExecCode { TXOP_nil, txNil }
+
+func txNil(st *State) {
+  st.sa = nil
+  st.Advance()
+}
+
+func txNoop(st *State) {
+  st.Advance()
+}
+
+func txLiteral(st *State) {
   st.sa = st.CurrentOp().u_arg
   st.Advance()
-} }
-var TXCODE_fetch_s = &ExecCode { TXOP_fetch_s, func(st *State) {
+}
+
+func txFetchSymbol(st *State) {
   key   := st.CurrentOp().u_arg
   vars  := st.Vars()
   if v, ok := vars.Get(key); ok {
@@ -33,8 +49,9 @@ var TXCODE_fetch_s = &ExecCode { TXOP_fetch_s, func(st *State) {
     st.sa = nil
   }
   st.Advance()
-}}
-var TXCODE_fetch_field_s = &ExecCode { TXOP_fetch_field_s, func(st *State) {
+}
+
+func txFetchField(st *State) {
   container := st.sa
   if container == nil {
     // XXX ? no op?
@@ -52,45 +69,40 @@ var TXCODE_fetch_field_s = &ExecCode { TXOP_fetch_field_s, func(st *State) {
     st.sa = f.Interface()
   }
   st.Advance()
-}}
-var TXCODE_nil = &ExecCode { TXOP_nil, func(st *State) {
-  st.sa = nil
-  st.Advance()
-} }
-var TXCODE_print_raw = &ExecCode { TXOP_print_raw,
-  func(st *State) {
-    // mark_raw handling
-    arg := st.sa
-    if arg == nil {
-      st.Warnf("Use of nil to print\n")
-    } else {
-      t := reflect.TypeOf(arg)
-      var v string
-      switch t.Kind() {
-      case reflect.String:
-        v, _ = arg.(string)
-      case reflect.Int:
-        x, _ := arg.(int)
-        v = strconv.FormatInt(int64(x), 10)
-      case reflect.Int64:
-        x, _ := arg.(int64)
-        v = strconv.FormatInt(x, 10)
-      case reflect.Int32:
-        x, _ := arg.(int32)
-        v = strconv.FormatInt(int64(x), 10)
-      case reflect.Int16:
-        x, _ := arg.(int16)
-        v = strconv.FormatInt(int64(x), 10)
-      case reflect.Int8:
-        x, _ := arg.(int8)
-        v = strconv.FormatInt(int64(x), 10)
-      default:
-        v = fmt.Sprintf("%s", arg)
-      }
-      st.AppendOutput([]byte(v))
+}
+
+func txPrintRaw(st *State) {
+  // mark_raw handling
+  arg := st.sa
+  if arg == nil {
+    st.Warnf("Use of nil to print\n")
+  } else {
+    t := reflect.TypeOf(arg)
+    var v string
+    switch t.Kind() {
+    case reflect.String:
+      v, _ = arg.(string)
+    case reflect.Int:
+      x, _ := arg.(int)
+      v = strconv.FormatInt(int64(x), 10)
+    case reflect.Int64:
+      x, _ := arg.(int64)
+      v = strconv.FormatInt(x, 10)
+    case reflect.Int32:
+      x, _ := arg.(int32)
+      v = strconv.FormatInt(int64(x), 10)
+    case reflect.Int16:
+      x, _ := arg.(int16)
+      v = strconv.FormatInt(int64(x), 10)
+    case reflect.Int8:
+      x, _ := arg.(int8)
+      v = strconv.FormatInt(int64(x), 10)
+    default:
+      v = fmt.Sprintf("%s", arg)
     }
-    st.Advance()
-  },
+    st.AppendOutput([]byte(v))
+  }
+  st.Advance()
 }
 
 type ExecCode struct {
