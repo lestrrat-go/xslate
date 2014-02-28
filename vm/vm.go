@@ -25,7 +25,7 @@ func (v Vars) Get(k interface {}) (interface{}, bool) {
 
 type State struct {
   opidx int
-  pc OpList
+  pc *OpList
 
   // output
   output io.ReadWriter
@@ -47,7 +47,7 @@ func (st *State) Vars() Vars {
 }
 
 func (st *State) CurrentOp() *Op {
-  return st.pc[st.opidx]
+  return st.pc.Get(st.opidx)
 }
 
 func (st *State) Warnf(format string, args ...interface{}) {
@@ -63,7 +63,7 @@ func NewVM() (*VM) {
   return &VM {
     &State {
       opidx: 0,
-      pc: []*Op{},
+      pc: &OpList {},
       vars: make(Vars),
       output: &bytes.Buffer {},
     },

@@ -8,12 +8,13 @@ func TestBasic(t *testing.T) {
   vm := NewVM()
 
   vm.st.Vars().Set("name", "Bob")
-  vm.st.pc = append(vm.st.pc, &Op { TXCODE_noop, nil })
-  vm.st.pc = append(vm.st.pc, &Op { TXCODE_literal, "Hello, World! " })
-  vm.st.pc = append(vm.st.pc, &Op { TXCODE_print_raw, nil })
-  vm.st.pc = append(vm.st.pc, &Op { TXCODE_fetch_s, "name" })
-  vm.st.pc = append(vm.st.pc, &Op { TXCODE_print_raw, nil })
-  vm.st.pc = append(vm.st.pc, &Op { TXCODE_end, nil })
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_noop, nil })
+  pc.Append(&Op { TXCODE_literal, "Hello, World! " })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_fetch_s, "name" })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
 
   // for debug only
   t.Logf("%s", vm.st.pc)
