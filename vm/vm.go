@@ -40,6 +40,15 @@ type State struct {
   targ  interface {}
 }
 
+func NewState() *State {
+  return &State {
+    opidx: 0,
+    pc: &OpList {},
+    vars: make(Vars),
+    output: &bytes.Buffer {},
+  }
+}
+
 func (st *State) Advance() {
   st.opidx++
 }
@@ -62,14 +71,7 @@ func (st *State) AppendOutput(b []byte) {
 }
 
 func NewVM() (*VM) {
-  return &VM {
-    &State {
-      opidx: 0,
-      pc: &OpList {},
-      vars: make(Vars),
-      output: &bytes.Buffer {},
-    },
-  }
+  return &VM { NewState() }
 }
 
 func (vm *VM) CurrentOp() *Op {
