@@ -38,7 +38,7 @@ func TestFetchField(t *testing.T) {
   pc := vm.st.pc
   vm.st.Vars().Set("foo", struct { Value int } { 100 })
   pc.Append(&Op { TXCODE_fetch_s, "foo" })
-  pc.Append(&Op { TXCODE_fetch_field_s, "Value" })
+  pc.Append(&Op { TXCODE_fetch_field_s, "value" })
   pc.Append(&Op { TXCODE_print_raw, nil })
   pc.Append(&Op { TXCODE_end, nil })
 

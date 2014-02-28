@@ -5,6 +5,8 @@ import (
   "fmt"
   "reflect"
   "strconv"
+  "unicode"
+  "unicode/utf8"
 )
 
 type OpType int
@@ -25,6 +27,33 @@ var TXCODE_literal        = &ExecCode { TXOP_literal, txLiteral }
 var TXCODE_fetch_s        = &ExecCode { TXOP_fetch_s, txFetchSymbol }
 var TXCODE_fetch_field_s  = &ExecCode { TXOP_fetch_field_s, txFetchField }
 var TXCODE_nil            = &ExecCode { TXOP_nil, txNil }
+
+func interfaceToString(arg interface {}) string {
+  t := reflect.TypeOf(arg)
+  var v string
+  switch t.Kind() {
+  case reflect.String:
+    v, _ = arg.(string)
+  case reflect.Int:
+    x, _ := arg.(int)
+    v = strconv.FormatInt(int64(x), 10)
+  case reflect.Int64:
+    x, _ := arg.(int64)
+    v = strconv.FormatInt(x, 10)
+  case reflect.Int32:
+    x, _ := arg.(int32)
+    v = strconv.FormatInt(int64(x), 10)
+  case reflect.Int16:
+    x, _ := arg.(int16)
+    v = strconv.FormatInt(int64(x), 10)
+  case reflect.Int8:
+    x, _ := arg.(int8)
+    v = strconv.FormatInt(int64(x), 10)
+  default:
+    v = fmt.Sprintf("%s", arg)
+  }
+  return v
+}
 
 func txNil(st *State) {
   st.sa = nil
@@ -64,7 +93,9 @@ func txFetchField(st *State) {
     default:
       v = reflect.ValueOf(&container).Elem()
     }
-    name := fmt.Sprintf("%s", st.CurrentOp().u_arg)
+    name := interfaceToString(st.CurrentOp().u_arg)
+    r, size := utf8.DecodeRuneInString(name)
+    name = string(unicode.ToUpper(r)) + name[size:]
     f := v.FieldByName(name)
     st.sa = f.Interface()
   }
@@ -77,29 +108,7 @@ func txPrintRaw(st *State) {
   if arg == nil {
     st.Warnf("Use of nil to print\n")
   } else {
-    t := reflect.TypeOf(arg)
-    var v string
-    switch t.Kind() {
-    case reflect.String:
-      v, _ = arg.(string)
-    case reflect.Int:
-      x, _ := arg.(int)
-      v = strconv.FormatInt(int64(x), 10)
-    case reflect.Int64:
-      x, _ := arg.(int64)
-      v = strconv.FormatInt(x, 10)
-    case reflect.Int32:
-      x, _ := arg.(int32)
-      v = strconv.FormatInt(int64(x), 10)
-    case reflect.Int16:
-      x, _ := arg.(int16)
-      v = strconv.FormatInt(int64(x), 10)
-    case reflect.Int8:
-      x, _ := arg.(int8)
-      v = strconv.FormatInt(int64(x), 10)
-    default:
-      v = fmt.Sprintf("%s", arg)
-    }
+    v := interfaceToString(arg)
     st.AppendOutput([]byte(v))
   }
   st.Advance()
