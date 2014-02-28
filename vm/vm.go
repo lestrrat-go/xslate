@@ -11,13 +11,26 @@ type VM struct {
   st *State
 }
 
+type Vars map[string]interface {}
+
+func (v Vars) Set(k string, x interface {}) {
+  v[k] = x
+}
+
+func (v Vars) Get(k interface {}) (interface{}, bool) {
+  key := fmt.Sprintf("%s", k)
+  x, ok := v[key]
+  return x, ok
+}
 
 type State struct {
   opidx int
-  pc []*Op
+  pc OpList
 
   // output
   output io.ReadWriter
+
+  vars Vars
 
   // registers
   sa    interface {}
@@ -27,6 +40,10 @@ type State struct {
 
 func (st *State) Advance() {
   st.opidx++
+}
+
+func (st *State) Vars() Vars {
+  return st.vars
 }
 
 func (st *State) CurrentOp() *Op {
@@ -47,6 +64,7 @@ func NewVM() (*VM) {
     &State {
       opidx: 0,
       pc: []*Op{},
+      vars: make(Vars),
       output: &bytes.Buffer {},
     },
   }
