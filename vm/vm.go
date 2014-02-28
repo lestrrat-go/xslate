@@ -28,8 +28,10 @@ type State struct {
   pc *OpList
 
   // output
-  output io.ReadWriter
+  output  io.ReadWriter
+  warn    io.Writer
 
+  // template variables
   vars Vars
 
   // registers
@@ -51,7 +53,7 @@ func (st *State) CurrentOp() *Op {
 }
 
 func (st *State) Warnf(format string, args ...interface{}) {
-  fmt.Printf(format, args...)
+  st.warn.Write([]byte(fmt.Sprintf(format, args...)))
 }
 
 func (st *State) AppendOutput(b []byte) {
