@@ -3,6 +3,8 @@ package vm
 import (
   "bytes"
   "fmt"
+  "reflect"
+  "strconv"
 )
 
 type OpType int
@@ -11,6 +13,7 @@ const (
   TXOP_nil
   TXOP_literal
   TXOP_fetch_s
+  TXOP_fetch_field_s
   TXOP_print_raw
   TXOP_end
 )
@@ -31,6 +34,25 @@ var TXCODE_fetch_s = &ExecCode { TXOP_fetch_s, func(st *State) {
   }
   st.Advance()
 }}
+var TXCODE_fetch_field_s = &ExecCode { TXOP_fetch_field_s, func(st *State) {
+  container := st.sa
+  if container == nil {
+    // XXX ? no op?
+  } else {
+    t := reflect.TypeOf(container)
+    var v reflect.Value
+    switch t.Kind() {
+    case reflect.Ptr, reflect.Struct:
+      v = reflect.ValueOf(container)
+    default:
+      v = reflect.ValueOf(&container).Elem()
+    }
+    name := fmt.Sprintf("%s", st.CurrentOp().u_arg)
+    f := v.FieldByName(name)
+    st.sa = f.Interface()
+  }
+  st.Advance()
+}}
 var TXCODE_nil = &ExecCode { TXOP_nil, func(st *State) {
   st.sa = nil
   st.Advance()
@@ -42,7 +64,30 @@ var TXCODE_print_raw = &ExecCode { TXOP_print_raw,
     if arg == nil {
       st.Warnf("Use of nil to print\n")
     } else {
-      st.AppendOutput([]byte(fmt.Sprintf("%s", arg)))
+      t := reflect.TypeOf(arg)
+      var v string
+      switch t.Kind() {
+      case reflect.String:
+        v, _ = arg.(string)
+      case reflect.Int:
+        x, _ := arg.(int)
+        v = strconv.FormatInt(int64(x), 10)
+      case reflect.Int64:
+        x, _ := arg.(int64)
+        v = strconv.FormatInt(x, 10)
+      case reflect.Int32:
+        x, _ := arg.(int32)
+        v = strconv.FormatInt(int64(x), 10)
+      case reflect.Int16:
+        x, _ := arg.(int16)
+        v = strconv.FormatInt(int64(x), 10)
+      case reflect.Int8:
+        x, _ := arg.(int8)
+        v = strconv.FormatInt(int64(x), 10)
+      default:
+        v = fmt.Sprintf("%s", arg)
+      }
+      st.AppendOutput([]byte(v))
     }
     st.Advance()
   },
