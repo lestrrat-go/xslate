@@ -211,3 +211,22 @@ func TestVM_DivFloat(t *testing.T) {
   assertOutput(t, vm, "2.5")
 }
 
+func TestVM_LvarAssignArithmeticResult(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, 1 })
+  pc.Append(&Op { TXCODE_save_to_lvar, 0 })
+  pc.Append(&Op { TXCODE_literal, 2 })
+  pc.Append(&Op { TXCODE_save_to_lvar, 1 })
+  pc.Append(&Op { TXCODE_load_lvar, 0 })
+  pc.Append(&Op { TXCODE_move_to_sb, nil })
+  pc.Append(&Op { TXCODE_load_lvar, 1 })
+  pc.Append(&Op { TXCODE_add, nil })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
+
+  vm.Run()
+
+  assertOutput(t, vm, "3")
+}
