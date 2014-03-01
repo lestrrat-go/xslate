@@ -28,6 +28,34 @@ var TXCODE_fetch_s        = &ExecCode { TXOP_fetch_s, txFetchSymbol }
 var TXCODE_fetch_field_s  = &ExecCode { TXOP_fetch_field_s, txFetchField }
 var TXCODE_nil            = &ExecCode { TXOP_nil, txNil }
 
+func convertNumeric(v interface{}) reflect.Value {
+  t := reflect.TypeOf(v)
+  switch t.Kind() {
+  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+    return reflect.ValueOf(v)
+  default:
+    return reflect.ValueOf(0)
+  }
+}
+
+func alignTypesForArithmetic(left, right interface {}) (reflect.Value, reflect.Value) {
+  leftV  := convertNumeric(left)
+  rightV := convertNumeric(right)
+
+  if leftV.Kind() == rightV.Kind() {
+    return leftV, rightV
+  }
+
+  var alignTo reflect.Type
+  if leftV.Kind() > rightV.Kind() {
+    alignTo = leftV.Type()
+  } else {
+    alignTo = rightV.Type()
+  }
+
+  return leftV.Convert(alignTo), rightV.Convert(alignTo)
+}
+
 func interfaceToString(arg interface {}) string {
   t := reflect.TypeOf(arg)
   var v string
@@ -84,6 +112,7 @@ func txFetchField(st *State) {
   container := st.sa
   if container == nil {
     // XXX ? no op?
+    st.sa = nil
   } else {
     t := reflect.TypeOf(container)
     var v reflect.Value
