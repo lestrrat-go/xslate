@@ -230,3 +230,24 @@ func TestVM_LvarAssignArithmeticResult(t *testing.T) {
 
   assertOutput(t, vm, "3")
 }
+
+func TestVM_IfNoElse(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, true })
+  pc.Append(&Op { TXCODE_and, 2 })
+  pc.Append(&Op { TXCODE_literal, "Hello, World!" })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
+
+  vm.Run()
+
+  assertOutput(t, vm, "Hello, World!")
+
+  pc.Get(0).u_arg = false
+
+  vm.Run()
+  assertOutput(t, vm, "")
+}
+

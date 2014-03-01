@@ -25,6 +25,7 @@ const (
   TXOP_sub
   TXOP_mul
   TXOP_div
+  TXOP_and
   TXOP_end
 )
 
@@ -43,7 +44,7 @@ var TXCODE_add            = &ExecCode { TXOP_add, txAdd }
 var TXCODE_sub            = &ExecCode { TXOP_sub, txSub }
 var TXCODE_mul            = &ExecCode { TXOP_mul, txMul }
 var TXCODE_div            = &ExecCode { TXOP_div, txDiv }
-
+var TXCODE_and            = &ExecCode { TXOP_and, txAnd }
 func convertNumeric(v interface{}) reflect.Value {
   t := reflect.TypeOf(v)
   switch t.Kind() {
@@ -86,6 +87,16 @@ func interfaceToString(arg interface {}) string {
     v = fmt.Sprintf("%s", arg)
   }
   return v
+}
+
+func interfaceToBool(arg interface {}) bool {
+  t := reflect.TypeOf(arg)
+  if t.Kind() == reflect.Bool {
+    return arg.(bool)
+  }
+
+  z := reflect.Zero(t)
+  return reflect.DeepEqual(z, t)
 }
 
 func txNil(st *State) {
@@ -239,6 +250,14 @@ func txDiv(st *State) {
 
   // XXX: set to targ?
   st.Advance()
+}
+
+func txAnd(st *State) {
+  if interfaceToBool(st.sa) {
+    st.Advance()
+  } else {
+    st.AdvanceBy(int(reflect.ValueOf(st.CurrentOp().u_arg).Int()))
+  }
 }
 
 type ExecCode struct {

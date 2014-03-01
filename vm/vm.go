@@ -83,7 +83,11 @@ func NewState() *State {
 }
 
 func (st *State) Advance() {
-  st.opidx++
+  st.AdvanceBy(1)
+}
+
+func (st *State) AdvanceBy(i int) {
+  st.opidx += i
 }
 
 func (st *State) Vars() Vars {
