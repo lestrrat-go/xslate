@@ -1,7 +1,6 @@
 package vm
 
 import (
-  "bytes"
   "encoding/json"
   "fmt"
   "reflect"
@@ -104,6 +103,10 @@ func convertNumeric(v interface{}) reflect.Value {
   }
 }
 
+// Given possibly non-matched pair of things to perform arithmetic
+// operations on, align their types so that the given operation
+// can be performed correctly.
+// e.g. given int, float, we align them to float, float
 func alignTypesForArithmetic(left, right interface {}) (reflect.Value, reflect.Value) {
   leftV  := convertNumeric(left)
   rightV := convertNumeric(right)
@@ -367,21 +370,5 @@ func (o *Op) Code() *ExecCode {
 func (o *Op) String() string {
   // TODO: also print out register id's and stuff
   return fmt.Sprintf("Op[%s]", o.OpType())
-}
-
-func (ol *OpList) Get(i int) *Op {
-  return (*ol)[i]
-}
-
-func (ol *OpList) Append(op *Op) {
-  *ol = append(*ol, op)
-}
-
-func (ol *OpList) String() string {
-  buf := &bytes.Buffer {}
-  for k, v := range *ol {
-    buf.WriteString(fmt.Sprintf("%03d. %s\n", k + 1, v))
-  }
-  return buf.String()
 }
 

@@ -1,6 +1,27 @@
 package vm
 
+import (
+  "bytes"
+  "fmt"
+)
+
 type OpList []*Op
+
+func (ol *OpList) Get(i int) *Op {
+  return (*ol)[i]
+}
+
+func (ol *OpList) Append(op *Op) {
+  *ol = append(*ol, op)
+}
+
+func (ol *OpList) String() string {
+  buf := &bytes.Buffer {}
+  for k, v := range *ol {
+    buf.WriteString(fmt.Sprintf("%03d. %s\n", k + 1, v))
+  }
+  return buf.String()
+}
 
 func (l *OpList) AppendOp(o OpType, args ...interface{}) {
   l.Append(NewOp(o, args...))
