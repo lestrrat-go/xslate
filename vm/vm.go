@@ -23,6 +23,32 @@ func (v Vars) Get(k interface {}) (interface{}, bool) {
   return x, ok
 }
 
+type Frame struct {
+  name string
+  output interface {} // TODO: what's this?
+  retaddr interface {} // TODO: what's this?
+  localvars []interface {}
+}
+
+func NewFrame() *Frame {
+  return &Frame { localvars: make([]interface {}, 0, 10) }
+}
+
+func (f *Frame) GetLvar(i int) interface {} {
+  if len(f.localvars) <= i {
+    return nil
+  }
+  return f.localvars[i]
+}
+
+func (f *Frame) SetLvar(i int, v interface {}) {
+  if len(f.localvars) <= i {
+    newl := make([]interface{}, i + 1)
+    f.localvars = newl
+  }
+  f.localvars[i] = v
+}
+
 type State struct {
   opidx int
   pc *OpList
@@ -38,6 +64,10 @@ type State struct {
   sa    interface {}
   sb    interface {}
   targ  interface {}
+
+  // stack frame
+  frames []*Frame // TODO: what's in a frame?
+  currentFrame int
 }
 
 func NewState() *State {
@@ -46,6 +76,7 @@ func NewState() *State {
     pc: &OpList {},
     vars: make(Vars),
     output: &bytes.Buffer {},
+    frames: make([]*Frame, 0),
   }
 }
 
@@ -59,6 +90,25 @@ func (st *State) Vars() Vars {
 
 func (st *State) CurrentOp() *Op {
   return st.pc.Get(st.opidx)
+}
+
+func (st *State) PushFrame(f *Frame) {
+  if st.currentFrame >= len(st.frames) {
+    newf := make([]*Frame, st.currentFrame + 1)
+    copy(newf, st.frames)
+    st.frames = newf
+  }
+  st.currentFrame++
+  st.frames[st.currentFrame] = f
+}
+
+func (st *State) PopFrame() {
+  st.frames[st.currentFrame] = nil
+  st.currentFrame--
+}
+
+func (st *State) CurrentFrame() *Frame {
+  return st.frames[st.currentFrame]
 }
 
 func (st *State) Warnf(format string, args ...interface{}) {
