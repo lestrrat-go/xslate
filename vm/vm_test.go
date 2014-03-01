@@ -83,7 +83,7 @@ func TestVm_Lvar(t *testing.T) {
   assertOutput(t, vm, "999")
 }
 
-func TestVM_Add(t *testing.T) {
+func TestVM_AddInt(t *testing.T) {
   vm := NewVM()
   vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
@@ -99,7 +99,23 @@ func TestVM_Add(t *testing.T) {
   assertOutput(t, vm, "1000")
 }
 
-func TestVM_Sub(t *testing.T) {
+func TestVM_AddFloat(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, 0.999 })
+  pc.Append(&Op { TXCODE_move_to_sb, nil })
+  pc.Append(&Op { TXCODE_literal, 0.001 })
+  pc.Append(&Op { TXCODE_add, nil })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
+
+  vm.Run()
+
+  assertOutput(t, vm, "1")
+}
+
+func TestVM_SubInt(t *testing.T) {
   vm := NewVM()
   vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
@@ -114,6 +130,55 @@ func TestVM_Sub(t *testing.T) {
 
   assertOutput(t, vm, "998")
 }
+
+func TestVM_SubFloat(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, 1 })
+  pc.Append(&Op { TXCODE_move_to_sb, nil })
+  pc.Append(&Op { TXCODE_literal, 0.1 })
+  pc.Append(&Op { TXCODE_sub, nil })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
+
+  vm.Run()
+
+  assertOutput(t, vm, "0.9")
+}
+
+func TestVM_MulInt(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, 3 })
+  pc.Append(&Op { TXCODE_move_to_sb, nil })
+  pc.Append(&Op { TXCODE_literal, 4 })
+  pc.Append(&Op { TXCODE_mul, nil })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
+
+  vm.Run()
+
+  assertOutput(t, vm, "12")
+}
+
+func TestVM_MulFloat(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, 2.2 })
+  pc.Append(&Op { TXCODE_move_to_sb, nil })
+  pc.Append(&Op { TXCODE_literal, 4 })
+  pc.Append(&Op { TXCODE_mul, nil })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
+
+  vm.Run()
+
+  assertOutput(t, vm, "8.8")
+}
+
 
 
 
