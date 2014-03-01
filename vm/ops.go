@@ -22,6 +22,7 @@ const (
   TXOP_save_to_lvar
   TXOP_load_lvar
   TXOP_add
+  TXOP_sub
   TXOP_end
 )
 
@@ -37,6 +38,7 @@ var TXCODE_save_to_lvar   = &ExecCode { TXOP_save_to_lvar, txSaveToLvar }
 var TXCODE_load_lvar      = &ExecCode { TXOP_load_lvar, txLoadLvar }
 var TXCODE_nil            = &ExecCode { TXOP_nil, txNil }
 var TXCODE_add            = &ExecCode { TXOP_add, txAdd }
+var TXCODE_sub            = &ExecCode { TXOP_sub, txSub }
 
 func convertNumeric(v interface{}) reflect.Value {
   t := reflect.TypeOf(v)
@@ -184,7 +186,7 @@ func txLoadLvar(st *State) {
 }
 
 func txAdd(st *State) {
-  leftV, rightV := alignTypesForArithmetic(st.sa, st.sb)
+  leftV, rightV := alignTypesForArithmetic(st.sb, st.sa)
   switch leftV.Kind() {
   case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
     st.sa = leftV.Int() + rightV.Int()
@@ -192,6 +194,21 @@ func txAdd(st *State) {
     st.sa = leftV.Uint() + rightV.Uint()
   case reflect.Float32, reflect.Float64:
     st.sa = leftV.Float() + rightV.Float()
+  }
+
+  // XXX: set to targ?
+  st.Advance()
+}
+
+func txSub(st *State) {
+  leftV, rightV := alignTypesForArithmetic(st.sb, st.sa)
+  switch leftV.Kind() {
+  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+    st.sa = leftV.Int() - rightV.Int()
+  case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+    st.sa = leftV.Uint() - rightV.Uint()
+  case reflect.Float32, reflect.Float64:
+    st.sa = leftV.Float() - rightV.Float()
   }
 
   // XXX: set to targ?

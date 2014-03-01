@@ -98,3 +98,22 @@ func TestVM_Add(t *testing.T) {
 
   assertOutput(t, vm, "1000")
 }
+
+func TestVM_Sub(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, 999 })
+  pc.Append(&Op { TXCODE_move_to_sb, nil })
+  pc.Append(&Op { TXCODE_literal, 1 })
+  pc.Append(&Op { TXCODE_sub, nil })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
+
+  vm.Run()
+
+  assertOutput(t, vm, "998")
+}
+
+
+
