@@ -21,12 +21,12 @@ func TestBasic(t *testing.T) {
 
   vm.st.Vars().Set("name", "Bob")
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_noop, nil })
-  pc.Append(&Op { TXCODE_literal, "Hello, World! " })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_fetch_s, "name" })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendNoop()
+  pc.AppendLiteral("Hello, World! ")
+  pc.AppendPrintRaw()
+  pc.AppendFetchSymbol("name")
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   // for debug only
   t.Logf("%s", vm.st.pc)
@@ -40,12 +40,12 @@ func TestBasic(t *testing.T) {
 
 func TestFetchField(t *testing.T) {
   vm := NewVM()
-  pc := vm.st.pc
   vm.st.Vars().Set("foo", struct { Value int } { 100 })
-  pc.Append(&Op { TXCODE_fetch_s, "foo" })
-  pc.Append(&Op { TXCODE_fetch_field_s, "value" })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc := vm.st.pc
+  pc.AppendFetchSymbol("foo")
+  pc.AppendFetchField("value")
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -55,9 +55,9 @@ func TestFetchField(t *testing.T) {
 func TestNonExistingSymbol(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_fetch_s, "foo" })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendFetchSymbol("foo")
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   buf := &bytes.Buffer {}
   vm.st.warn = buf
@@ -73,11 +73,11 @@ func TestNonExistingSymbol(t *testing.T) {
 func TestVm_Lvar(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 999 })
-  pc.Append(&Op { TXCODE_save_to_lvar, 0 })
-  pc.Append(&Op { TXCODE_load_lvar, 0 })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(999)
+  pc.AppendSaveToLvar(0)
+  pc.AppendLoadLvar(0)
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -87,12 +87,12 @@ func TestVm_Lvar(t *testing.T) {
 func TestVM_AddInt(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 999 })
-  pc.Append(&Op { TXCODE_move_to_sb, nil })
-  pc.Append(&Op { TXCODE_literal, 1 })
-  pc.Append(&Op { TXCODE_add, nil })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(999)
+  pc.AppendMoveToSb()
+  pc.AppendLiteral(1)
+  pc.AppendAdd()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -102,12 +102,12 @@ func TestVM_AddInt(t *testing.T) {
 func TestVM_AddFloat(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 0.999 })
-  pc.Append(&Op { TXCODE_move_to_sb, nil })
-  pc.Append(&Op { TXCODE_literal, 0.001 })
-  pc.Append(&Op { TXCODE_add, nil })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(0.999)
+  pc.AppendMoveToSb()
+  pc.AppendLiteral(0.001)
+  pc.AppendAdd()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -117,12 +117,12 @@ func TestVM_AddFloat(t *testing.T) {
 func TestVM_SubInt(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 999 })
-  pc.Append(&Op { TXCODE_move_to_sb, nil })
-  pc.Append(&Op { TXCODE_literal, 1 })
-  pc.Append(&Op { TXCODE_sub, nil })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(999)
+  pc.AppendMoveToSb()
+  pc.AppendLiteral(1)
+  pc.AppendSub()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -132,12 +132,12 @@ func TestVM_SubInt(t *testing.T) {
 func TestVM_SubFloat(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 1 })
-  pc.Append(&Op { TXCODE_move_to_sb, nil })
-  pc.Append(&Op { TXCODE_literal, 0.1 })
-  pc.Append(&Op { TXCODE_sub, nil })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(1)
+  pc.AppendMoveToSb()
+  pc.AppendLiteral(0.1)
+  pc.AppendSub()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -147,12 +147,12 @@ func TestVM_SubFloat(t *testing.T) {
 func TestVM_MulInt(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 3 })
-  pc.Append(&Op { TXCODE_move_to_sb, nil })
-  pc.Append(&Op { TXCODE_literal, 4 })
-  pc.Append(&Op { TXCODE_mul, nil })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(3)
+  pc.AppendMoveToSb()
+  pc.AppendLiteral(4)
+  pc.AppendMul()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -162,12 +162,12 @@ func TestVM_MulInt(t *testing.T) {
 func TestVM_MulFloat(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 2.2 })
-  pc.Append(&Op { TXCODE_move_to_sb, nil })
-  pc.Append(&Op { TXCODE_literal, 4 })
-  pc.Append(&Op { TXCODE_mul, nil })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(2.2)
+  pc.AppendMoveToSb()
+  pc.AppendLiteral(4)
+  pc.AppendMul()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -177,12 +177,12 @@ func TestVM_MulFloat(t *testing.T) {
 func TestVM_DivInt(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 6 })
-  pc.Append(&Op { TXCODE_move_to_sb, nil })
-  pc.Append(&Op { TXCODE_literal, 3 })
-  pc.Append(&Op { TXCODE_div, nil })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(6)
+  pc.AppendMoveToSb()
+  pc.AppendLiteral(3)
+  pc.AppendDiv()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -192,12 +192,12 @@ func TestVM_DivInt(t *testing.T) {
 func TestVM_DivFloat(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 10 })
-  pc.Append(&Op { TXCODE_move_to_sb, nil })
-  pc.Append(&Op { TXCODE_literal, 4 })
-  pc.Append(&Op { TXCODE_div, nil })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(10)
+  pc.AppendMoveToSb()
+  pc.AppendLiteral(4)
+  pc.AppendDiv()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -207,16 +207,16 @@ func TestVM_DivFloat(t *testing.T) {
 func TestVM_LvarAssignArithmeticResult(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, 1 })
-  pc.Append(&Op { TXCODE_save_to_lvar, 0 })
-  pc.Append(&Op { TXCODE_literal, 2 })
-  pc.Append(&Op { TXCODE_save_to_lvar, 1 })
-  pc.Append(&Op { TXCODE_load_lvar, 0 })
-  pc.Append(&Op { TXCODE_move_to_sb, nil })
-  pc.Append(&Op { TXCODE_load_lvar, 1 })
-  pc.Append(&Op { TXCODE_add, nil })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(1)
+  pc.AppendSaveToLvar(0)
+  pc.AppendLiteral(2)
+  pc.AppendSaveToLvar(1)
+  pc.AppendLoadLvar(0)
+  pc.AppendMoveToSb()
+  pc.AppendLoadLvar(1)
+  pc.AppendAdd()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -226,11 +226,11 @@ func TestVM_LvarAssignArithmeticResult(t *testing.T) {
 func TestVM_IfNoElse(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, true })
-  pc.Append(&Op { TXCODE_and, 3 })
-  pc.Append(&Op { TXCODE_literal, "Hello, World!" })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(true)
+  pc.AppendAnd(3)
+  pc.AppendLiteral("Hello, World!")
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 
@@ -245,14 +245,14 @@ func TestVM_IfNoElse(t *testing.T) {
 func TestVM_IfElse(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.Append(&Op { TXCODE_literal, true })
-  pc.Append(&Op { TXCODE_and, 4 })
-  pc.Append(&Op { TXCODE_literal, "Hello, World!" })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_goto, 3 })
-  pc.Append(&Op { TXCODE_literal, "Ola, Mundo!" })
-  pc.Append(&Op { TXCODE_print_raw, nil })
-  pc.Append(&Op { TXCODE_end, nil })
+  pc.AppendLiteral(true)
+  pc.AppendAnd(4)
+  pc.AppendLiteral("Hello, World!")
+  pc.AppendPrintRaw()
+  pc.AppendGoto(3)
+  pc.AppendLiteral("Ola, Mundo!")
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
 
   vm.Run()
 

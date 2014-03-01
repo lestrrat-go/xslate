@@ -11,8 +11,14 @@ import (
 )
 
 type OpType int
+type OpHandler func(*State)
+type ExecCode struct {
+  id   OpType
+  code func(*State)
+}
+
 const (
-  TXOP_noop       OpType = iota
+  TXOP_noop OpType = iota
   TXOP_nil
   TXOP_move_to_sb
   TXOP_move_from_sb
@@ -29,25 +35,64 @@ const (
   TXOP_and
   TXOP_goto
   TXOP_end
+  TXOP_max
 )
 
-var TXCODE_noop           = &ExecCode { TXOP_noop, txNoop }
-var TXCODE_move_to_sb     = &ExecCode { TXOP_move_to_sb, txMoveToSb }
-var TXCODE_move_from_sb   = &ExecCode { TXOP_move_from_sb, txMoveFromSb }
-var TXCODE_print_raw      = &ExecCode { TXOP_print_raw, txPrintRaw }
-var TXCODE_end            = &ExecCode { TXOP_end, txNoop }
-var TXCODE_literal        = &ExecCode { TXOP_literal, txLiteral }
-var TXCODE_fetch_s        = &ExecCode { TXOP_fetch_s, txFetchSymbol }
-var TXCODE_fetch_field_s  = &ExecCode { TXOP_fetch_field_s, txFetchField }
-var TXCODE_save_to_lvar   = &ExecCode { TXOP_save_to_lvar, txSaveToLvar }
-var TXCODE_load_lvar      = &ExecCode { TXOP_load_lvar, txLoadLvar }
-var TXCODE_nil            = &ExecCode { TXOP_nil, txNil }
-var TXCODE_add            = &ExecCode { TXOP_add, txAdd }
-var TXCODE_sub            = &ExecCode { TXOP_sub, txSub }
-var TXCODE_mul            = &ExecCode { TXOP_mul, txMul }
-var TXCODE_div            = &ExecCode { TXOP_div, txDiv }
-var TXCODE_and            = &ExecCode { TXOP_and, txAnd }
-var TXCODE_goto           = &ExecCode { TXOP_goto, txGoto }
+var ophandlers []OpHandler = make([]OpHandler, TXOP_max)
+var execcodes  []*ExecCode = make([]*ExecCode, TXOP_max)
+func init () {
+  for i := TXOP_noop; i < TXOP_max; i++ {
+    var h OpHandler
+    switch i {
+    case TXOP_noop:
+      h = txNoop
+    case TXOP_end:
+      h = txEnd
+    case TXOP_move_to_sb:
+      h = txMoveToSb
+    case TXOP_move_from_sb:
+      h = txMoveFromSb
+    case TXOP_print_raw:
+      h = txPrintRaw
+    case TXOP_literal:
+      h = txLiteral
+    case TXOP_fetch_s:
+      h = txFetchSymbol
+    case TXOP_fetch_field_s:
+      h = txFetchField
+    case TXOP_save_to_lvar:
+      h = txSaveToLvar
+    case TXOP_load_lvar:
+      h = txLoadLvar
+    case TXOP_nil:
+      h = txNil
+    case TXOP_add:
+      h = txAdd
+    case TXOP_sub:
+      h = txSub
+    case TXOP_mul:
+      h = txMul
+    case TXOP_div:
+      h = txDiv
+    case TXOP_and:
+      h = txAnd
+    case TXOP_goto:
+      h = txGoto
+    default:
+      panic("No such optype")
+    }
+    ophandlers[i] = h
+    execcodes[i]  = &ExecCode { OpType(i), h}
+  }
+}
+
+func optypeToExecCode(o OpType) *ExecCode {
+  return execcodes[o]
+}
+
+func optypeToHandler(o OpType) OpHandler {
+  return ophandlers[o]
+}
 
 func convertNumeric(v interface{}) reflect.Value {
   t := reflect.TypeOf(v)
@@ -102,6 +147,8 @@ func interfaceToBool(arg interface {}) bool {
   z := reflect.Zero(t)
   return reflect.DeepEqual(z, t)
 }
+
+func txEnd(st *State) {}
 
 func txNil(st *State) {
   st.sa = nil
@@ -268,14 +315,20 @@ func txGoto(st *State) {
   st.AdvanceBy(int(reflect.ValueOf(st.CurrentOp().u_arg).Int()))
 }
 
-type ExecCode struct {
-  id   OpType
-  code func(*State)
+type Op struct {
+  code  *ExecCode
+  u_arg interface {}
 }
 
-type Op struct {
-  code *ExecCode
-  u_arg interface {}
+func NewOp(o OpType, args ...interface {}) *Op {
+  e := optypeToExecCode(o)
+  var arg interface {}
+  if len(args) > 0 {
+    arg = args[0]
+  } else {
+    arg = nil
+  }
+  return &Op { e, arg }
 }
 
 func (o Op) MarshalJSON() ([]byte, error) {
@@ -284,8 +337,6 @@ func (o Op) MarshalJSON() ([]byte, error) {
     "u_arg": o.u_arg,
   })
 }
-
-type OpList []*Op
 
 func (o OpType) String() string {
   var name string
