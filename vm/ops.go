@@ -37,51 +37,71 @@ const (
   TXOP_max
 )
 
+var opnames    []string    = make([]string, TXOP_max)
 var ophandlers []OpHandler = make([]OpHandler, TXOP_max)
 var execcodes  []*ExecCode = make([]*ExecCode, TXOP_max)
 func init () {
   for i := TXOP_noop; i < TXOP_max; i++ {
     var h OpHandler
+    n := "Unknown"
     switch i {
     case TXOP_noop:
       h = txNoop
+      n = "noop"
     case TXOP_end:
       h = txEnd
+      n = "end"
     case TXOP_move_to_sb:
       h = txMoveToSb
+      n = "move_to_sb"
     case TXOP_move_from_sb:
       h = txMoveFromSb
+      n = "move_from_sb"
     case TXOP_print_raw:
       h = txPrintRaw
+      n = "print_raw"
     case TXOP_literal:
       h = txLiteral
+      n = "literal"
     case TXOP_fetch_s:
       h = txFetchSymbol
+      n = "fetch_s"
     case TXOP_fetch_field_s:
       h = txFetchField
+      n = "fetch_field_s"
     case TXOP_save_to_lvar:
       h = txSaveToLvar
+      n = "save_to_lvar"
     case TXOP_load_lvar:
       h = txLoadLvar
+      n = "load_lvar"
     case TXOP_nil:
       h = txNil
+      n = "nil"
     case TXOP_add:
       h = txAdd
+      n = "add"
     case TXOP_sub:
       h = txSub
+      n = "sub"
     case TXOP_mul:
       h = txMul
+      n = "mul"
     case TXOP_div:
       h = txDiv
+      n = "div"
     case TXOP_and:
       h = txAnd
+      n = "and"
     case TXOP_goto:
       h = txGoto
+      n = "goto"
     default:
       panic("No such optype")
     }
     ophandlers[i] = h
     execcodes[i]  = &ExecCode { OpType(i), h}
+    opnames[i]    = n
   }
 }
 
@@ -342,19 +362,7 @@ func (o Op) MarshalJSON() ([]byte, error) {
 }
 
 func (o OpType) String() string {
-  var name string
-  switch o {
-  case TXOP_noop:       name  = "noop"
-  case TXOP_nil:        name  = "nil"
-  case TXOP_literal:    name  = "literal"
-  case TXOP_fetch_s:    name  = "fetch_s"
-  case TXOP_print_raw:  name  = "print_raw"
-  case TXOP_end:        name  = "end"
-  case TXOP_and:        name  = "and"
-  case TXOP_goto:       name  = "goto"
-  default:              name  = "Unknown"
-  }
-  return name
+  return opnames[o]
 }
 
 func (o *Op) Call(st *State) {
