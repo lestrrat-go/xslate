@@ -148,6 +148,8 @@ func (vm *VM) OutputString() (string, error) {
 
 func (vm *VM) Run() {
   st := vm.st
+  st.opidx = 0
+  st.output = &bytes.Buffer {}
   for op := st.CurrentOp(); op.OpType() != TXOP_end; op = st.CurrentOp() {
     op.Call(st)
   }

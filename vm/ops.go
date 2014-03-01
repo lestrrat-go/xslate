@@ -26,6 +26,7 @@ const (
   TXOP_mul
   TXOP_div
   TXOP_and
+  TXOP_goto
   TXOP_end
 )
 
@@ -45,6 +46,8 @@ var TXCODE_sub            = &ExecCode { TXOP_sub, txSub }
 var TXCODE_mul            = &ExecCode { TXOP_mul, txMul }
 var TXCODE_div            = &ExecCode { TXOP_div, txDiv }
 var TXCODE_and            = &ExecCode { TXOP_and, txAnd }
+var TXCODE_goto           = &ExecCode { TXOP_goto, txGoto }
+
 func convertNumeric(v interface{}) reflect.Value {
   t := reflect.TypeOf(v)
   switch t.Kind() {
@@ -260,6 +263,10 @@ func txAnd(st *State) {
   }
 }
 
+func txGoto(st *State) {
+  st.AdvanceBy(int(reflect.ValueOf(st.CurrentOp().u_arg).Int()))
+}
+
 type ExecCode struct {
   id   OpType
   code func(*State)
@@ -281,6 +288,8 @@ func (o OpType) String() string {
   case TXOP_fetch_s:    name  = "fetch_s"
   case TXOP_print_raw:  name  = "print_raw"
   case TXOP_end:        name  = "end"
+  case TXOP_and:        name  = "and"
+  case TXOP_goto:       name  = "goto"
   default:              name  = "Unknown"
   }
   return name
