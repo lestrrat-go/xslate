@@ -44,6 +44,7 @@ func (f *Frame) GetLvar(i int) interface {} {
 func (f *Frame) SetLvar(i int, v interface {}) {
   if len(f.localvars) <= i {
     newl := make([]interface{}, i + 1)
+    copy(newl, f.localvars)
     f.localvars = newl
   }
   f.localvars[i] = v

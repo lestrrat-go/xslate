@@ -28,4 +28,14 @@ func TestLvarExtend(t *testing.T) {
   if len(f.localvars) != 100 {
     t.Errorf("Expected 100 localvars, but got %d", len(f.localvars))
   }
+
+  for i := 0; i < 100; i++ {
+    x := f.GetLvar(i)
+    v, ok := x.(int)
+    if ! ok {
+      t.Errorf("var(%d) is not an int!", i)
+    } else if v != i {
+      t.Errorf("expected %d, got %d", i, v)
+    }
+  }
 }
