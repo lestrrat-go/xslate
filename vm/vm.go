@@ -72,7 +72,7 @@ type State struct {
 }
 
 func NewState() *State {
-  return &State {
+  st := &State {
     opidx: 0,
     pc: &OpList {},
     vars: make(Vars),
@@ -80,6 +80,8 @@ func NewState() *State {
     frames: make([]*Frame, 10),
     currentFrame: -1,
   }
+  st.PushFrame(NewFrame())
+  return st
 }
 
 func (st *State) Advance() {

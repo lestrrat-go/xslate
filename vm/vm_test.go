@@ -72,7 +72,6 @@ func TestNonExistingSymbol(t *testing.T) {
 
 func TestVm_Lvar(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 999 })
   pc.Append(&Op { TXCODE_save_to_lvar, 0 })
@@ -87,7 +86,6 @@ func TestVm_Lvar(t *testing.T) {
 
 func TestVM_AddInt(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 999 })
   pc.Append(&Op { TXCODE_move_to_sb, nil })
@@ -103,7 +101,6 @@ func TestVM_AddInt(t *testing.T) {
 
 func TestVM_AddFloat(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 0.999 })
   pc.Append(&Op { TXCODE_move_to_sb, nil })
@@ -119,7 +116,6 @@ func TestVM_AddFloat(t *testing.T) {
 
 func TestVM_SubInt(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 999 })
   pc.Append(&Op { TXCODE_move_to_sb, nil })
@@ -135,7 +131,6 @@ func TestVM_SubInt(t *testing.T) {
 
 func TestVM_SubFloat(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 1 })
   pc.Append(&Op { TXCODE_move_to_sb, nil })
@@ -151,7 +146,6 @@ func TestVM_SubFloat(t *testing.T) {
 
 func TestVM_MulInt(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 3 })
   pc.Append(&Op { TXCODE_move_to_sb, nil })
@@ -167,7 +161,6 @@ func TestVM_MulInt(t *testing.T) {
 
 func TestVM_MulFloat(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 2.2 })
   pc.Append(&Op { TXCODE_move_to_sb, nil })
@@ -183,7 +176,6 @@ func TestVM_MulFloat(t *testing.T) {
 
 func TestVM_DivInt(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 6 })
   pc.Append(&Op { TXCODE_move_to_sb, nil })
@@ -199,7 +191,6 @@ func TestVM_DivInt(t *testing.T) {
 
 func TestVM_DivFloat(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 10 })
   pc.Append(&Op { TXCODE_move_to_sb, nil })
@@ -215,7 +206,6 @@ func TestVM_DivFloat(t *testing.T) {
 
 func TestVM_LvarAssignArithmeticResult(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, 1 })
   pc.Append(&Op { TXCODE_save_to_lvar, 0 })
@@ -235,7 +225,6 @@ func TestVM_LvarAssignArithmeticResult(t *testing.T) {
 
 func TestVM_IfNoElse(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, true })
   pc.Append(&Op { TXCODE_and, 3 })
@@ -255,7 +244,6 @@ func TestVM_IfNoElse(t *testing.T) {
 
 func TestVM_IfElse(t *testing.T) {
   vm := NewVM()
-  vm.st.PushFrame(NewFrame())
   pc := vm.st.pc
   pc.Append(&Op { TXCODE_literal, true })
   pc.Append(&Op { TXCODE_and, 4 })
