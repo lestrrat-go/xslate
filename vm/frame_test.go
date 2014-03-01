@@ -4,7 +4,7 @@ import (
   "testing"
 )
 
-func TestLvar(t *testing.T) {
+func TestFrame_Lvar(t *testing.T) {
   f := NewFrame()
   f.SetLvar(0, 1)
   x := f.GetLvar(0)
@@ -18,7 +18,7 @@ func TestLvar(t *testing.T) {
   }
 }
 
-func TestLvarExtend(t *testing.T) {
+func TestFrame_LvarExtend(t *testing.T) {
   f := NewFrame()
 
   for i := 0; i < 100; i++ {

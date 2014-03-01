@@ -77,7 +77,8 @@ func NewState() *State {
     pc: &OpList {},
     vars: make(Vars),
     output: &bytes.Buffer {},
-    frames: make([]*Frame, 0),
+    frames: make([]*Frame, 10),
+    currentFrame: -1,
   }
 }
 

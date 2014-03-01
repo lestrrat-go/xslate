@@ -17,6 +17,8 @@ const (
   TXOP_fetch_s
   TXOP_fetch_field_s
   TXOP_print_raw
+  TXOP_save_to_lvar
+  TXOP_load_lvar
   TXOP_end
 )
 
@@ -26,6 +28,8 @@ var TXCODE_end            = &ExecCode { TXOP_end, txNoop }
 var TXCODE_literal        = &ExecCode { TXOP_literal, txLiteral }
 var TXCODE_fetch_s        = &ExecCode { TXOP_fetch_s, txFetchSymbol }
 var TXCODE_fetch_field_s  = &ExecCode { TXOP_fetch_field_s, txFetchField }
+var TXCODE_save_to_lvar   = &ExecCode { TXOP_save_to_lvar, txSaveToLvar }
+var TXCODE_load_lvar      = &ExecCode { TXOP_load_lvar, txLoadLvar }
 var TXCODE_nil            = &ExecCode { TXOP_nil, txNil }
 
 func convertNumeric(v interface{}) reflect.Value {
@@ -140,6 +144,26 @@ func txPrintRaw(st *State) {
     v := interfaceToString(arg)
     st.AppendOutput([]byte(v))
   }
+  st.Advance()
+}
+
+func txSaveToLvar(st *State) {
+  idx, ok := st.CurrentOp().u_arg.(int)
+  if ! ok {
+    panic("save_to_lvar.u_arg MUST BE AN INT")
+  }
+
+  st.CurrentFrame().SetLvar(idx, st.sa)
+  st.Advance()
+}
+
+func txLoadLvar(st *State) {
+  idx, ok := st.CurrentOp().u_arg.(int)
+  if ! ok {
+    panic("load_lvar.u_arg MUST BE AN INT")
+  }
+
+  st.sa = st.CurrentFrame().GetLvar(idx)
   st.Advance()
 }
 

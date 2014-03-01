@@ -5,6 +5,17 @@ import (
   "testing"
 )
 
+func assertOutput(t *testing.T, vm *VM, expected string) {
+  output, err := vm.OutputString()
+  if err != nil {
+    t.Errorf("Error getting output: %s", err)
+  }
+
+  if output != expected {
+    t.Errorf("Expected output '%s', got '%s'", expected, output)
+  }
+}
+
 func TestBasic(t *testing.T) {
   vm := NewVM()
 
@@ -22,15 +33,7 @@ func TestBasic(t *testing.T) {
 
   vm.Run()
 
-  output, err := vm.OutputString()
-  if err != nil {
-    t.Errorf("Error getting output: %s", err)
-  }
-
-  expected := "Hello, World! Bob"
-  if output != expected {
-    t.Errorf("Expected output '%s', got '%s'", expected, output)
-  }
+  assertOutput(t, vm, "Hello, World! Bob")
 }
 
 func TestFetchField(t *testing.T) {
@@ -44,15 +47,7 @@ func TestFetchField(t *testing.T) {
 
   vm.Run()
 
-  output, err := vm.OutputString()
-  if err != nil {
-    t.Errorf("Error getting output: %s", err)
-  }
-
-  expected := "100"
-  if output != expected {
-    t.Errorf("Expected output '%s', got '%s'", expected, output)
-  }
+  assertOutput(t, vm, "100")
 }
 
 func TestNonExistingSymbol(t *testing.T) {
@@ -71,4 +66,19 @@ func TestNonExistingSymbol(t *testing.T) {
   if warnOutput := buf.String(); warnOutput != expected {
     t.Errorf("Expected warning to be '%s', got '%s'", expected, warnOutput)
   }
+}
+
+func TestVm_Lvar(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, 999 })
+  pc.Append(&Op { TXCODE_save_to_lvar, 0 })
+  pc.Append(&Op { TXCODE_load_lvar, 0 })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
+
+  vm.Run()
+
+  assertOutput(t, vm, "999")
 }
