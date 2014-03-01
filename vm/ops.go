@@ -2,6 +2,7 @@ package vm
 
 import (
   "bytes"
+  "encoding/json"
   "fmt"
   "reflect"
   "strconv"
@@ -275,6 +276,13 @@ type ExecCode struct {
 type Op struct {
   code *ExecCode
   u_arg interface {}
+}
+
+func (o Op) MarshalJSON() ([]byte, error) {
+  return json.Marshal(map[string]interface{}{
+    "code": o.code.id.String(),
+    "u_arg": o.u_arg,
+  })
 }
 
 type OpList []*Op
