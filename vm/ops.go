@@ -24,6 +24,7 @@ const (
   TXOP_add
   TXOP_sub
   TXOP_mul
+  TXOP_div
   TXOP_end
 )
 
@@ -41,6 +42,7 @@ var TXCODE_nil            = &ExecCode { TXOP_nil, txNil }
 var TXCODE_add            = &ExecCode { TXOP_add, txAdd }
 var TXCODE_sub            = &ExecCode { TXOP_sub, txSub }
 var TXCODE_mul            = &ExecCode { TXOP_mul, txMul }
+var TXCODE_div            = &ExecCode { TXOP_div, txDiv }
 
 func convertNumeric(v interface{}) reflect.Value {
   t := reflect.TypeOf(v)
@@ -215,6 +217,24 @@ func txMul(st *State) {
     st.sa = leftV.Uint() * rightV.Uint()
   case reflect.Float32, reflect.Float64:
     st.sa = leftV.Float() * rightV.Float()
+  }
+
+  // XXX: set to targ?
+  st.Advance()
+}
+
+func txDiv(st *State) {
+  leftV, rightV := alignTypesForArithmetic(st.sb, st.sa)
+  switch leftV.Kind() {
+  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+    // XXX This is a hack. We rely on interfaceToString() using FormatFloat(prec = -1)
+    // to get rid of the fractional portions when printing
+    typeF := reflect.TypeOf(0.1)
+    st.sa = leftV.Convert(typeF).Float() / rightV.Convert(typeF).Float()
+  case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+    st.sa = leftV.Uint() / rightV.Uint()
+  case reflect.Float32, reflect.Float64:
+    st.sa = leftV.Float() / rightV.Float()
   }
 
   // XXX: set to targ?

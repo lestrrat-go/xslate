@@ -179,6 +179,35 @@ func TestVM_MulFloat(t *testing.T) {
   assertOutput(t, vm, "8.8")
 }
 
+func TestVM_DivInt(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, 6 })
+  pc.Append(&Op { TXCODE_move_to_sb, nil })
+  pc.Append(&Op { TXCODE_literal, 3 })
+  pc.Append(&Op { TXCODE_div, nil })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
 
+  vm.Run()
 
+  assertOutput(t, vm, "2")
+}
+
+func TestVM_DivFloat(t *testing.T) {
+  vm := NewVM()
+  vm.st.PushFrame(NewFrame())
+  pc := vm.st.pc
+  pc.Append(&Op { TXCODE_literal, 10 })
+  pc.Append(&Op { TXCODE_move_to_sb, nil })
+  pc.Append(&Op { TXCODE_literal, 4 })
+  pc.Append(&Op { TXCODE_div, nil })
+  pc.Append(&Op { TXCODE_print_raw, nil })
+  pc.Append(&Op { TXCODE_end, nil })
+
+  vm.Run()
+
+  assertOutput(t, vm, "2.5")
+}
 
