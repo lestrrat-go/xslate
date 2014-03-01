@@ -13,16 +13,21 @@ type OpType int
 const (
   TXOP_noop       OpType = iota
   TXOP_nil
+  TXOP_move_to_sb
+  TXOP_move_from_sb
   TXOP_literal
   TXOP_fetch_s
   TXOP_fetch_field_s
   TXOP_print_raw
   TXOP_save_to_lvar
   TXOP_load_lvar
+  TXOP_add
   TXOP_end
 )
 
 var TXCODE_noop           = &ExecCode { TXOP_noop, txNoop }
+var TXCODE_move_to_sb     = &ExecCode { TXOP_move_to_sb, txMoveToSb }
+var TXCODE_move_from_sb   = &ExecCode { TXOP_move_from_sb, txMoveFromSb }
 var TXCODE_print_raw      = &ExecCode { TXOP_print_raw, txPrintRaw }
 var TXCODE_end            = &ExecCode { TXOP_end, txNoop }
 var TXCODE_literal        = &ExecCode { TXOP_literal, txLiteral }
@@ -31,6 +36,7 @@ var TXCODE_fetch_field_s  = &ExecCode { TXOP_fetch_field_s, txFetchField }
 var TXCODE_save_to_lvar   = &ExecCode { TXOP_save_to_lvar, txSaveToLvar }
 var TXCODE_load_lvar      = &ExecCode { TXOP_load_lvar, txLoadLvar }
 var TXCODE_nil            = &ExecCode { TXOP_nil, txNil }
+var TXCODE_add            = &ExecCode { TXOP_add, txAdd }
 
 func convertNumeric(v interface{}) reflect.Value {
   t := reflect.TypeOf(v)
@@ -93,6 +99,16 @@ func txNil(st *State) {
 }
 
 func txNoop(st *State) {
+  st.Advance()
+}
+
+func txMoveToSb(st *State) {
+  st.sb = st.sa
+  st.Advance()
+}
+
+func txMoveFromSb(st *State) {
+  st.sa = st.sb
   st.Advance()
 }
 
@@ -164,6 +180,21 @@ func txLoadLvar(st *State) {
   }
 
   st.sa = st.CurrentFrame().GetLvar(idx)
+  st.Advance()
+}
+
+func txAdd(st *State) {
+  leftV, rightV := alignTypesForArithmetic(st.sa, st.sb)
+  switch leftV.Kind() {
+  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+    st.sa = leftV.Int() + rightV.Int()
+  case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+    st.sa = leftV.Uint() + rightV.Uint()
+  case reflect.Float32, reflect.Float64:
+    st.sa = leftV.Float() + rightV.Float()
+  }
+
+  // XXX: set to targ?
   st.Advance()
 }
 
