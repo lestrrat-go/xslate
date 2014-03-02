@@ -16,7 +16,7 @@ Currently:
 
 * I'm aiming for port of most of TTerse syntax
 * I'm working on the Virtual Machine portion
-* VM currently supports: print\_raw, variable subtitution, arithmetic (add, subtract, multiply, divide), if/else conditionals
+* VM currently supports: print\_raw, variable subtitution, arithmetic (add, subtract, multiply, divide), if/else conditionals, "for x in list" loop
 * VM TODO: loops, macros, stuff involving external templates
 
 
