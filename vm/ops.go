@@ -42,6 +42,7 @@ const (
   TXOP_for_start
   TXOP_for_iter
   TXOP_html_escape
+  TXOP_uri_escape
   TXOP_end
   TXOP_max
 )
@@ -114,6 +115,9 @@ func init () {
     case TXOP_html_escape:
       h = txHtmlEscape
       n = "html_escape"
+    case TXOP_uri_escape:
+      h = txUriEscape
+      n = "uri_escape"
     default:
       panic("No such optype")
     }
@@ -385,6 +389,12 @@ func txForIter(st *State) {
 
   // loop done
   st.AdvanceBy(st.CurrentOp().ArgInt())
+}
+
+func txUriEscape(st *State) {
+  v := interfaceToString(st.sa)
+  st.sa = escapeUriString(v)
+  st.Advance()
 }
 
 func txHtmlEscape(st *State) {

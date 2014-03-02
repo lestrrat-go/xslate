@@ -293,3 +293,16 @@ func TestVM_HtmlEscape(t *testing.T) {
   assertOutput(t, vm, "&lt;div&gt;Hello, World!&lt;/div&gt;")
 }
 
+func TestVM_UriEscape(t *testing.T) {
+  vm := NewVM()
+  pc := vm.st.pc
+  pc.AppendLiteral("日本語")
+  pc.AppendUriEscape()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
+
+  vm.Run()
+  assertOutput(t, vm, "%E6%97%A5%E6%9C%AC%E8%AA%9E")
+}
+
+
