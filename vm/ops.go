@@ -38,6 +38,8 @@ const (
   TXOP_div
   TXOP_and
   TXOP_goto
+  TXOP_for_start
+  TXOP_for_iter
   TXOP_end
   TXOP_max
 )
@@ -101,6 +103,12 @@ func init () {
     case TXOP_goto:
       h = txGoto
       n = "goto"
+    case TXOP_for_start:
+      h = txForStart
+      n = "for_start"
+    case TXOP_for_iter:
+      h = txForIter
+      n = "for_iter"
     default:
       panic("No such optype")
     }
@@ -332,6 +340,45 @@ func txAnd(st *State) {
 }
 
 func txGoto(st *State) {
+  st.AdvanceBy(st.CurrentOp().ArgInt())
+}
+
+func txForStart(st *State) {
+  id    := st.CurrentOp().ArgInt()
+  slice := reflect.ValueOf(st.sa)
+
+  switch slice.Kind() {
+  case reflect.Array, reflect.Slice:
+    // Normal case. nothing to do
+  default:
+    // Oh you silly goose. You didn't give me a slice.
+    // Use a dummy array
+    slice = reflect.ValueOf([]struct{}{})
+  }
+
+  cf := st.CurrentFrame()
+  cf.SetLvar(id    , nil)   // item
+  cf.SetLvar(id + 1, -1)    // index
+  cf.SetLvar(id + 2, slice) // slice (Value)
+
+  st.Advance()
+}
+
+func txForIter(st *State) {
+  id    := st.sa.(int)
+  cf    := st.CurrentFrame()
+  index := cf.GetLvar(id + 1).(int)
+  slice := cf.GetLvar(id + 2).(reflect.Value)
+
+  index++
+  cf.SetLvar(id + 1, index)
+  if slice.Len() > index {
+    cf.SetLvar(id, slice.Index(index).Interface())
+    st.Advance()
+    return
+  }
+
+  // loop done
   st.AdvanceBy(st.CurrentOp().ArgInt())
 }
 

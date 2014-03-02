@@ -264,3 +264,20 @@ func TestVM_IfElse(t *testing.T) {
   assertOutput(t, vm, "Ola, Mundo!")
 }
 
+func TestVM_ForLoop(t *testing.T) {
+  vm := NewVM()
+  pc := vm.st.pc
+  pc.AppendLiteral([]int { 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 })
+  pc.AppendForStart(0)
+  pc.AppendLiteral(0)
+  pc.AppendForIter(4)
+  pc.AppendLoadLvar(0)
+  pc.AppendPrintRaw()
+  pc.AppendGoto(-4)
+  pc.AppendEnd()
+
+  vm.Run()
+
+  assertOutput(t, vm, "10987654321")
+}
+

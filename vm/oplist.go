@@ -86,3 +86,11 @@ func (l *OpList) AppendAnd(ix int) {
 func (l *OpList) AppendGoto(ix int) {
   l.AppendOp(TXOP_goto, ix)
 }
+
+func (l *OpList) AppendForStart(ix int) {
+  l.AppendOp(TXOP_for_start, ix)
+}
+
+func (l *OpList) AppendForIter(ix int) {
+  l.AppendOp(TXOP_for_iter, ix)
+}
