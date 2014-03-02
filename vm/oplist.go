@@ -7,17 +7,17 @@ import (
 
 type OpList []*Op
 
-func (ol *OpList) Get(i int) *Op {
-  return (*ol)[i]
+func (l *OpList) Get(i int) *Op {
+  return (*l)[i]
 }
 
-func (ol *OpList) Append(op *Op) {
-  *ol = append(*ol, op)
+func (l *OpList) Append(op *Op) {
+  *l = append(*l, op)
 }
 
-func (ol *OpList) String() string {
+func (l *OpList) String() string {
   buf := &bytes.Buffer {}
-  for k, v := range *ol {
+  for k, v := range *l {
     buf.WriteString(fmt.Sprintf("%03d. %s\n", k + 1, v))
   }
   return buf.String()
