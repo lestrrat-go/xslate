@@ -3,6 +3,8 @@ go-xslate
 
 Attempt to port Perl5's Text::Xslate to Go
 
+[![Build Status](https://travis-ci.org/lestrrat/go-xslate.png?branch=master)](https://travis-ci.org/lestrrat/go-xslate)
+
 Description
 ===========
 
