@@ -3,6 +3,7 @@ package vm
 import (
   "encoding/json"
   "fmt"
+  "html"
   "reflect"
   "strconv"
   "unicode"
@@ -40,6 +41,7 @@ const (
   TXOP_goto
   TXOP_for_start
   TXOP_for_iter
+  TXOP_html_escape
   TXOP_end
   TXOP_max
 )
@@ -109,6 +111,9 @@ func init () {
     case TXOP_for_iter:
       h = txForIter
       n = "for_iter"
+    case TXOP_html_escape:
+      h = txHtmlEscape
+      n = "html_escape"
     default:
       panic("No such optype")
     }
@@ -380,6 +385,12 @@ func txForIter(st *State) {
 
   // loop done
   st.AdvanceBy(st.CurrentOp().ArgInt())
+}
+
+func txHtmlEscape(st *State) {
+  v := interfaceToString(st.sa)
+  st.sa = html.EscapeString(v)
+  st.Advance()
 }
 
 func NewOp(o OpType, args ...interface {}) *Op {

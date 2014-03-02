@@ -94,3 +94,7 @@ func (l *OpList) AppendForStart(ix int) {
 func (l *OpList) AppendForIter(ix int) {
   l.AppendOp(TXOP_for_iter, ix)
 }
+
+func (l *OpList) AppendHtmlEscape() {
+  l.AppendOp(TXOP_html_escape)
+}

@@ -281,3 +281,15 @@ func TestVM_ForLoop(t *testing.T) {
   assertOutput(t, vm, "10987654321")
 }
 
+func TestVM_HtmlEscape(t *testing.T) {
+  vm := NewVM()
+  pc := vm.st.pc
+  pc.AppendLiteral("<div>Hello, World!</div>")
+  pc.AppendHtmlEscape()
+  pc.AppendPrintRaw()
+  pc.AppendEnd()
+
+  vm.Run()
+  assertOutput(t, vm, "&lt;div&gt;Hello, World!&lt;/div&gt;")
+}
+
