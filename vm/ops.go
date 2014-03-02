@@ -15,6 +15,11 @@ type ExecCode struct {
   id   OpType
   code func(*State)
 }
+type Op struct {
+  code  *ExecCode
+  u_arg interface {}
+}
+
 
 const (
   TXOP_noop OpType = iota
@@ -193,12 +198,12 @@ func txMoveFromSb(st *State) {
 }
 
 func txLiteral(st *State) {
-  st.sa = st.CurrentOp().u_arg
+  st.sa = st.CurrentOp().Arg()
   st.Advance()
 }
 
 func txFetchSymbol(st *State) {
-  key   := st.CurrentOp().u_arg
+  key   := st.CurrentOp().Arg()
   vars  := st.Vars()
   if v, ok := vars.Get(key); ok {
     st.sa = v
@@ -222,7 +227,7 @@ func txFetchField(st *State) {
     default:
       v = reflect.ValueOf(&container).Elem()
     }
-    name := interfaceToString(st.CurrentOp().u_arg)
+    name := st.CurrentOp().ArgString()
     r, size := utf8.DecodeRuneInString(name)
     name = string(unicode.ToUpper(r)) + name[size:]
     f := v.FieldByName(name)
@@ -244,21 +249,13 @@ func txPrintRaw(st *State) {
 }
 
 func txSaveToLvar(st *State) {
-  idx, ok := st.CurrentOp().u_arg.(int)
-  if ! ok {
-    panic("save_to_lvar.u_arg MUST BE AN INT")
-  }
-
+  idx := st.CurrentOp().ArgInt()
   st.CurrentFrame().SetLvar(idx, st.sa)
   st.Advance()
 }
 
 func txLoadLvar(st *State) {
-  idx, ok := st.CurrentOp().u_arg.(int)
-  if ! ok {
-    panic("load_lvar.u_arg MUST BE AN INT")
-  }
-
+  idx := st.CurrentOp().ArgInt()
   st.sa = st.CurrentFrame().GetLvar(idx)
   st.Advance()
 }
@@ -330,17 +327,12 @@ func txAnd(st *State) {
   if interfaceToBool(st.sa) {
     st.Advance()
   } else {
-    st.AdvanceBy(int(reflect.ValueOf(st.CurrentOp().u_arg).Int()))
+    st.AdvanceBy(st.CurrentOp().ArgInt())
   }
 }
 
 func txGoto(st *State) {
-  st.AdvanceBy(int(reflect.ValueOf(st.CurrentOp().u_arg).Int()))
-}
-
-type Op struct {
-  code  *ExecCode
-  u_arg interface {}
+  st.AdvanceBy(st.CurrentOp().ArgInt())
 }
 
 func NewOp(o OpType, args ...interface {}) *Op {
@@ -373,6 +365,18 @@ func (o *Op) OpType() OpType {
 }
 func (o *Op) Code() *ExecCode {
   return o.code
+}
+
+func (o *Op) Arg() interface {} {
+  return o.u_arg
+}
+
+func (o *Op) ArgInt() int {
+  return o.Arg().(int)
+}
+
+func (o *Op) ArgString() string {
+  return interfaceToString(o.Arg())
 }
 
 func (o *Op) String() string {
