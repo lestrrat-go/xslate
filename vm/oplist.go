@@ -102,3 +102,4 @@ func (l *OpList) AppendHtmlEscape() {
 func (l *OpList) AppendUriEscape() {
   l.AppendOp(TXOP_uri_escape)
 }
+

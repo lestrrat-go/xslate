@@ -305,4 +305,15 @@ func TestVM_UriEscape(t *testing.T) {
   assertOutput(t, vm, "%E6%97%A5%E6%9C%AC%E8%AA%9E")
 }
 
-
+func TestVM_Eq(t *testing.T) {
+  vm := NewVM()
+  pc := vm.st.pc
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_eq)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
+  vm.Run()
+  assertOutput(t, vm, "true")
+}

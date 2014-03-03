@@ -28,6 +28,7 @@ const (
   TXOP_for_iter
   TXOP_html_escape
   TXOP_uri_escape
+  TXOP_eq
   TXOP_end
   TXOP_max
 )
@@ -103,6 +104,9 @@ func init () {
     case TXOP_uri_escape:
       h = txUriEscape
       n = "uri_escape"
+    case TXOP_eq:
+      h = txEq
+      n = "eq"
     default:
       panic("No such optype")
     }
@@ -330,3 +334,7 @@ func txHtmlEscape(st *State) {
   st.Advance()
 }
 
+func txEq(st *State) {
+  st.sa = st.sa == st.sb
+  st.Advance()
+}

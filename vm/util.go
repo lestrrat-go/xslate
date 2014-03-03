@@ -77,6 +77,12 @@ func interfaceToString(arg interface {}) string {
     v = strconv.FormatInt(reflect.ValueOf(arg).Int(), 10)
   case reflect.Float32, reflect.Float64:
     v = strconv.FormatFloat(reflect.ValueOf(arg).Float(), 'f', -1, 64)
+  case reflect.Bool:
+    if reflect.ValueOf(arg).Bool() {
+      v = "true"
+    } else {
+      v = "false"
+    }
   default:
     v = fmt.Sprintf("%s", arg)
   }
