@@ -316,4 +316,26 @@ func TestVM_Eq(t *testing.T) {
   pc.AppendOp(TXOP_end)
   vm.Run()
   assertOutput(t, vm, "true")
+
+  pc.Get(0).u_arg = 2
+  vm.Run()
+  assertOutput(t, vm, "false")
 }
+
+func TestVM_Ne(t *testing.T) {
+  vm := NewVM()
+  pc := vm.st.pc
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_ne)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
+  vm.Run()
+  assertOutput(t, vm, "false")
+
+  pc.Get(0).u_arg = 2
+  vm.Run()
+  assertOutput(t, vm, "true")
+}
+

@@ -29,6 +29,7 @@ const (
   TXOP_html_escape
   TXOP_uri_escape
   TXOP_eq
+  TXOP_ne
   TXOP_end
   TXOP_max
 )
@@ -107,6 +108,9 @@ func init () {
     case TXOP_eq:
       h = txEq
       n = "eq"
+    case TXOP_ne:
+      h = txNe
+      n = "ne"
     default:
       panic("No such optype")
     }
@@ -335,6 +339,11 @@ func txHtmlEscape(st *State) {
 }
 
 func txEq(st *State) {
-  st.sa = st.sa == st.sb
+  st.sa = st.sb == st.sa
+  st.Advance()
+}
+
+func txNe(st *State) {
+  st.sa = st.sb != st.sa
   st.Advance()
 }
