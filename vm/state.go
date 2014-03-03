@@ -10,6 +10,9 @@ type State struct {
   opidx int
   pc *OpList
 
+  stack *Stack
+  markstack *Stack
+
   // output
   output  io.ReadWriter
   warn    io.Writer
@@ -23,7 +26,7 @@ type State struct {
   targ  interface {}
 
   // stack frame
-  frames []*Frame // TODO: what's in a frame?
+  frames *Stack
   currentFrame int
 }
 
@@ -31,12 +34,16 @@ func NewState() *State {
   st := &State {
     opidx: 0,
     pc: &OpList {},
+    stack: NewStack(5),
+    markstack: NewStack(5),
     vars: make(Vars),
     output: &bytes.Buffer {},
-    frames: make([]*Frame, 10),
+    frames: NewStack(5),
     currentFrame: -1,
   }
-  st.PushFrame(NewFrame())
+
+  st.Pushmark()
+  st.PushFrame(NewFrame(st.CurrentMark(), st.stack))
   return st
 }
 
@@ -57,22 +64,17 @@ func (st *State) CurrentOp() *Op {
 }
 
 func (st *State) PushFrame(f *Frame) {
-  if st.currentFrame >= len(st.frames) {
-    newf := make([]*Frame, st.currentFrame + 1)
-    copy(newf, st.frames)
-    st.frames = newf
-  }
-  st.currentFrame++
-  st.frames[st.currentFrame] = f
+  st.frames.Push(f)
 }
 
-func (st *State) PopFrame() {
-  st.frames[st.currentFrame] = nil
-  st.currentFrame--
+func (st *State) PopFrame() *Frame {
+  x := st.frames.Pop()
+  return x.(*Frame)
 }
 
 func (st *State) CurrentFrame() *Frame {
-  return st.frames[st.currentFrame]
+  x := st.frames.Top()
+  return x.(*Frame)
 }
 
 func (st *State) Warnf(format string, args ...interface{}) {
@@ -88,3 +90,16 @@ func (st *State) AppendOutputString(o string) {
   st.output.Write([]byte(o))
 }
 
+func (st *State) Pushmark() {
+  st.markstack.Push(st.stack.Cur())
+}
+
+func (st *State) Popmark() int {
+  x := st.markstack.Pop()
+  return x.(int)
+}
+
+func (st *State) CurrentMark() int {
+  x := st.markstack.Top()
+  return x.(int)
+}

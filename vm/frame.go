@@ -2,43 +2,27 @@ package vm
 
 type Frame struct {
   name string
+
+  stack *Stack
+  base int // base index into the main stack
+
   output interface {} // TODO: what's this?
   retaddr interface {} // TODO: what's this?
-
-  localvars []interface {}
 }
 
-func NewFrame() *Frame {
-  return &Frame { localvars: make([]interface {}, 0, 10) }
+func NewFrame(base int, s *Stack) *Frame {
+  return &Frame {
+    base: base,
+    stack: s,
+  }
 }
 
 func (f *Frame) GetLvar(i int) interface {} {
-  if len(f.localvars) <= i {
-    return nil
-  }
-  return f.localvars[i]
-}
-
-func (f *Frame) ReallocLvars(size int) {
-  newl := make([]interface{}, size)
-  copy(newl, f.localvars)
-  f.localvars = newl
-}
-
-func (f *Frame) ExtendLvars() {
-  extendTo := int(float64(len(f.localvars)) * 1.5)
-  if extendTo == 0 {
-    extendTo = 5
-  }
-
-  f.ReallocLvars(extendTo)
+  return f.stack.Get(f.base + i)
 }
 
 func (f *Frame) SetLvar(i int, v interface {}) {
-  if len(f.localvars) <= i {
-    f.ExtendLvars()
-  }
-  f.localvars[i] = v
+  f.stack.Set(f.base + i, v)
 }
 
 

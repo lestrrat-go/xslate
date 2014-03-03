@@ -387,3 +387,36 @@ func txNe(st *State) {
   st.sa = st.sb != st.sa
   st.Advance()
 }
+
+// method call related stuff
+/*
+In the original p5-Text-Xslate, foo.hoge(1, 2, 3) generates the
+following bytecode:
+
+  pushmark // hoge
+  load_lvar 0 #2
+  push
+  literal_i 1
+  push
+  literal_i 2
+  push
+  literal_i 3
+  push
+  methodcall_s "hoge" #2
+
+*/
+// func txPushmark(st *State) {
+
+var funcZero = reflect.Zero(reflect.ValueOf(func() {}).Type())
+
+func txMethodCall(st *State) {
+  name := interfaceToString(st.sa)
+  v := reflect.ValueOf(st.sb)
+
+  method := v.MethodByName(name)
+  if method == funcZero {
+    st.sa = nil
+    return
+  }
+
+}
