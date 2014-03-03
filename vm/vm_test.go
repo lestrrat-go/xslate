@@ -28,11 +28,6 @@ func TestBasic(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  // for debug only
-  t.Logf("%s", vm.st.pc)
-  // v, _ := json.Marshal(vm.st.pc)
-  // t.Logf("json: %s", v)
-
   vm.Run()
 
   assertOutput(t, vm, "Hello, World! Bob")
