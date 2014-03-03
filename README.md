@@ -25,6 +25,19 @@ Currently:
 Caveats
 =======
 
+Comparison Operators
+--------------------
+
+The original xslate, written for Perl5, has comparison operators for both
+numeric and string ("eq" vs "==", "ne" vs "!=", etc). In go-xslate, there's
+no distinction. Both are translated to the same opcode (XXX "we plan to", that is)
+
+So these are the same:
+
+    [% IF x == 1 %]...[% END %]
+    [% IF x eq 1 %]...[% END %]
+
+
 Accessing Fields
 ----------------
 
