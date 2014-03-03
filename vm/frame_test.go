@@ -25,8 +25,8 @@ func TestFrame_LvarExtend(t *testing.T) {
     f.SetLvar(i, i)
   }
 
-  if len(f.localvars) != 100 {
-    t.Errorf("Expected 100 localvars, but got %d", len(f.localvars))
+  if len(f.localvars) < 100 {
+    t.Errorf("Expected more than 100 localvars, but got %d", len(f.localvars))
   }
 
   for i := 0; i < 100; i++ {
