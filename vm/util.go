@@ -1,5 +1,11 @@
 package vm
 
+import (
+  "fmt"
+  "reflect"
+  "strconv"
+)
+
 var hexdigits []byte = []byte("0123456789ABCDEF")
 func escapeUri(thing []byte) []byte {
   ret := make([]byte, 0, len(thing))
@@ -28,3 +34,62 @@ func shouldEscapeUri(v byte) bool {
     return true
   }
 }
+
+func convertNumeric(v interface{}) reflect.Value {
+  t := reflect.TypeOf(v)
+  switch t.Kind() {
+  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+    return reflect.ValueOf(v)
+  default:
+    return reflect.ValueOf(0)
+  }
+}
+
+// Given possibly non-matched pair of things to perform arithmetic
+// operations on, align their types so that the given operation
+// can be performed correctly.
+// e.g. given int, float, we align them to float, float
+func alignTypesForArithmetic(left, right interface {}) (reflect.Value, reflect.Value) {
+  leftV  := convertNumeric(left)
+  rightV := convertNumeric(right)
+
+  if leftV.Kind() == rightV.Kind() {
+    return leftV, rightV
+  }
+
+  var alignTo reflect.Type
+  if leftV.Kind() > rightV.Kind() {
+    alignTo = leftV.Type()
+  } else {
+    alignTo = rightV.Type()
+  }
+
+  return leftV.Convert(alignTo), rightV.Convert(alignTo)
+}
+
+func interfaceToString(arg interface {}) string {
+  t := reflect.TypeOf(arg)
+  var v string
+  switch t.Kind() {
+  case reflect.String:
+    v, _ = arg.(string)
+  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+    v = strconv.FormatInt(reflect.ValueOf(arg).Int(), 10)
+  case reflect.Float32, reflect.Float64:
+    v = strconv.FormatFloat(reflect.ValueOf(arg).Float(), 'f', -1, 64)
+  default:
+    v = fmt.Sprintf("%s", arg)
+  }
+  return v
+}
+
+func interfaceToBool(arg interface {}) bool {
+  t := reflect.TypeOf(arg)
+  if t.Kind() == reflect.Bool {
+    return arg.(bool)
+  }
+
+  z := reflect.Zero(t)
+  return reflect.DeepEqual(z, t)
+}
+
