@@ -167,22 +167,28 @@ func txNoop(st *State) {
   st.Advance()
 }
 
+// Moves content of register sa to register sb
 func txMoveToSb(st *State) {
   st.sb = st.sa
   st.Advance()
 }
 
+// Moves content of register sb to register sa
 func txMoveFromSb(st *State) {
   st.sa = st.sb
   st.Advance()
 }
 
+// Sets literal in op arg to register sa
 func txLiteral(st *State) {
   st.sa = st.CurrentOp().Arg()
   st.Advance()
 }
 
+// Fetches a symbol specified in op arg from template variables.
+// XXX need to handle local vars?
 func txFetchSymbol(st *State) {
+  // Need to handle local vars?
   key   := st.CurrentOp().Arg()
   vars  := st.Vars()
   if v, ok := vars.Get(key); ok {
@@ -238,6 +244,9 @@ func txFetchField(st *State) {
 type rawString string
 func (s rawString) String() string { return string(s) }
 var rawStringType = reflect.TypeOf(new(rawString)).Elem()
+
+// Wraps the contents of register sa with a "raw string" mark
+// Note that this effectively stringifies the contents of register sa
 func txMarkRaw(st *State) {
   if reflect.ValueOf(st.sa).Type() != rawStringType {
     st.sa = rawString(interfaceToString(st.sa))
@@ -245,6 +254,9 @@ func txMarkRaw(st *State) {
   st.Advance()
 }
 
+// Sets the contents of register sa to a regular string, and removes
+// the "raw string" mark, forcing html escapes to be applied when printing.
+// Note that this effectively stringifies the contents of register sa
 func txUnmarkRaw(st *State) {
   if reflect.ValueOf(st.sa).Type() == rawStringType {
     st.sa = string(interfaceToString(st.sa))
@@ -252,6 +264,8 @@ func txUnmarkRaw(st *State) {
   st.Advance()
 }
 
+// Prints the contents of register sa to Output.
+// Forcefully applies html escaping unless the variable in sa is marked "raw"
 func txPrint(st *State) {
   arg := st.sa
   if arg == nil {
@@ -264,8 +278,9 @@ func txPrint(st *State) {
   st.Advance()
 }
 
+// Prints the contents of register sa, forcing raw string semantics
 func txPrintRaw(st *State) {
-  // mark_raw handling
+  // XXX TODO: mark_raw handling
   arg := st.sa
   if arg == nil {
     st.Warnf("Use of nil to print\n")
