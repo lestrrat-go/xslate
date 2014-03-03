@@ -25,4 +25,8 @@ func (f *Frame) SetLvar(i int, v interface {}) {
   f.stack.Set(f.base + i, v)
 }
 
+func (f *Frame) LastLvarIndex() int {
+  return f.stack.Cur() - f.base
+}
+
 

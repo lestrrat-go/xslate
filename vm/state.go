@@ -103,3 +103,4 @@ func (st *State) CurrentMark() int {
   x := st.markstack.Top()
   return x.(int)
 }
+

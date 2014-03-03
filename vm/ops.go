@@ -33,6 +33,10 @@ const (
   TXOP_uri_escape
   TXOP_eq
   TXOP_ne
+  TXOP_popmark
+  TXOP_pushmark
+  TXOP_push
+  TXOP_methodcall
   TXOP_end
   TXOP_max
 )
@@ -123,6 +127,18 @@ func init () {
     case TXOP_ne:
       h = txNe
       n = "ne"
+    case TXOP_push:
+      h = txPush
+      n = "push"
+    case TXOP_popmark:
+      h = txPopmark
+      n = "popmark"
+    case TXOP_pushmark:
+      h = txPushmark
+      n = "pushmark"
+    case TXOP_methodcall:
+      h = txMethodCall
+      n = "methodcall"
     default:
       panic("No such optype")
     }
@@ -176,6 +192,25 @@ func txFetchSymbol(st *State) {
   }
   st.Advance()
 }
+
+// pushmark
+// load_lvar 0
+// push
+// literal_i start
+// push
+// literal_i end
+// push
+// fetch_slice
+/*
+func txFetchSlice(st *State) {
+  container := st.sa
+  if container == nil {
+    // XXX ? no op?
+    st.sa = nil
+  } else {
+    v := reflect.ValueOf(container)
+    v.Slice(
+*/
 
 func txFetchField(st *State) {
   container := st.sa
@@ -388,7 +423,9 @@ func txNe(st *State) {
   st.Advance()
 }
 
-// method call related stuff
+// func/method call related stuff
+// Note: You MUST MUST MUST call pushmark before setting up the argument
+// list on the stack
 /*
 In the original p5-Text-Xslate, foo.hoge(1, 2, 3) generates the
 following bytecode:
@@ -405,18 +442,54 @@ following bytecode:
   methodcall_s "hoge" #2
 
 */
-// func txPushmark(st *State) {
+func txPopmark(st *State) {
+  st.Popmark()
+  st.Advance()
+}
+
+func txPushmark(st *State) {
+  st.Pushmark()
+  st.Advance()
+}
+
+func txPush(st *State) {
+  st.stack.Push(st.sa)
+  st.Advance()
+}
 
 var funcZero = reflect.Zero(reflect.ValueOf(func() {}).Type())
 
 func txMethodCall(st *State) {
-  name := interfaceToString(st.sa)
-  v := reflect.ValueOf(st.sb)
+  name := interfaceToString(st.CurrentOp().Arg())
 
-  method := v.MethodByName(name)
-  if method == funcZero {
-    st.sa = nil
-    return
+  // Everything in our lvars up to the current tip is our argument list
+  mark := st.CurrentMark()
+  tip  := st.stack.Cur()
+
+  invocant := reflect.ValueOf(st.stack.Get(mark))
+
+  var args []reflect.Value = make([]reflect.Value, tip - mark)
+  for i := mark; tip > i; i++ {
+    args[i - mark] = reflect.ValueOf(st.stack.Get(i))
   }
 
+  method, ok := invocant.Type().MethodByName(name)
+  if ! ok {
+    st.sa = nil
+  } else if method.Func.Type().NumIn() != len(args) {
+    st.Warnf("Number of arguments do not match (expected %d, got %d)", method.Func.Type().NumIn(), len(args))
+    st.sa = nil
+  } else {
+    ret := method.Func.Call(args)
+    if method.Func.Type().NumOut() == 0 {
+      // Purely for side effect
+      st.sa = ""
+    } else {
+      // methodcall op grabs only the first return value. If you need the
+      // entire return value set, you need to call methodcall_assign
+      // (to be implemented)
+      st.sa = ret[0].Interface()
+    }
+  }
+  st.Advance()
 }

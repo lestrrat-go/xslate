@@ -3,6 +3,7 @@ package vm
 import (
   "bytes"
   "testing"
+  "time"
 )
 
 func assertOutput(t *testing.T, vm *VM, expected string) {
@@ -344,5 +345,27 @@ func TestVM_MarkRaw(t *testing.T) {
 
   vm.Run()
   assertOutput(t, vm, "<div>Hello</div>")
+}
+
+func TestVM_MethodCall(t *testing.T) {
+  vm := NewVM()
+  pc := vm.st.pc
+
+  // [% t = time.Now() %]
+  // [% t.Before(time.Now()) %]
+  pc.AppendOp(TXOP_literal, time.Now())
+  pc.AppendOp(TXOP_save_to_lvar, 0)
+  pc.AppendOp(TXOP_pushmark)
+  pc.AppendOp(TXOP_load_lvar, 0)
+  pc.AppendOp(TXOP_push)
+  pc.AppendOp(TXOP_literal, time.Now())
+  pc.AppendOp(TXOP_push)
+  pc.AppendOp(TXOP_methodcall, "Before")
+  pc.AppendOp(TXOP_popmark)
+  pc.AppendOp(TXOP_print)
+  pc.AppendOp(TXOP_end)
+
+  vm.Run()
+  assertOutput(t, vm, "false")
 }
 
