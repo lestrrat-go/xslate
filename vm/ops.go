@@ -15,6 +15,9 @@ const (
   TXOP_literal
   TXOP_fetch_s
   TXOP_fetch_field_s
+  TXOP_mark_raw
+  TXOP_unmark_raw
+  TXOP_print
   TXOP_print_raw
   TXOP_save_to_lvar
   TXOP_load_lvar
@@ -54,6 +57,15 @@ func init () {
     case TXOP_move_from_sb:
       h = txMoveFromSb
       n = "move_from_sb"
+    case TXOP_mark_raw:
+      h = txMarkRaw
+      n = "mark_raw"
+    case TXOP_unmark_raw:
+      h = txUnmarkRaw
+      n = "unmark_raw"
+    case TXOP_print:
+      h = txPrint
+      n = "print"
     case TXOP_print_raw:
       h = txPrintRaw
       n = "print_raw"
@@ -188,14 +200,42 @@ func txFetchField(st *State) {
   st.Advance()
 }
 
+type rawString string
+func (s rawString) String() string { return string(s) }
+var rawStringType = reflect.TypeOf(new(rawString)).Elem()
+func txMarkRaw(st *State) {
+  if reflect.ValueOf(st.sa).Type() != rawStringType {
+    st.sa = rawString(interfaceToString(st.sa))
+  }
+  st.Advance()
+}
+
+func txUnmarkRaw(st *State) {
+  if reflect.ValueOf(st.sa).Type() == rawStringType {
+    st.sa = string(interfaceToString(st.sa))
+  }
+  st.Advance()
+}
+
+func txPrint(st *State) {
+  arg := st.sa
+  if arg == nil {
+    st.Warnf("Use of nil to print\n")
+  } else if reflect.ValueOf(st.sa).Type() != rawStringType {
+    st.AppendOutputString(html.EscapeString(interfaceToString(arg)))
+  } else {
+    st.AppendOutputString(interfaceToString(arg))
+  }
+  st.Advance()
+}
+
 func txPrintRaw(st *State) {
   // mark_raw handling
   arg := st.sa
   if arg == nil {
     st.Warnf("Use of nil to print\n")
   } else {
-    v := interfaceToString(arg)
-    st.AppendOutput([]byte(v))
+    st.AppendOutputString(interfaceToString(arg))
   }
   st.Advance()
 }

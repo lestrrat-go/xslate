@@ -72,7 +72,7 @@ func interfaceToString(arg interface {}) string {
   var v string
   switch t.Kind() {
   case reflect.String:
-    v, _ = arg.(string)
+    v = string(reflect.ValueOf(arg).String())
   case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
     v = strconv.FormatInt(reflect.ValueOf(arg).Int(), 10)
   case reflect.Float32, reflect.Float64:

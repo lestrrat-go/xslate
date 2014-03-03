@@ -339,3 +339,15 @@ func TestVM_Ne(t *testing.T) {
   assertOutput(t, vm, "true")
 }
 
+func TestVM_MarkRaw(t *testing.T) {
+  vm := NewVM()
+  pc := vm.st.pc
+  pc.AppendOp(TXOP_literal, "<div>Hello</div>")
+  pc.AppendOp(TXOP_mark_raw)
+  pc.AppendOp(TXOP_print)
+  pc.AppendOp(TXOP_end)
+
+  vm.Run()
+  assertOutput(t, vm, "<div>Hello</div>")
+}
+

@@ -84,4 +84,7 @@ func (st *State) AppendOutput(b []byte) {
   st.output.Write(b)
 }
 
+func (st *State) AppendOutputString(o string) {
+  st.output.Write([]byte(o))
+}
 
