@@ -21,12 +21,12 @@ func TestBasic(t *testing.T) {
 
   vm.st.Vars().Set("name", "Bob")
   pc := vm.st.pc
-  pc.AppendNoop()
-  pc.AppendLiteral("Hello, World! ")
-  pc.AppendPrintRaw()
-  pc.AppendFetchSymbol("name")
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_noop)
+  pc.AppendOp(TXOP_literal, "Hello, World! ")
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_fetch_s, "name")
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   // for debug only
   t.Logf("%s", vm.st.pc)
@@ -42,10 +42,10 @@ func TestFetchField(t *testing.T) {
   vm := NewVM()
   vm.st.Vars().Set("foo", struct { Value int } { 100 })
   pc := vm.st.pc
-  pc.AppendFetchSymbol("foo")
-  pc.AppendFetchField("value")
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_fetch_s, "foo")
+  pc.AppendOp(TXOP_fetch_field_s, "value")
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -55,9 +55,9 @@ func TestFetchField(t *testing.T) {
 func TestNonExistingSymbol(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendFetchSymbol("foo")
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_fetch_s, "foo")
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   buf := &bytes.Buffer {}
   vm.st.warn = buf
@@ -73,11 +73,11 @@ func TestNonExistingSymbol(t *testing.T) {
 func TestVm_Lvar(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(999)
-  pc.AppendSaveToLvar(0)
-  pc.AppendLoadLvar(0)
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 999)
+  pc.AppendOp(TXOP_save_to_lvar, 0)
+  pc.AppendOp(TXOP_load_lvar, 0)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -87,12 +87,12 @@ func TestVm_Lvar(t *testing.T) {
 func TestVM_AddInt(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(999)
-  pc.AppendMoveToSb()
-  pc.AppendLiteral(1)
-  pc.AppendAdd()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 999)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_add)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -102,12 +102,12 @@ func TestVM_AddInt(t *testing.T) {
 func TestVM_AddFloat(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(0.999)
-  pc.AppendMoveToSb()
-  pc.AppendLiteral(0.001)
-  pc.AppendAdd()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 0.999)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 0.001)
+  pc.AppendOp(TXOP_add)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -117,12 +117,12 @@ func TestVM_AddFloat(t *testing.T) {
 func TestVM_SubInt(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(999)
-  pc.AppendMoveToSb()
-  pc.AppendLiteral(1)
-  pc.AppendSub()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 999)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_sub)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -132,12 +132,12 @@ func TestVM_SubInt(t *testing.T) {
 func TestVM_SubFloat(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(1)
-  pc.AppendMoveToSb()
-  pc.AppendLiteral(0.1)
-  pc.AppendSub()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 0.1)
+  pc.AppendOp(TXOP_sub)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -147,12 +147,12 @@ func TestVM_SubFloat(t *testing.T) {
 func TestVM_MulInt(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(3)
-  pc.AppendMoveToSb()
-  pc.AppendLiteral(4)
-  pc.AppendMul()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 3)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 4)
+  pc.AppendOp(TXOP_mul)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -162,12 +162,12 @@ func TestVM_MulInt(t *testing.T) {
 func TestVM_MulFloat(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(2.2)
-  pc.AppendMoveToSb()
-  pc.AppendLiteral(4)
-  pc.AppendMul()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 2.2)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 4)
+  pc.AppendOp(TXOP_mul)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -177,12 +177,12 @@ func TestVM_MulFloat(t *testing.T) {
 func TestVM_DivInt(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(6)
-  pc.AppendMoveToSb()
-  pc.AppendLiteral(3)
-  pc.AppendDiv()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 6)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 3)
+  pc.AppendOp(TXOP_div)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -192,12 +192,12 @@ func TestVM_DivInt(t *testing.T) {
 func TestVM_DivFloat(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(10)
-  pc.AppendMoveToSb()
-  pc.AppendLiteral(4)
-  pc.AppendDiv()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 10)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 4)
+  pc.AppendOp(TXOP_div)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -207,16 +207,16 @@ func TestVM_DivFloat(t *testing.T) {
 func TestVM_LvarAssignArithmeticResult(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(1)
-  pc.AppendSaveToLvar(0)
-  pc.AppendLiteral(2)
-  pc.AppendSaveToLvar(1)
-  pc.AppendLoadLvar(0)
-  pc.AppendMoveToSb()
-  pc.AppendLoadLvar(1)
-  pc.AppendAdd()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_save_to_lvar, 0)
+  pc.AppendOp(TXOP_literal, 2)
+  pc.AppendOp(TXOP_save_to_lvar, 1)
+  pc.AppendOp(TXOP_load_lvar, 0)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_load_lvar, 1)
+  pc.AppendOp(TXOP_add)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -226,11 +226,11 @@ func TestVM_LvarAssignArithmeticResult(t *testing.T) {
 func TestVM_IfNoElse(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(true)
-  pc.AppendAnd(3)
-  pc.AppendLiteral("Hello, World!")
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, true)
+  pc.AppendOp(TXOP_and, 3)
+  pc.AppendOp(TXOP_literal, "Hello, World!")
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -245,14 +245,14 @@ func TestVM_IfNoElse(t *testing.T) {
 func TestVM_IfElse(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral(true)
-  pc.AppendAnd(4)
-  pc.AppendLiteral("Hello, World!")
-  pc.AppendPrintRaw()
-  pc.AppendGoto(3)
-  pc.AppendLiteral("Ola, Mundo!")
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, true)
+  pc.AppendOp(TXOP_and, 4)
+  pc.AppendOp(TXOP_literal, "Hello, World!")
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_goto, 3)
+  pc.AppendOp(TXOP_literal, "Ola, Mundo!")
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -267,14 +267,14 @@ func TestVM_IfElse(t *testing.T) {
 func TestVM_ForLoop(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral([]int { 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 })
-  pc.AppendForStart(0)
-  pc.AppendLiteral(0)
-  pc.AppendForIter(4)
-  pc.AppendLoadLvar(0)
-  pc.AppendPrintRaw()
-  pc.AppendGoto(-4)
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, []int { 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 })
+  pc.AppendOp(TXOP_for_start, 0)
+  pc.AppendOp(TXOP_literal, 0)
+  pc.AppendOp(TXOP_for_iter, 4)
+  pc.AppendOp(TXOP_load_lvar, 0)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_goto, -4)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
 
@@ -284,10 +284,10 @@ func TestVM_ForLoop(t *testing.T) {
 func TestVM_HtmlEscape(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral("<div>Hello, World!</div>")
-  pc.AppendHtmlEscape()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, "<div>Hello, World!</div>")
+  pc.AppendOp(TXOP_html_escape)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
   assertOutput(t, vm, "&lt;div&gt;Hello, World!&lt;/div&gt;")
@@ -296,10 +296,10 @@ func TestVM_HtmlEscape(t *testing.T) {
 func TestVM_UriEscape(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
-  pc.AppendLiteral("日本語")
-  pc.AppendUriEscape()
-  pc.AppendPrintRaw()
-  pc.AppendEnd()
+  pc.AppendOp(TXOP_literal, "日本語")
+  pc.AppendOp(TXOP_uri_escape)
+  pc.AppendOp(TXOP_print_raw)
+  pc.AppendOp(TXOP_end)
 
   vm.Run()
   assertOutput(t, vm, "%E6%97%A5%E6%9C%AC%E8%AA%9E")
