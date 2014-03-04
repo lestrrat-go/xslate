@@ -5,6 +5,7 @@ import (
   "reflect"
   "unicode"
   "unicode/utf8"
+  "github.com/lestrrat/go-xslate/functions"
 )
 
 const (
@@ -494,19 +495,6 @@ func invokeFuncSingleReturn(st *State, fun reflect.Value, args []reflect.Value) 
   }
 }
 
-// FuncDepot is a map of function name to it's real content
-// wrapped in reflect.ValueOf()
-type FuncDepot map[string]reflect.Value
-
-func (fc FuncDepot) Get(key string) (reflect.Value, bool) {
-  f, ok := fc[key]
-  return f, ok
-}
-
-func (fc FuncDepot) Set(key string, v interface {}) {
-  fc[key] = reflect.ValueOf(v)
-}
-
 // Function calls (NOT to be confused with method calls, which are totally
 // sane, and fine) in go-xslate is a bit different. Unlike in non-compiled
 // languages like Perl, we can't just lookup a function out of nowhere
@@ -527,11 +515,8 @@ func (fc FuncDepot) Set(key string, v interface {}) {
 // so that it in turn calls the ordinary time.Now() function
 //
 //  // Exact usage TBD
-//  tx.Render(..., map[string]interface {} {
-//    "time": &FuncDepot {
-//      "Now": reflect.ValueOf(time.Now),
-//    },
-//  })
+//  tx.RegisterFunctions(txtime.New())
+//  tx.Render(...)
 //  [% time.Now %]
 // ...And that's how we manage function calls
 // See also: 
@@ -554,10 +539,11 @@ func txFunCall(st *State) {
 
   st.sa = nil
   if st.CurrentOp().Arg() != nil {
-    if v.Type().Kind() == reflect.Map && v.Type().Name() == "FuncDepot" {
+    vtype := v.Type()
+    if vtype.Kind() == reflect.Ptr && vtype.Elem().Kind() == reflect.Struct && v.Elem().Type().Name() == "FuncDepot" {
       name := interfaceToString(st.CurrentOp().Arg())
-      depot := x.(FuncDepot)
-      fun, ok := depot.Get(name)
+      fd := x.(*functions.FuncDepot)
+      fun, ok := fd.Get(name)
       if ok {
         invokeFuncSingleReturn(st, fun, args)
       }

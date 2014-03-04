@@ -7,6 +7,7 @@ import (
   "regexp"
   "testing"
   "time"
+  txtime "github.com/lestrrat/go-xslate/functions/time"
 )
 
 func assertOutput(t *testing.T, vm *VM, expected interface {}) {
@@ -379,8 +380,7 @@ func TestVM_FunCallFromDepot(t *testing.T) {
   vm := NewVM()
   pc := vm.st.pc
 
-  fd := FuncDepot {}
-  fd.Set("Now", time.Now)
+  fd := txtime.Depot()
   pc.AppendOp(TXOP_literal, fd)
   pc.AppendOp(TXOP_save_to_lvar, 0)
   pc.AppendOp(TXOP_pushmark)
