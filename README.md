@@ -18,13 +18,45 @@ Currently:
 
 * I'm aiming for port of most of TTerse syntax
 * I'm working on the Virtual Machine portion
-* VM currently supports: print\_raw, variable subtitution, arithmetic (add, subtract, multiply, divide), if/else conditionals, "for x in list" loop, simple method calls
+* VM currently supports: print\_raw, variable subtitution, arithmetic (add, subtract, multiply, divide), if/else conditionals, "for x in list" loop, simple method calls, function calls
 * VM TODO: loops, macros, stuff involving external templates
 * Parser is currently not finished.
 
 
 Caveats
 =======
+
+Functions
+---------
+
+In Go, functions that are not part of current package namespace must be
+qualified with a package name, e.g.:
+
+    time.Now()
+
+This works fine because you can specify this at compile time, but you can't
+resolve this at runtime... which is a problem for templates. The way to solve
+this is to register these functions as variables:
+
+    template = `
+      [% now() %]
+    `
+    tx.RenderString(template, xslate.Vars { "now": time.Now })
+
+But this forces you to register these functions every time, as well as
+having to take the extra care to make names globally unique.
+
+    tx := xslate.New(
+      functions: map[string]FuncDepot {
+        // TODO: create pre-built "bundle" of these FuncDepot's
+        "time": FuncDepot { "Now": time.Now }
+      }
+    )
+    template := `
+      [% time.Now() %]
+    `
+    tx.RenderString(template, ...)
+
 
 Comparison Operators
 --------------------
