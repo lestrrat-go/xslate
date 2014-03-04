@@ -36,6 +36,7 @@ const (
   TXOP_popmark
   TXOP_pushmark
   TXOP_push
+  TXOP_funcall
   TXOP_methodcall
   TXOP_end
   TXOP_max
@@ -136,6 +137,9 @@ func init () {
     case TXOP_pushmark:
       h = txPushmark
       n = "pushmark"
+    case TXOP_funcall:
+      h = txFunCall
+      n = "funcall"
     case TXOP_methodcall:
       h = txMethodCall
       n = "methodcall"
@@ -474,6 +478,100 @@ func txPush(st *State) {
 
 var funcZero = reflect.Zero(reflect.ValueOf(func() {}).Type())
 
+func invokeFuncSingleReturn(st *State, fun reflect.Value, args []reflect.Value) {
+  if fun.Type().NumIn() != len(args) {
+    st.Warnf("Number of arguments for function does not match (expected %d, got %d)", fun.Type().NumIn(), len(args))
+    st.sa = ""
+  } else if fun.Type().NumOut() == 0 {
+    // Purely for side effect
+    st.sa = ""
+  } else {
+    ret := fun.Call(args)
+    // grab only the first return value. If you need the
+    // entire return value set, you need to call invokeFunMultiReturn
+    // (to be implemented)
+    st.sa = ret[0].Interface()
+  }
+}
+
+// FuncDepot is a map of function name to it's real content
+// wrapped in reflect.ValueOf()
+type FuncDepot map[string]reflect.Value
+
+func (fc FuncDepot) Get(key string) (reflect.Value, bool) {
+  f, ok := fc[key]
+  return f, ok
+}
+
+func (fc FuncDepot) Set(key string, v interface {}) {
+  fc[key] = reflect.ValueOf(v)
+}
+
+// Function calls (NOT to be confused with method calls, which are totally
+// sane, and fine) in go-xslate is a bit different. Unlike in non-compiled
+// languages like Perl, we can't just lookup a function out of nowhere
+// with just its name: Golang's reflection mechanism requires that you
+// have a concret value before doing a lookup.
+//
+// So this is not possible (where "time" is just a string):
+//
+//  [% time.Now() %]
+//
+// However, it's possible to register the function itself as a variable:
+//
+//  tx.Render(..., map[string]interface {} { "now": time.Now })
+//  [% now() %]
+//
+// But this requires function names to be globally unique. That's not always
+// possible. To avoid this, we can register an OBJECT named "time" before hand
+// so that it in turn calls the ordinary time.Now() function
+//
+//  // Exact usage TBD
+//  tx.Render(..., map[string]interface {} {
+//    "time": &FuncDepot {
+//      "Now": reflect.ValueOf(time.Now),
+//    },
+//  })
+//  [% time.Now %]
+// ...And that's how we manage function calls
+// See also: 
+func txFunCall(st *State) {
+  // Everything in our lvars up to the current tip is our argument list
+  mark := st.CurrentMark()
+  tip  := st.stack.Cur()
+  var args []reflect.Value
+
+  if tip - mark - 1  > 0{
+    args = make([]reflect.Value, tip - mark - 1)
+    for i := mark + 1; tip > i; i++ {
+      args[i - mark] = reflect.ValueOf(st.stack.Get(i))
+    }
+  }
+
+  x := st.stack.Get(mark)
+  // fun can be either a real function, or a FuncDepot
+  v := reflect.ValueOf(x)
+
+  st.sa = nil
+  if st.CurrentOp().Arg() != nil {
+    if v.Type().Kind() == reflect.Map && v.Type().Name() == "FuncDepot" {
+      name := interfaceToString(st.CurrentOp().Arg())
+      depot := x.(FuncDepot)
+      fun, ok := depot.Get(name)
+      if ok {
+        invokeFuncSingleReturn(st, fun, args)
+      }
+    }
+  } else {
+    // if the Arg() is nil, then we expect the first argument to be a function
+    if v.Type().Kind() == reflect.Func {
+      fun := reflect.ValueOf(x)
+      invokeFuncSingleReturn(st, fun, args)
+    }
+  }
+  st.Advance()
+}
+
 func txMethodCall(st *State) {
   name := interfaceToString(st.CurrentOp().Arg())
 
@@ -491,20 +589,8 @@ func txMethodCall(st *State) {
   method, ok := invocant.Type().MethodByName(name)
   if ! ok {
     st.sa = nil
-  } else if method.Func.Type().NumIn() != len(args) {
-    st.Warnf("Number of arguments do not match (expected %d, got %d)", method.Func.Type().NumIn(), len(args))
-    st.sa = nil
   } else {
-    ret := method.Func.Call(args)
-    if method.Func.Type().NumOut() == 0 {
-      // Purely for side effect
-      st.sa = ""
-    } else {
-      // methodcall op grabs only the first return value. If you need the
-      // entire return value set, you need to call methodcall_assign
-      // (to be implemented)
-      st.sa = ret[0].Interface()
-    }
+    invokeFuncSingleReturn(st, method.Func, args)
   }
   st.Advance()
 }

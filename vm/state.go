@@ -2,8 +2,9 @@ package vm
 
 import (
   "bytes"
-  "io"
   "fmt"
+  "io"
+  "os"
 )
 
 type State struct {
@@ -38,6 +39,7 @@ func NewState() *State {
     markstack: NewStack(5),
     vars: make(Vars),
     output: &bytes.Buffer {},
+    warn: os.Stderr,
     frames: NewStack(5),
     currentFrame: -1,
   }
