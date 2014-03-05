@@ -39,6 +39,8 @@ const (
   TXOP_push
   TXOP_funcall
   TXOP_methodcall
+  TXOP_range
+  TXOP_make_array
   TXOP_end
   TXOP_max
 )
@@ -144,6 +146,12 @@ func init () {
     case TXOP_methodcall:
       h = txMethodCall
       n = "methodcall"
+    case TXOP_range:
+      h = txRange
+      n = "range"
+    case TXOP_make_array:
+      h = txMakeArray
+      n = "make_array"
     default:
       panic("No such optype")
     }
@@ -578,5 +586,32 @@ func txMethodCall(st *State) {
   } else {
     invokeFuncSingleReturn(st, method.Func, args)
   }
+  st.Advance()
+}
+
+// XXX can I just push a []int to st.sa?
+func txRange(st *State) {
+  lhs := interfaceToNumeric(st.sb).Int()
+  rhs := interfaceToNumeric(st.sa).Int()
+
+  for i := lhs; i <= rhs; i++ {
+    // push these to stack
+    st.stack.Push(i)
+  }
+
+  st.Advance()
+}
+
+// Grab every thing from current mark up to the tip of the stack,
+// and make it a list
+func txMakeArray(st *State) {
+  start := st.CurrentMark() // start
+  end   := st.StackTip()    // end
+
+  list := make([]interface {}, end - start + 1)
+  for i := end; i >= start; i-- {
+    list[i - start] = st.stack.Pop()
+  }
+  st.sa = list
   st.Advance()
 }

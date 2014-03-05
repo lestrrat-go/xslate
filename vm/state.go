@@ -106,3 +106,6 @@ func (st *State) CurrentMark() int {
   return x.(int)
 }
 
+func (st *State) StackTip() int {
+  return st.stack.Cur()
+}

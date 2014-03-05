@@ -35,7 +35,7 @@ func shouldEscapeUri(v byte) bool {
   }
 }
 
-func convertNumeric(v interface{}) reflect.Value {
+func interfaceToNumeric(v interface{}) reflect.Value {
   t := reflect.TypeOf(v)
   switch t.Kind() {
   case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
@@ -50,8 +50,8 @@ func convertNumeric(v interface{}) reflect.Value {
 // can be performed correctly.
 // e.g. given int, float, we align them to float, float
 func alignTypesForArithmetic(left, right interface {}) (reflect.Value, reflect.Value) {
-  leftV  := convertNumeric(left)
-  rightV := convertNumeric(right)
+  leftV  := interfaceToNumeric(left)
+  rightV := interfaceToNumeric(right)
 
   if leftV.Kind() == rightV.Kind() {
     return leftV, rightV

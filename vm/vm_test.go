@@ -417,3 +417,26 @@ func TestVM_MethodCall(t *testing.T) {
   assertOutput(t, vm, "false")
 }
 
+func TestVM_RangeMakeArray(t *testing.T) {
+  vm := NewVM()
+  pc := vm.st.pc
+
+  pc.AppendOp(TXOP_pushmark)
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_move_to_sb)
+  pc.AppendOp(TXOP_literal, 10)
+  pc.AppendOp(TXOP_range)
+  pc.AppendOp(TXOP_make_array)
+  pc.AppendOp(TXOP_for_start, 0)
+  pc.AppendOp(TXOP_literal, 0)
+  pc.AppendOp(TXOP_for_iter, 6)
+  pc.AppendOp(TXOP_load_lvar, 0)
+  pc.AppendOp(TXOP_print)
+  pc.AppendOp(TXOP_literal, ",")
+  pc.AppendOp(TXOP_print)
+  pc.AppendOp(TXOP_goto, -6)
+  pc.AppendOp(TXOP_end)
+
+  vm.Run()
+  assertOutput(t, vm, "1,2,3,4,5,6,7,8,9,10,")
+}

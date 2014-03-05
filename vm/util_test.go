@@ -8,12 +8,12 @@ import (
 func TestNumericNormlization(t *testing.T) {
   var v reflect.Value
 
-  v = convertNumeric(1)
+  v = interfaceToNumeric(1)
   if v.Kind() != reflect.Int {
     t.Errorf("Expected Kind() to be Int, got %s", v.Kind())
   }
 
-  v = convertNumeric(1.0)
+  v = interfaceToNumeric(1.0)
   if v.Kind() != reflect.Float64 {
     t.Errorf("Expected Kind() to be Float, got %s", v.Kind())
   }
@@ -25,7 +25,7 @@ func TestNumericNormlization(t *testing.T) {
     &struct { bar int } { 0 },
   }
   for _, x := range thingies {
-    v = convertNumeric(x)
+    v = interfaceToNumeric(x)
     if v.Kind() != reflect.Int {
       t.Errorf("Expected Kind() to be Int, got %s", v.Kind())
     } else {
