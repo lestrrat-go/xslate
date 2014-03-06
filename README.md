@@ -17,7 +17,7 @@ Current Status
 Currently:
 
 * I'm aiming for port of most of TTerse syntax
-* I'm working on the Virtual Machine portion
+* I'm working on the Virtual Machine portion. See [VM Progress](https://github.com/lestrrat/go-xslate/wiki/VM-Progress)
 * VM currently supports: print\_raw, variable subtitution, arithmetic (add, subtract, multiply, divide), if/else conditionals, "for x in list" loop, simple method calls, function calls
 * VM TODO: loops, macros, stuff involving external templates
 * Parser is currently not finished.
