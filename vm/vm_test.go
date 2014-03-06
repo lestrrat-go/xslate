@@ -5,6 +5,7 @@ import (
   "fmt"
   "reflect"
   "regexp"
+  "strings"
   "testing"
   "time"
   txtime "github.com/lestrrat/go-xslate/functions/time"
@@ -439,4 +440,48 @@ func TestVM_RangeMakeArray(t *testing.T) {
 
   vm.Run()
   assertOutput(t, vm, "1,2,3,4,5,6,7,8,9,10,")
+}
+
+func TestVM_MakeHash(t *testing.T) {
+  vm := NewVM()
+  pc := vm.st.pc
+
+  pc.AppendOp(TXOP_pushmark)
+  pc.AppendOp(TXOP_literal, "foo")
+  pc.AppendOp(TXOP_push)
+  pc.AppendOp(TXOP_literal, 1)
+  pc.AppendOp(TXOP_push)
+  pc.AppendOp(TXOP_literal, "bar")
+  pc.AppendOp(TXOP_push)
+  pc.AppendOp(TXOP_literal, 2)
+  pc.AppendOp(TXOP_push)
+  pc.AppendOp(TXOP_make_hash)
+  pc.AppendOp(TXOP_popmark)
+  pc.AppendOp(TXOP_pushmark)
+  pc.AppendOp(TXOP_push)
+  pc.AppendOp(TXOP_methodcall, "Keys")
+  pc.AppendOp(TXOP_popmark)
+  pc.AppendOp(TXOP_for_start, 0)
+  pc.AppendOp(TXOP_literal, 0)
+  pc.AppendOp(TXOP_for_iter, 6)
+  pc.AppendOp(TXOP_load_lvar, 0)
+  pc.AppendOp(TXOP_print)
+  pc.AppendOp(TXOP_literal, ",")
+  pc.AppendOp(TXOP_print)
+  pc.AppendOp(TXOP_goto, -6)
+  pc.AppendOp(TXOP_end)
+
+  vm.Run()
+  // Note: order of keys may change depending on environment..., so we can't
+  // just compare against vm.Output()
+  output, err := vm.OutputString()
+  if err != nil {
+    t.Errorf("Error getting output: %s", err)
+  }
+
+  for _, v := range []string { "foo,", "bar," } {
+    if ! strings.Contains(output, v) {
+      t.Errorf("Expected to find '%s', but did not find it in '%s'", v, output)
+    }
+  }
 }

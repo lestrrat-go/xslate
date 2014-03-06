@@ -6,6 +6,8 @@ import (
   "unicode"
   "unicode/utf8"
   "github.com/lestrrat/go-xslate/functions"
+  "github.com/lestrrat/go-xslate/functions/array"
+  "github.com/lestrrat/go-xslate/functions/hash"
 )
 
 const (
@@ -41,6 +43,7 @@ const (
   TXOP_methodcall
   TXOP_range
   TXOP_make_array
+  TXOP_make_hash
   TXOP_end
   TXOP_max
 )
@@ -152,6 +155,9 @@ func init () {
     case TXOP_make_array:
       h = txMakeArray
       n = "make_array"
+    case TXOP_make_hash:
+      h = txMakeHash
+      n = "make_hash"
     default:
       panic("No such optype")
     }
@@ -481,7 +487,7 @@ func txPushmark(st *State) {
 }
 
 func txPush(st *State) {
-  st.stack.Push(st.sa)
+  st.StackPush(st.sa)
   st.Advance()
 }
 
@@ -580,11 +586,26 @@ func txMethodCall(st *State) {
     args[i - mark] = reflect.ValueOf(st.stack.Get(i))
   }
 
-  method, ok := invocant.Type().MethodByName(name)
-  if ! ok {
-    st.sa = nil
-  } else {
-    invokeFuncSingleReturn(st, method.Func, args)
+  // For maps, arrays, slices, we call virtual methods, if they are available
+
+  switch invocant.Kind() {
+  case reflect.Map:
+    fun, ok := hash.Depot().Get(name)
+    if ok {
+      invokeFuncSingleReturn(st, fun, args)
+    }
+  case reflect.Array, reflect.Slice:
+    fun, ok := array.Depot().Get(name)
+    if ok {
+      invokeFuncSingleReturn(st, fun, args)
+    }
+  default:
+    method, ok := invocant.Type().MethodByName(name)
+    if ! ok {
+      st.sa = nil
+    } else {
+      invokeFuncSingleReturn(st, method.Func, args)
+    }
   }
   st.Advance()
 }
@@ -596,7 +617,7 @@ func txRange(st *State) {
 
   for i := lhs; i <= rhs; i++ {
     // push these to stack
-    st.stack.Push(i)
+    st.StackPush(i)
   }
 
   st.Advance()
@@ -610,8 +631,24 @@ func txMakeArray(st *State) {
 
   list := make([]interface {}, end - start + 1)
   for i := end; i >= start; i-- {
-    list[i - start] = st.stack.Pop()
+    list[i - start] = st.StackPop()
   }
   st.sa = list
+  st.Advance()
+}
+
+func txMakeHash(st *State) {
+  start := st.CurrentMark() // start
+  end   := st.StackTip()    // end
+
+  hash := make(map[interface{}]interface{})
+  for i := end; i >= start; {
+    v := st.StackPop()
+    k := st.StackPop()
+    hash[k] = v
+    i -= 2
+  }
+
+  st.StackPush(hash)
   st.Advance()
 }

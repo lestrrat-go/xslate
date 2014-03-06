@@ -109,3 +109,11 @@ func (st *State) CurrentMark() int {
 func (st *State) StackTip() int {
   return st.stack.Cur()
 }
+
+func (st *State) StackPop() interface {} {
+  return st.stack.Pop()
+}
+
+func (st *State) StackPush(v interface {}) {
+  st.stack.Push(v)
+}
