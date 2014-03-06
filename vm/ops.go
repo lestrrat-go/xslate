@@ -40,6 +40,7 @@ const (
   TXOP_pushmark
   TXOP_push
   TXOP_funcall
+  TXOP_funcall_symbol
   TXOP_methodcall
   TXOP_range
   TXOP_make_array
@@ -146,6 +147,9 @@ func init () {
     case TXOP_funcall:
       h = txFunCall
       n = "funcall"
+    case TXOP_funcall_symbol:
+      h = txFunCallSymbol
+      n = "funcall_symbol"
     case TXOP_methodcall:
       h = txMethodCall
       n = "methodcall"
@@ -548,7 +552,30 @@ func txFunCall(st *State) {
   }
 
   x := st.stack.Get(mark)
-  // fun can be either a real function, or a FuncDepot
+  v := reflect.ValueOf(x)
+
+  st.sa = nil
+  if v.Type().Kind() == reflect.Func {
+    fun := reflect.ValueOf(x)
+    invokeFuncSingleReturn(st, fun, args)
+  }
+  st.Advance()
+}
+
+func txFunCallSymbol(st *State) {
+  // Everything in our lvars up to the current tip is our argument list
+  mark := st.CurrentMark()
+  tip  := st.stack.Cur()
+  var args []reflect.Value
+
+  if tip - mark - 1  > 0{
+    args = make([]reflect.Value, tip - mark - 1)
+    for i := mark + 1; tip > i; i++ {
+      args[i - mark] = reflect.ValueOf(st.stack.Get(i))
+    }
+  }
+
+  x := st.stack.Get(mark)
   v := reflect.ValueOf(x)
 
   st.sa = nil
@@ -561,12 +588,6 @@ func txFunCall(st *State) {
       if ok {
         invokeFuncSingleReturn(st, fun, args)
       }
-    }
-  } else {
-    // if the Arg() is nil, then we expect the first argument to be a function
-    if v.Type().Kind() == reflect.Func {
-      fun := reflect.ValueOf(x)
-      invokeFuncSingleReturn(st, fun, args)
     }
   }
   st.Advance()

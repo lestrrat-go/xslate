@@ -387,7 +387,7 @@ func TestVM_FunCallFromDepot(t *testing.T) {
   pc.AppendOp(TXOP_pushmark)
   pc.AppendOp(TXOP_load_lvar, 0)
   pc.AppendOp(TXOP_push)
-  pc.AppendOp(TXOP_funcall, "Now")
+  pc.AppendOp(TXOP_funcall_symbol, "Now")
   pc.AppendOp(TXOP_popmark)
   pc.AppendOp(TXOP_print)
   pc.AppendOp(TXOP_end)
