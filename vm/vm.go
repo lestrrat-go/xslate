@@ -29,10 +29,14 @@ func (vm *VM) OutputString() (string, error) {
   return string(buf), nil
 }
 
+func (vm *VM) Reset() {
+  vm.st.opidx = 0
+  vm.st.output = &bytes.Buffer {}
+}
+
 func (vm *VM) Run() {
+  vm.Reset()
   st := vm.st
-  st.opidx = 0
-  st.output = &bytes.Buffer {}
   for op := st.CurrentOp(); op.OpType() != TXOP_end; op = st.CurrentOp() {
     op.Call(st)
   }
