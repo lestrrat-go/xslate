@@ -168,6 +168,8 @@ func (i LexItemType) String() string {
     name = "Set"
   case ItemPlus:
     name = "Plus"
+  case ItemAssign:
+    name = "Assign"
   default:
     name = fmt.Sprintf("Unknown(%d)", i)
   }

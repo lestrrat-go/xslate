@@ -16,3 +16,10 @@ func TestBasic(t *testing.T) {
   ast, err := p.Parse(tmpl)
   t.Logf("ast = %s, err = %s", ast, err)
 }
+
+func TestSimpleAssign(t *testing.T) {
+  tmpl := `[% s = 1 %]`
+  p := New()
+  ast, _ := p.Parse(tmpl)
+  t.Logf("%#v", ast)
+}

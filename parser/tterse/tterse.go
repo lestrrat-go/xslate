@@ -37,6 +37,7 @@ type Lexer struct {
 
 type TTerse struct {
   lexer *Lexer
+  items []parser.LexItem
 }
 
 func NewLexer() *Lexer {
@@ -60,21 +61,69 @@ func New() *TTerse {
   }
 }
 
+func (p *TTerse) next() parser.LexItem {
+  return p.lexer.NextItem()
+}
+
+func (p *TTerse) NextItem() parser.LexItem {
+  if len(p.items) > 0 {
+    item := p.items[0]
+    p.items = p.items[1:]
+    return item
+  }
+  return p.next()
+}
+
+func (p *TTerse) NextNonSpaceItem() parser.LexItem {
+  for {
+    n := p.NextItem()
+    switch n.Type() {
+    case parser.ItemEOF, parser.ItemError:
+      return parser.NewLexItem(parser.ItemEOF, 0, "")
+    case parser.ItemSpace:
+      continue
+    default:
+      return n
+    }
+  }
+}
+
+func (p *TTerse) Peek() parser.LexItem {
+  item := p.NextNonSpaceItem()
+  p.items = append(p.items, item)
+  return item
+}
+
 func (p *TTerse) Parse(input string) (*AST, error) {
   p.lexer.SetInput(input)
   go p.lexer.Run()
 
 Loop:
   for {
-    item := p.lexer.NextItem()
+    item := p.NextNonSpaceItem()
+    fmt.Printf("item -> %v\n", item)
     switch item.Type() {
-    case parser.ItemEnd:
+    case parser.ItemEnd, parser.ItemEOF:
       break Loop
+    case parser.ItemIdentifier:
+      next := p.Peek()
+      if next.Type() == parser.ItemAssign {
+        p.ParseAssignment(item)
+      }
+    case parser.ItemAssign:
+      // st.stack[st.curstack]
     case parser.ItemRawString:
-    default:
-      fmt.Printf("item -> %v\n", item)
+    case parser.ItemSpace, parser.ItemTagStart, parser.ItemTagEnd:
+      // Nothing to do
     }
   }
 
   return nil, nil
+}
+
+func (p *TTerse) ParseAssignment(iditem parser.LexItem) {
+  p.NextItem() // "="
+  // XXX THis is wrong
+  x := p.NextNonSpaceItem()
+  fmt.Printf("Assign %s = %s\n", iditem.Value(), x.Value())
 }
