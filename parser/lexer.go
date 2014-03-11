@@ -21,24 +21,28 @@ import (
 type LexItemType int
 type LexItem struct {
   typ LexItemType
-  pos int
+  pos Pos
   val string
 }
 const eof = -1
 
-func NewLexItem(t LexItemType, p int, v string) LexItem {
+func NewLexItem(t LexItemType, p Pos, v string) LexItem {
   return LexItem { t, p, v }
 }
 
-func (l *LexItem) Type() LexItemType {
+func (l LexItem) Copy() LexItem {
+  return NewLexItem(l.typ, l.pos, l.val)
+}
+
+func (l LexItem) Type() LexItemType {
   return l.typ
 }
 
-func (l *LexItem) Pos() int {
+func (l LexItem) Pos() Pos {
   return l.pos
 }
 
-func (l *LexItem) Value() string {
+func (l LexItem) Value() string {
   return l.val
 }
 
@@ -469,12 +473,12 @@ func (l *Lexer) acceptRun(valid string) {
 }
 
 func (l *Lexer) errorf(format string, args ...interface{}) stateFn {
-  l.items <-LexItem { ItemError, l.start, fmt.Sprintf(format, args...) }
+  l.items <-LexItem { ItemError, Pos(l.start), fmt.Sprintf(format, args...) }
   return nil
 }
 
 func (l *Lexer) Emit(t LexItemType) {
-  l.items <-LexItem { t, l.start, l.input[l.start:l.pos] }
+  l.items <-LexItem { t, Pos(l.start), l.input[l.start:l.pos] }
   l.start = l.pos
 }
 
