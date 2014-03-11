@@ -6,7 +6,7 @@ import (
 )
 
 func makeItem(t parser.LexItemType, p int, v string) parser.LexItem {
-  return parser.NewLexItem(t, p, v)
+  return parser.NewLexItem(t, parser.Pos(p), v)
 }
 
 var space     parser.LexItem = makeItem(parser.ItemSpace, 0, " ")
