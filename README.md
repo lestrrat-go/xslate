@@ -17,11 +17,34 @@ Current Status
 Currently:
 
 * I'm aiming for port of most of TTerse syntax
-* I'm working on the Virtual Machine portion. See [VM Progress](https://github.com/lestrrat/go-xslate/wiki/VM-Progress)
-* VM currently supports: print\_raw, variable subtitution, arithmetic (add, subtract, multiply, divide), if/else conditionals, "for x in list" loop, simple method calls, function calls
+* See [VM Progress](https://github.com/lestrrat/go-xslate/wiki/VM-Progress) for what the this xslate virtual machine can handle
 * VM TODO: loops, macros, stuff involving external templates
-* Parser is currently not finished.
+* Parser is about 30% finished.
+* Compiler is about 10% finished.
 
+For very simple templates, you can already do:
+
+```go
+package main
+
+import (
+  "log"
+  "github.com/lestrrat/go-xslate"
+  "github.com/lestrrat/go-xslate/vm"
+)
+
+func main() {
+  xt := xslate.New()
+  // vm.Vars will soon be just xslate.Vars, and the above import will
+  // not be necessary
+  template := `Hello World, [% name %]!`
+  output, err := xt.RenderString(template, vm.Vars { "name": "Bob" })
+  if err != nil {
+    log.Fatalf("Failed to render template: %s", err)
+  }
+  log.Printf(output)
+}
+```
 
 Caveats
 =======
