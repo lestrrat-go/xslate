@@ -33,6 +33,7 @@ func (b *Builder) Parse(name, text string, lex LexRunner) (*AST, error) {
     Tokens:     [3]LexItem {},
     CurrentStackTop: -1,
     ParentStack:[]*ListNode {},
+    LocalVars: make(map[string]bool),
   }
   b.Start(ctx)
   b.ParseStatements(ctx)
@@ -174,6 +175,9 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
     if parent.Type() == NodeRoot {
       b.Unexpected("Unexpected END")
     }
+  case ItemSet:
+    b.NextNonSpace(ctx)
+    tmpl = b.ParseAssignment(ctx)
   case ItemWrapper:
     tmpl = b.ParseWrapper(ctx)
   case ItemForeach:
@@ -252,6 +256,8 @@ func (b *Builder) ParseAssignment(ctx *BuilderCtx) Node {
 
   node := NewAssignmentNode(symbol.Pos(), symbol.Value())
   node.Append(b.ParseExpression(ctx, false))
+
+  ctx.LocalVars[symbol.Value()] = true
   return node
 }
 

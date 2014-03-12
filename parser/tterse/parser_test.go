@@ -47,11 +47,14 @@ func TestRawString(t *testing.T) {
 }
 
 func TestGetLocalVariable(t * testing.T) {
-  tmpl := `Hello World, [% name %]`
+  tmpl := `[% SET name = "Bob" %]Hello World, [% name %]`
   ast := parse(t, tmpl)
 
   expected := []parser.NodeType {
     parser.NodeRoot,
+    parser.NodeAssignment,
+    parser.NodeLocalVar,
+    parser.NodeText,
     parser.NodeText,
     parser.NodePrint,
     parser.NodeLocalVar,
@@ -69,7 +72,7 @@ func TestForeachLoop(t *testing.T) {
     parser.NodeLocalVar, // list var
     parser.NodeText,
     parser.NodePrint,
-    parser.NodeLocalVar,
+    parser.NodeFetchSymbol,
   }
   matchNodeTypes(t, ast, expected)
 }

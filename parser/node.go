@@ -61,6 +61,8 @@ func (n NodeType) String() string {
     return "Methodcall"
   case NodePrint:
     return "Print"
+  case NodeFetchSymbol:
+    return "FetchSymbol"
   default:
     return "Unknown Node"
   }
