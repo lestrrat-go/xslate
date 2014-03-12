@@ -5,17 +5,17 @@ import (
   "fmt"
 )
 
-type OpList []*Op
+type ByteCode []*Op
 
-func (l *OpList) Get(i int) *Op {
+func (l *ByteCode) Get(i int) *Op {
   return (*l)[i]
 }
 
-func (l *OpList) Append(op *Op) {
+func (l *ByteCode) Append(op *Op) {
   *l = append(*l, op)
 }
 
-func (l *OpList) String() string {
+func (l *ByteCode) String() string {
   buf := &bytes.Buffer {}
   for k, v := range *l {
     buf.WriteString(fmt.Sprintf("%03d. %s\n", k + 1, v))
@@ -23,7 +23,7 @@ func (l *OpList) String() string {
   return buf.String()
 }
 
-func (l *OpList) AppendOp(o OpType, args ...interface{}) {
+func (l *ByteCode) AppendOp(o OpType, args ...interface{}) {
   l.Append(NewOp(o, args...))
 }
 

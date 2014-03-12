@@ -9,7 +9,7 @@ import (
 
 type State struct {
   opidx int
-  pc *OpList
+  pc *ByteCode
 
   stack *Stack
   markstack *Stack
@@ -34,7 +34,7 @@ type State struct {
 func NewState() *State {
   st := &State {
     opidx: 0,
-    pc: &OpList {},
+    pc: &ByteCode {},
     stack: NewStack(5),
     markstack: NewStack(5),
     vars: make(Vars),
