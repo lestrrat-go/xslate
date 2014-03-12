@@ -1,7 +1,6 @@
 package xslate
 
 import (
-  "bytes"
   "testing"
   "github.com/lestrrat/go-xslate/vm"
 //  txtime "github.com/lestrrat/go-xslate/functions/time"
@@ -18,7 +17,7 @@ func ExampleXslate () {
 // TODO: vm.Vars should be xslate.Vars?
 func executeAndCompare(t *testing.T, template string, vars vm.Vars, expected string) {
   x := New()
-  output, err := x.Render(bytes.NewBufferString(template), vars)
+  output, err := x.RenderString(template, vars)
   if err != nil {
     t.Fatalf("Failed to render template: %s", err)
   }

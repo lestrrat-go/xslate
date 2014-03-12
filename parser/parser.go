@@ -1,6 +1,7 @@
 package parser
 
 type Parser interface {
-  Parse(string) (*AST, error)
+  Parse([]byte) (*AST, error)
+  ParseString(string) (*AST, error)
 }
 

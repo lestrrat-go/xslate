@@ -7,7 +7,7 @@ import (
 
 func parse(t *testing.T, tmpl string) *parser.AST {
   p := New()
-  ast, err := p.Parse(tmpl)
+  ast, err := p.ParseString(tmpl)
   if err != nil {
     t.Fatalf("Failed to parse template: %s", err)
   }
@@ -86,7 +86,7 @@ func TestBasic(t *testing.T) {
 [% END %]
 `
   p   := New()
-  ast, err := p.Parse(tmpl)
+  ast, err := p.ParseString(tmpl)
   if err != nil {
     t.Errorf("Error during parse: %s", err)
   }

@@ -25,13 +25,21 @@ func New() *Xslate {
   }
 }
 
-func (x *Xslate) Render(rdr io.Reader, vars vm.Vars) (string, error) {
+func (x *Xslate) RenderReader(rdr io.Reader, vars vm.Vars) (string, error) {
   tmpl, err := ioutil.ReadAll(rdr)
   if err != nil {
     return "", err
   }
 
-  ast, err := x.Parser.Parse(string(tmpl))
+  return x.Render(tmpl, vars)
+}
+
+func (x *Xslate) RenderString(template string, vars vm.Vars) (string, error) {
+  return x.Render([]byte(template), vars)
+}
+
+func (x *Xslate) Render(template []byte, vars vm.Vars) (string, error) {
+  ast, err := x.Parser.Parse(template)
   if err != nil {
     return "", err
   }

@@ -87,12 +87,17 @@ func (p *TTerse) Peek() parser.LexItem {
   return item
 }
 
-func (p *TTerse) Parse(input string) (*parser.AST, error) {
+func (p *TTerse) Parse(template []byte) (*parser.AST, error) {
+  return p.ParseString(string(template))
+}
+
+func (p *TTerse) ParseString(template string) (*parser.AST, error) {
   b := parser.NewBuilder()
   lex := NewLexer()
-  lex.SetInput(input)
-  return b.Parse("foo", input, lex)
+  lex.SetInput(template)
+  return b.Parse("foo", template, lex)
 }
+
 /*
 
   p.lexer.SetInput(input)

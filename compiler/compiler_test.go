@@ -8,7 +8,7 @@ import (
 
 func compile(t *testing.T, tmpl string) *vm.ByteCode {
   p := tterse.New()
-  ast, err := p.Parse(tmpl)
+  ast, err := p.ParseString(tmpl)
   if err != nil {
     t.Fatalf("Failed to parse template: %s", err)
   }
