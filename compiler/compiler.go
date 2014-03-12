@@ -6,7 +6,7 @@ import (
 )
 
 type Compiler interface {
-  Compile(* parser.AST) *vm.ByteCode
+  Compile(* parser.AST) (*vm.ByteCode, error)
 }
 
 type CompilerCtx struct {
