@@ -16,10 +16,11 @@ func ExampleXslate () {
 */
 }
 
-func TestCompile(t *testing.T) {
+// TODO: vm.Vars should be xslate.Vars?
+func executeAndCompare(t *testing.T, template string, vars vm.Vars, expected string) {
   p := tterse.New()
   c := compiler.New()
-  ast, err := p.Parse(`Hello, World!`)
+  ast, err := p.Parse(template)
   if err != nil {
     t.Fatalf("Failed to parse template: %s", err)
   }
@@ -29,14 +30,24 @@ func TestCompile(t *testing.T) {
     t.Fatalf("Failed to compile ast: %s", err)
   }
 
+t.Logf("bytecode = %s\n", bc)
+
   v := vm.NewVM()
-  v.Run(bc)
+  v.Run(bc, vars)
 
   output, err := v.OutputString()
   if err != nil {
     t.Fatalf("Failed to get output from virtual machine: %s", err)
   }
-  if output != `Hello, World!` {
-    t.Errorf("Expected '%s', got '%s'", `Hello, World!`, output)
+  if output != expected {
+    t.Errorf("Expected '%s', got '%s'", expected, output)
   }
+}
+
+func TestXslate_SimpleString(t *testing.T) {
+  executeAndCompare(t, `Hello, World!`, nil, `Hello, World!`)
+}
+
+func TestXslate_LocalVar(t *testing.T) {
+  executeAndCompare(t, `Hello World, [% name %]!`, vm.Vars { "name": "Bob" }, `Hello World, Bob!`)
 }

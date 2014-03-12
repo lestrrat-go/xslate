@@ -32,6 +32,7 @@ const (
   NodeFetchField
   NodeMethodcall
   NodePrint
+  NodeFetchSymbol
 )
 
 func (n NodeType) String() string {
@@ -211,5 +212,11 @@ func NewPrintNode(pos Pos, arg Node) *ListNode {
   n := NewListNode(pos)
   n.NodeType = NodePrint
   n.Append(arg)
+  return n
+}
+
+func NewFetchSymbolNode(pos Pos, symbol string) *TextNode {
+  n := NewTextNode(pos, symbol)
+  n.NodeType = NodeFetchSymbol
   return n
 }

@@ -39,6 +39,8 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     // XXX probably not true all the time
     ctx.ByteCode.AppendOp(vm.TXOP_literal, n.(*parser.TextNode).Text)
     ctx.ByteCode.AppendOp(vm.TXOP_print_raw)
+  case parser.NodeFetchSymbol:
+    ctx.ByteCode.AppendOp(vm.TXOP_fetch_s, n.(*parser.TextNode).Text)
   case parser.NodeLocalVar:
     ctx.ByteCode.AppendOp(vm.TXOP_load_lvar, n.(*parser.TextNode).Text)
   case parser.NodePrint:

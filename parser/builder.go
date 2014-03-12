@@ -16,6 +16,7 @@ type BuilderCtx struct{
   Tokens    [3]LexItem
   ParentStack []*ListNode
   CurrentStackTop int
+  LocalVars map[string]bool
 }
 
 func NewBuilder() *Builder {
@@ -275,7 +276,13 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
       b.Backup2(ctx, token)
       return b.ParseAssignment(ctx)
     case ItemTagEnd:
-      n := NewLocalVarNode(token.Pos(), token.Value())
+      var n Node
+      if ctx.LocalVars[token.Value()] {
+        n = NewLocalVarNode(token.Pos(), token.Value())
+      } else {
+        n = NewFetchSymbolNode(token.Pos(), token.Value())
+      }
+
       if canPrint {
         return NewPrintNode(token.Pos(), n)
       }
