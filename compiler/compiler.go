@@ -36,7 +36,9 @@ func (c *BasicCompiler) Compile(ast *parser.AST) (*vm.ByteCode, error) {
 func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
   switch n.Type() {
   case parser.NodeText:
-    ctx.ByteCode.AppendOp(vm.TXOP_print_raw, n.(*parser.TextNode).Text)
+    // XXX probably not true all the time
+    ctx.ByteCode.AppendOp(vm.TXOP_literal, n.(*parser.TextNode).Text)
+    ctx.ByteCode.AppendOp(vm.TXOP_print_raw)
   case parser.NodeLocalVar:
     ctx.ByteCode.AppendOp(vm.TXOP_load_lvar, n.(*parser.TextNode).Text)
   case parser.NodePrint:

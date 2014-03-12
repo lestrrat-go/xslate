@@ -34,9 +34,12 @@ func (vm *VM) Reset() {
   vm.st.output = &bytes.Buffer {}
 }
 
-func (vm *VM) Run() {
+func (vm *VM) Run(bc *ByteCode) {
   vm.Reset()
   st := vm.st
+  if bc != nil {
+    st.pc = bc
+  }
   for op := st.CurrentOp(); op.OpType() != TXOP_end; op = st.CurrentOp() {
     op.Call(st)
   }
