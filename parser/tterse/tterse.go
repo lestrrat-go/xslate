@@ -1,13 +1,7 @@
 package tterse
 
 import (
-  "fmt"
-//  "github.com/lestrrat/go-xslate/ast"
   "github.com/lestrrat/go-xslate/parser"
-)
-
-const (
-  ItemWrapper parser.LexItemType = parser.DefaultItemTypeMax + 1
 )
 
 var operators = map[string]parser.LexItemType{
@@ -16,7 +10,7 @@ var operators = map[string]parser.LexItemType{
 }
 
 var symbols = map[string]parser.LexItemType{
-  "WRAPPER":  ItemWrapper,
+  "WRAPPER":  parser.ItemWrapper,
   "SET":      parser.ItemSet,
   "GET":      parser.ItemGet,
   "IF":       parser.ItemIf,
@@ -30,7 +24,6 @@ var symbols = map[string]parser.LexItemType{
   "END":      parser.ItemEnd,
 }
 
-type AST struct {}
 type Lexer struct {
   *parser.Lexer
 }
@@ -94,7 +87,14 @@ func (p *TTerse) Peek() parser.LexItem {
   return item
 }
 
-func (p *TTerse) Parse(input string) (*AST, error) {
+func (p *TTerse) Parse(input string) (*parser.AST, error) {
+  b := parser.NewBuilder()
+  lex := NewLexer()
+  lex.SetInput(input)
+  return b.Parse("foo", input, lex)
+}
+/*
+
   p.lexer.SetInput(input)
   go p.lexer.Run()
 
@@ -120,10 +120,4 @@ Loop:
 
   return nil, nil
 }
-
-func (p *TTerse) ParseAssignment(iditem parser.LexItem) {
-  p.NextItem() // "="
-  // XXX THis is wrong
-  x := p.NextNonSpaceItem()
-  fmt.Printf("Assign %s = %s\n", iditem.Value(), x.Value())
-}
+*/

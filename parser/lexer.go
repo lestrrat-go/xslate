@@ -63,6 +63,7 @@ const (
   ItemSingleQuotedString
   ItemBool
   ItemField
+  ItemComma
   ItemOpenParen   // '('
   ItemCloseParen  // ')'
   ItemPeriod      // '.'
@@ -128,6 +129,11 @@ type Lexer struct {
   items chan LexItem
 }
 
+type LexRunner interface {
+  Run()
+  NextItem() LexItem
+}
+
 type stateFn func(*Lexer) stateFn
 
 func (l *Lexer) SetInput(s string) {
@@ -174,8 +180,28 @@ func (i LexItemType) String() string {
     name = "Plus"
   case ItemAssign:
     name = "Assign"
+  case ItemWrapper:
+    name = "Wrapper"
+  case ItemComma:
+    name = "Comma"
+  case ItemOpenParen:
+    name = "OpenParen"
+  case ItemCloseParen:
+    name = "CloseParen"
+  case ItemPeriod:
+    name = "Period"
+  case ItemDoubleQuotedString:
+    name = "DoubleQuotedString"
+  case ItemSingleQuotedString:
+    name = "SingleQuotedString"
+  case ItemWith:
+    name = "With"
+  case ItemForeach:
+    name = "Foreach"
+  case ItemEnd:
+    name = "End"
   default:
-    name = fmt.Sprintf("Unknown(%d)", i)
+    name = fmt.Sprintf("Unknown Item (%d)", i)
   }
   return name
 }
@@ -213,6 +239,11 @@ func NewLexer() *Lexer {
   l.AddSymbol("(", ItemOpenParen)
   l.AddSymbol(")", ItemCloseParen)
   l.AddSymbol(".", ItemPeriod)
+  l.AddSymbol(",", ItemComma)
+  // XXX TTerse specific
+  l.AddSymbol("WITH", ItemWith)
+  l.AddSymbol("IN", ItemIn)
+  l.AddSymbol("END", ItemEnd)
   return l
 }
 
@@ -490,5 +521,6 @@ func (l *Lexer) Run() {
 }
 
 func (l *Lexer) NextItem() LexItem {
-  return <-l.items
+  i := <-l.items
+  return i
 }

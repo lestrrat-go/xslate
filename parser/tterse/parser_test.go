@@ -6,7 +6,7 @@ import (
 
 func TestBasic(t *testing.T) {
   tmpl := `
-[% WRAPPER hoge.tx WITH foo = "bar" %]
+[% WRAPPER "hoge.tx" WITH foo = "bar" %]
 [% FOREACH x IN list %]
 [% loop.index %]. x is [% x %]
 [% END %]
@@ -14,7 +14,13 @@ func TestBasic(t *testing.T) {
 `
   p   := New()
   ast, err := p.Parse(tmpl)
-  t.Logf("ast = %s, err = %s", ast, err)
+  if err != nil {
+    t.Errorf("Error during parse: %s", err)
+  }
+
+  if len(ast.Root.Nodes) == 1 {
+    t.Errorf("Expected Root node to have 1 child, got %d", len(ast.Root.Nodes))
+  }
 }
 
 func TestSimpleAssign(t *testing.T) {
