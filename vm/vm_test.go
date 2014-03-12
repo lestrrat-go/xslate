@@ -44,7 +44,7 @@ func TestBasic(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "Hello, World! Bob")
 }
@@ -58,7 +58,7 @@ func TestFetchField(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "100")
 }
@@ -73,7 +73,7 @@ func TestNonExistingSymbol(t *testing.T) {
   buf := &bytes.Buffer {}
   vm.st.warn = buf
 
-  vm.Run()
+  vm.Run(nil)
 
   expected := "Use of nil to print\n"
   if warnOutput := buf.String(); warnOutput != expected {
@@ -90,7 +90,7 @@ func TestVm_Lvar(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "999")
 }
@@ -105,7 +105,7 @@ func TestVM_AddInt(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "1000")
 }
@@ -120,7 +120,7 @@ func TestVM_AddFloat(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "1")
 }
@@ -135,7 +135,7 @@ func TestVM_SubInt(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "998")
 }
@@ -150,7 +150,7 @@ func TestVM_SubFloat(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "0.9")
 }
@@ -165,7 +165,7 @@ func TestVM_MulInt(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "12")
 }
@@ -180,7 +180,7 @@ func TestVM_MulFloat(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "8.8")
 }
@@ -195,7 +195,7 @@ func TestVM_DivInt(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "2")
 }
@@ -210,7 +210,7 @@ func TestVM_DivFloat(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "2.5")
 }
@@ -229,7 +229,7 @@ func TestVM_LvarAssignArithmeticResult(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "3")
 }
@@ -243,13 +243,13 @@ func TestVM_IfNoElse(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "Hello, World!")
 
   pc.Get(0).u_arg = false
 
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "")
 }
 
@@ -265,13 +265,13 @@ func TestVM_IfElse(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "Hello, World!")
 
   pc.Get(0).u_arg = false
 
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "Ola, Mundo!")
 }
 
@@ -287,7 +287,7 @@ func TestVM_ForLoop(t *testing.T) {
   pc.AppendOp(TXOP_goto, -4)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
 
   assertOutput(t, vm, "10987654321")
 }
@@ -300,7 +300,7 @@ func TestVM_HtmlEscape(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "&lt;div&gt;Hello, World!&lt;/div&gt;")
 }
 
@@ -312,7 +312,7 @@ func TestVM_UriEscape(t *testing.T) {
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "%E6%97%A5%E6%9C%AC%E8%AA%9E")
 }
 
@@ -325,11 +325,11 @@ func TestVM_Eq(t *testing.T) {
   pc.AppendOp(TXOP_eq)
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "true")
 
   pc.Get(0).u_arg = 2
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "false")
 }
 
@@ -342,11 +342,11 @@ func TestVM_Ne(t *testing.T) {
   pc.AppendOp(TXOP_ne)
   pc.AppendOp(TXOP_print_raw)
   pc.AppendOp(TXOP_end)
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "false")
 
   pc.Get(0).u_arg = 2
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "true")
 }
 
@@ -358,7 +358,7 @@ func TestVM_MarkRaw(t *testing.T) {
   pc.AppendOp(TXOP_print)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "<div>Hello</div>")
 }
 
@@ -373,7 +373,7 @@ func TestVM_FunCall(t *testing.T) {
   pc.AppendOp(TXOP_print)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, regexp.MustCompile(`\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ [+-]\d{4} \w+`))
 }
 
@@ -392,7 +392,7 @@ func TestVM_FunCallFromDepot(t *testing.T) {
   pc.AppendOp(TXOP_print)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, regexp.MustCompile(`\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ [+-]\d{4} \w+`))
 }
 
@@ -414,7 +414,7 @@ func TestVM_MethodCall(t *testing.T) {
   pc.AppendOp(TXOP_print)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "false")
 }
 
@@ -438,7 +438,7 @@ func TestVM_RangeMakeArray(t *testing.T) {
   pc.AppendOp(TXOP_goto, -6)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
   assertOutput(t, vm, "1,2,3,4,5,6,7,8,9,10,")
 }
 
@@ -471,7 +471,7 @@ func TestVM_MakeHash(t *testing.T) {
   pc.AppendOp(TXOP_goto, -6)
   pc.AppendOp(TXOP_end)
 
-  vm.Run()
+  vm.Run(nil)
   // Note: order of keys may change depending on environment..., so we can't
   // just compare against vm.Output()
   output, err := vm.OutputString()
