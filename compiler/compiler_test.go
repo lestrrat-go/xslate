@@ -2,19 +2,13 @@ package compiler
 
 import (
   "github.com/lestrrat/go-xslate/parser/tterse"
+  "github.com/lestrrat/go-xslate/vm"
   "testing"
 )
 
-func TestCompiler(t *testing.T) {
-  c := New()
-  if c == nil {
-    t.Fatalf("Failed to instanticate compiler")
-  }
-}
-
-func TestCompile_RawText(t *testing.T) {
+func compile(t *testing.T, tmpl string) *vm.ByteCode {
   p := tterse.New()
-  ast, err := p.Parse(`Hello, World!`)
+  ast, err := p.Parse(tmpl)
   if err != nil {
     t.Fatalf("Failed to parse template: %s", err)
   }
@@ -26,4 +20,21 @@ func TestCompile_RawText(t *testing.T) {
   }
 
   t.Logf("-> %+v", bc)
+
+  return bc
+}
+
+func TestCompiler(t *testing.T) {
+  c := New()
+  if c == nil {
+    t.Fatalf("Failed to instanticate compiler")
+  }
+}
+
+func TestCompile_RawText(t *testing.T) {
+  compile(t, `Hello, World!`)
+}
+
+func TestCompile_LocalVar(t *testing.T) {
+  compile(t, `[% s %]`)
 }

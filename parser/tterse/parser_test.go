@@ -53,6 +53,7 @@ func TestGetLocalVariable(t * testing.T) {
   expected := []parser.NodeType {
     parser.NodeRoot,
     parser.NodeText,
+    parser.NodePrint,
     parser.NodeLocalVar,
   }
   matchNodeTypes(t, ast, expected)
@@ -67,6 +68,7 @@ func TestForeachLoop(t *testing.T) {
     parser.NodeLocalVar, // index var
     parser.NodeLocalVar, // list var
     parser.NodeText,
+    parser.NodePrint,
     parser.NodeLocalVar,
   }
   matchNodeTypes(t, ast, expected)
@@ -100,6 +102,7 @@ func TestSimpleAssign(t *testing.T) {
     parser.NodeAssignment,
     parser.NodeLocalVar,
     parser.NodeNumber,
+    parser.NodePrint,
     parser.NodeLocalVar,
   }
 

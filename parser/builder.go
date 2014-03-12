@@ -181,7 +181,7 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
     b.NextNonSpace(ctx)
     tmpl = NewNoopNode()
   case ItemIdentifier:
-    tmpl = b.ParseExpression(ctx)
+    tmpl = b.ParseExpression(ctx, true)
   default:
     b.Unexpected("%s", b.PeekNonSpace(ctx))
   }
@@ -250,11 +250,11 @@ func (b *Builder) ParseAssignment(ctx *BuilderCtx) Node {
   }
 
   node := NewAssignmentNode(symbol.Pos(), symbol.Value())
-  node.Append(b.ParseExpression(ctx))
+  node.Append(b.ParseExpression(ctx, false))
   return node
 }
 
-func (b *Builder) ParseExpression(ctx *BuilderCtx) Node {
+func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
   token := b.PeekNonSpace(ctx)
   switch token.Type() {
   case ItemIdentifier:
@@ -266,17 +266,29 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx) Node {
       // if an identifier is followed by a period, it's either
       // a method call or a variable fetch. 
       b.NextNonSpace(ctx)
-      return b.ParseMethodOrFetch(ctx, token)
+      n := b.ParseMethodOrFetch(ctx, token)
+      if canPrint {
+        return NewPrintNode(next.Pos(), n)
+      }
+      return n
     case ItemAssign:
       b.Backup2(ctx, token)
       return b.ParseAssignment(ctx)
     case ItemTagEnd:
-      return NewLocalVarNode(token.Pos(), token.Value())
+      n := NewLocalVarNode(token.Pos(), token.Value())
+      if canPrint {
+        return NewPrintNode(token.Pos(), n)
+      }
+      return n
     default:
       b.Unexpected("Unknown token %s", next)
     }
   default:
-    return b.ParseLiteral(ctx)
+    n := b.ParseLiteral(ctx)
+    if canPrint {
+      return NewPrintNode(token.Pos(), n)
+    }
+    return n
   }
   return nil
 }
@@ -295,7 +307,7 @@ func (b *Builder) ParseMethodOrFetch(ctx *BuilderCtx, symbol LexItem) Node {
 
   // Methodcall!
   b.NextNonSpace(ctx) // "("
-  args := b.ParseExpression(ctx)
+  args := b.ParseExpression(ctx, false)
   paren = b.NextNonSpace(ctx)
   if paren.Type() != ItemCloseParen {
     b.Unexpected("Expected close parenthesis, got %s", paren)

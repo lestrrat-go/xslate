@@ -31,6 +31,7 @@ const (
   NodeLocalVar
   NodeFetchField
   NodeMethodcall
+  NodePrint
 )
 
 func (n NodeType) String() string {
@@ -57,6 +58,8 @@ func (n NodeType) String() string {
     return "FetchField"
   case NodeMethodcall:
     return "Methodcall"
+  case NodePrint:
+    return "Print"
   default:
     return "Unknown Node"
   }
@@ -201,5 +204,12 @@ func NewRootNode() *ListNode {
 func NewNumberNode(pos Pos, number string) *TextNode {
   n := NewTextNode(pos, number)
   n.NodeType = NodeNumber
+  return n
+}
+
+func NewPrintNode(pos Pos, arg Node) *ListNode {
+  n := NewListNode(pos)
+  n.NodeType = NodePrint
+  n.Append(arg)
   return n
 }
