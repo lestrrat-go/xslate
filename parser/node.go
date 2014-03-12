@@ -41,6 +41,8 @@ func (n NodeType) String() string {
     return "Root"
   case NodeText:
     return "Text"
+  case NodeNumber:
+    return "Number"
   case NodeList:
     return "List"
   case NodeForeach:

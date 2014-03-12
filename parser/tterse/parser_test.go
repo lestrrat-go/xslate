@@ -58,6 +58,20 @@ func TestGetLocalVariable(t * testing.T) {
   matchNodeTypes(t, ast, expected)
 }
 
+func TestForeachLoop(t *testing.T) {
+  tmpl := `[% FOREACH x IN list %]Hello World, [% x %][% END %]`
+  ast := parse(t, tmpl)
+  expected := []parser.NodeType {
+    parser.NodeRoot,
+    parser.NodeForeach,
+    parser.NodeLocalVar, // index var
+    parser.NodeLocalVar, // list var
+    parser.NodeText,
+    parser.NodeLocalVar,
+  }
+  matchNodeTypes(t, ast, expected)
+}
+
 func TestBasic(t *testing.T) {
   tmpl := `
 [% WRAPPER "hoge.tx" WITH foo = "bar" %]
@@ -78,8 +92,16 @@ func TestBasic(t *testing.T) {
 }
 
 func TestSimpleAssign(t *testing.T) {
-  tmpl := `[% s = 1 %]`
-  p := New()
-  ast, _ := p.Parse(tmpl)
-  t.Logf("%#v", ast)
+  tmpl := `[% s = 1 %][% s %]`
+  ast := parse(t, tmpl)
+
+  expected := []parser.NodeType {
+    parser.NodeRoot,
+    parser.NodeAssignment,
+    parser.NodeLocalVar,
+    parser.NodeNumber,
+    parser.NodeLocalVar,
+  }
+
+  matchNodeTypes(t, ast, expected)
 }

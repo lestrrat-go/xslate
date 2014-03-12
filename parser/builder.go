@@ -138,7 +138,9 @@ func (b *Builder) ParseTemplateOrText(ctx *BuilderCtx) Node {
 
     switch node.Type() {
     case NodeForeach, NodeWrapper:
+      ctx.CurrentParentNode().Append(node)
       ctx.PushParentNode(node.(*ListNode))
+      node = nil
     }
     return node
   default:
@@ -267,7 +269,7 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx) Node {
       return b.ParseMethodOrFetch(ctx, token)
     case ItemAssign:
       b.Backup2(ctx, token)
-      b.ParseAssignment(ctx)
+      return b.ParseAssignment(ctx)
     case ItemTagEnd:
       return NewLocalVarNode(token.Pos(), token.Value())
     default:
