@@ -20,3 +20,12 @@ func NewAST () *AST {
   }
 }
 */
+
+func (ast *AST) Visit() <-chan Node {
+  c := make(chan Node)
+  go func () {
+    ast.Root.Visit(c)
+    close(c)
+  }()
+  return c
+}

@@ -16,6 +16,7 @@ type Node interface {
   String() string
   Copy() Node
   Position() Pos
+  Visit(chan Node)
 }
 
 const (
@@ -82,18 +83,15 @@ type TextNode struct {
   Text []byte
 }
 
-func NewNode(t NodeType, pos Pos, args ...interface {}) Node {
-  switch t {
-  case NodeNoop:
-    return NewNoopNode()
-  case NodeList:
-    return NewListNode(pos)
-  case NodeText:
-    return NewTextNode(pos, args[0].(string))
-  default:
-    panic("fuck")
+func (l *ListNode) Visit(c chan Node) {
+  c <- l
+  for _, child := range l.Nodes {
+    child.Visit(c)
   }
-  return nil
+}
+
+func (t *TextNode) Visit(c chan Node) {
+  c <- t
 }
 
 var noop = &NoopNode {NodeType: NodeNoop}
@@ -107,6 +105,10 @@ func (n NoopNode) Copy() Node {
 
 func (n *NoopNode) String() string {
   return "noop"
+}
+
+func (n *NoopNode) Visit(chan Node) {
+  // ignore
 }
 
 func NewListNode(pos Pos) *ListNode {

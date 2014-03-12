@@ -129,7 +129,7 @@ func (b *Builder) ParseTemplateOrText(ctx *BuilderCtx) Node {
   switch token := b.PeekNonSpace(ctx); token.Type() {
   case ItemRawString:
     b.NextNonSpace(ctx)
-    return NewNode(NodeText, token.Pos(), token.Value())
+    return NewTextNode(token.Pos(), token.Value())
   case ItemTagStart:
     node := b.ParseTemplate(ctx)
     if node == nil {
@@ -177,7 +177,7 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
     tmpl = b.ParseForeach(ctx)
   case ItemTagEnd: // Silly, but possible
     b.NextNonSpace(ctx)
-    tmpl = NewNode(NodeNoop, Pos(0))
+    tmpl = NewNoopNode()
   case ItemIdentifier:
     tmpl = b.ParseExpression(ctx)
   default:
