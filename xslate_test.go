@@ -37,3 +37,14 @@ func TestXslate_Variable(t *testing.T) {
 func TestXslate_LocalVar(t *testing.T) {
   executeAndCompare(t, `[% SET name = "Bob" %]Hello World, [% name %]!`, nil, `Hello World, Bob!`)
 }
+
+/* I'm still very confused about the for_start / for_iter bytecodes 
+func TestXslate_Foreach(t *testing.T) {
+  var list [10]int
+  for i := 0; i < 10; i++ {
+    list[i] = i
+  }
+  template := `[% FOREACH i IN list %][% i %],[% END %]`
+  executeAndCompare(t, template, Vars { "list": list }, `0, 1, 2, 3, 4, 5, 6, 7, 8, 9,`)
+}
+*/

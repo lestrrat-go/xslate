@@ -13,6 +13,10 @@ type CompilerCtx struct {
   ByteCode *vm.ByteCode
 }
 
+func (ctx *CompilerCtx) AppendOp(o vm.OpType, args ...interface {}) {
+  ctx.ByteCode.AppendOp(o, args...)
+}
+
 type BasicCompiler struct {}
 
 func New() *BasicCompiler {
@@ -37,25 +41,29 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
   switch n.Type() {
   case parser.NodeText:
     // XXX probably not true all the time
-    ctx.ByteCode.AppendOp(vm.TXOP_literal, n.(*parser.TextNode).Text)
+    ctx.AppendOp(vm.TXOP_literal, n.(*parser.TextNode).Text)
   case parser.NodeFetchSymbol:
-    ctx.ByteCode.AppendOp(vm.TXOP_fetch_s, n.(*parser.TextNode).Text)
+    ctx.AppendOp(vm.TXOP_fetch_s, n.(*parser.TextNode).Text)
   case parser.NodeLocalVar:
     l := n.(*parser.ListNode)
     val := l.Nodes[1].(*parser.NumberNode)
     if val.Type() == parser.NodeInt {
-      ctx.ByteCode.AppendOp(vm.TXOP_load_lvar, val.Value.Int())
+      ctx.AppendOp(vm.TXOP_load_lvar, val.Value.Int())
     } else if val.Type() == parser.NodeFloat {
-      ctx.ByteCode.AppendOp(vm.TXOP_load_lvar, val.Value.Float())
+      ctx.AppendOp(vm.TXOP_load_lvar, val.Value.Float())
     }
   case parser.NodeAssignment:
     c.compile(ctx, n.(*parser.ListNode).Nodes[1])
-    ctx.ByteCode.AppendOp(vm.TXOP_save_to_lvar, 0) // XXX this 0 must be pre-computed
+    ctx.AppendOp(vm.TXOP_save_to_lvar, 0) // XXX this 0 must be pre-computed
   case parser.NodePrint:
     c.compile(ctx, n.(*parser.ListNode).Nodes[0])
-    ctx.ByteCode.AppendOp(vm.TXOP_print)
+    ctx.AppendOp(vm.TXOP_print)
   case parser.NodePrintRaw:
     c.compile(ctx, n.(*parser.ListNode).Nodes[0])
-    ctx.ByteCode.AppendOp(vm.TXOP_print_raw)
+    ctx.AppendOp(vm.TXOP_print_raw)
+/*
+  case parser.NodeForeach:
+    ctx.AppendOp(vm.TXOP_for_start, 0)
+*/
   }
 }
