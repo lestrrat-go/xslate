@@ -2,6 +2,7 @@ package parser
 import (
   "bytes"
   "fmt"
+  "reflect"
 )
 
 var nodeTextFormat = "%s"
@@ -24,6 +25,8 @@ const (
   NodeRoot
   NodeText
   NodeNumber
+  NodeInt
+  NodeFloat
   NodeList
   NodeForeach
   NodeWrapper
@@ -32,6 +35,7 @@ const (
   NodeFetchField
   NodeMethodcall
   NodePrint
+  NodePrintRaw
   NodeFetchSymbol
 )
 
@@ -89,6 +93,12 @@ type TextNode struct {
   NodeType
   Pos
   Text []byte
+}
+
+type NumberNode struct {
+  NodeType
+  Pos
+  Value reflect.Value
 }
 
 func (l *ListNode) Visit(c chan Node) {
@@ -164,27 +174,29 @@ func NewWrapperNode(pos Pos, template string) *ListNode {
 func NewAssignmentNode(pos Pos, symbol string) *ListNode {
   n := NewListNode(pos)
   n.NodeType = NodeAssignment
-  n.Append(NewLocalVarNode(pos, symbol))
+  n.Append(NewLocalVarNode(pos, symbol, 0)) // TODO
   return n
 }
 
-func NewLocalVarNode(pos Pos, symbol string) *TextNode {
-  n := NewTextNode(pos, symbol)
+func NewLocalVarNode(pos Pos, symbol string, idx int) *ListNode {
+  n := NewListNode(pos)
   n.NodeType = NodeLocalVar
+  n.Append(NewTextNode(pos, symbol))
+  n.Append(NewIntNode(pos, int64(idx)))
   return n
 }
 
 func NewForeachNode(pos Pos, symbol string) *ListNode {
   n := NewListNode(pos)
   n.NodeType = NodeForeach
-  n.Append(NewLocalVarNode(pos, symbol))
+  n.Append(NewLocalVarNode(pos, symbol, 0)) // TODO
   return n
 }
 
 func NewMethodcallNode(pos Pos, invocant, method string, args Node) *ListNode {
   n := NewListNode(pos)
   n.NodeType = NodeMethodcall
-  n.Append(NewLocalVarNode(pos, invocant))
+  n.Append(NewLocalVarNode(pos, invocant, 0)) // TODO
   n.Append(NewTextNode(pos, method))
   n.Append(args)
   return n
@@ -193,7 +205,7 @@ func NewMethodcallNode(pos Pos, invocant, method string, args Node) *ListNode {
 func NewFetchFieldNode(pos Pos, invocant, field string) *ListNode {
   n := NewListNode(pos)
   n.NodeType = NodeFetchField
-  n.Append(NewLocalVarNode(pos, invocant))
+  n.Append(NewLocalVarNode(pos, invocant, 0)) // TODO
   n.Append(NewTextNode(pos, field))
   return n
 }
@@ -204,9 +216,29 @@ func NewRootNode() *ListNode {
   return n
 }
 
-func NewNumberNode(pos Pos, number string) *TextNode {
-  n := NewTextNode(pos, number)
-  n.NodeType = NodeNumber
+func NewNumberNode(pos Pos, num reflect.Value) *NumberNode {
+  return &NumberNode {NodeType: NodeNumber, Pos: pos, Value: num}
+}
+
+func (n *NumberNode) Copy() Node {
+  x := NewNumberNode(n.Pos, n.Value)
+  x.NodeType = n.NodeType
+  return x
+}
+
+func (n *NumberNode) Visit(c chan Node) {
+  c <- n
+}
+
+func NewIntNode(pos Pos, v int64) *NumberNode {
+  n := NewNumberNode(pos, reflect.ValueOf(v))
+  n.NodeType = NodeInt
+  return n
+}
+
+func NewFloatNode(pos Pos, v float64) *NumberNode {
+  n := NewNumberNode(pos, reflect.ValueOf(v))
+  n.NodeType = NodeFloat
   return n
 }
 
@@ -214,6 +246,12 @@ func NewPrintNode(pos Pos, arg Node) *ListNode {
   n := NewListNode(pos)
   n.NodeType = NodePrint
   n.Append(arg)
+  return n
+}
+
+func NewPrintRawNode(pos Pos) *ListNode {
+  n := NewListNode(pos)
+  n.NodeType = NodePrintRaw
   return n
 }
 

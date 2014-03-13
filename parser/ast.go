@@ -1,6 +1,8 @@
 package parser
 
 import (
+  "bytes"
+  "fmt"
   "time"
 )
 
@@ -28,4 +30,12 @@ func (ast *AST) Visit() <-chan Node {
     close(c)
   }()
   return c
+}
+
+func (ast *AST) String() string {
+  buf := &bytes.Buffer {}
+  for k, v := range ast.Root.Nodes {
+    buf.WriteString(fmt.Sprintf("%03d. %s\n", k + 1, v))
+  }
+  return buf.String()
 }

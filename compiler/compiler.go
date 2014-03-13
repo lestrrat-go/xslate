@@ -38,13 +38,24 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
   case parser.NodeText:
     // XXX probably not true all the time
     ctx.ByteCode.AppendOp(vm.TXOP_literal, n.(*parser.TextNode).Text)
-    ctx.ByteCode.AppendOp(vm.TXOP_print_raw)
   case parser.NodeFetchSymbol:
     ctx.ByteCode.AppendOp(vm.TXOP_fetch_s, n.(*parser.TextNode).Text)
   case parser.NodeLocalVar:
-    ctx.ByteCode.AppendOp(vm.TXOP_load_lvar, n.(*parser.TextNode).Text)
+    l := n.(*parser.ListNode)
+    val := l.Nodes[1].(*parser.NumberNode)
+    if val.Type() == parser.NodeInt {
+      ctx.ByteCode.AppendOp(vm.TXOP_load_lvar, val.Value.Int())
+    } else if val.Type() == parser.NodeFloat {
+      ctx.ByteCode.AppendOp(vm.TXOP_load_lvar, val.Value.Float())
+    }
+  case parser.NodeAssignment:
+    c.compile(ctx, n.(*parser.ListNode).Nodes[1])
+    ctx.ByteCode.AppendOp(vm.TXOP_save_to_lvar, 0) // XXX this 0 must be pre-computed
   case parser.NodePrint:
     c.compile(ctx, n.(*parser.ListNode).Nodes[0])
     ctx.ByteCode.AppendOp(vm.TXOP_print)
+  case parser.NodePrintRaw:
+    c.compile(ctx, n.(*parser.ListNode).Nodes[0])
+    ctx.ByteCode.AppendOp(vm.TXOP_print_raw)
   }
 }

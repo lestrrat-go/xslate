@@ -2,6 +2,8 @@ package parser
 
 import (
   "fmt"
+  "strconv"
+  "strings"
 )
 type Builder struct {
 
@@ -16,7 +18,8 @@ type BuilderCtx struct{
   Tokens    [3]LexItem
   ParentStack []*ListNode
   CurrentStackTop int
-  LocalVars map[string]bool
+  LocalVars map[string]int
+  LocalVarIdx int
 }
 
 func NewBuilder() *Builder {
@@ -33,7 +36,7 @@ func (b *Builder) Parse(name, text string, lex LexRunner) (*AST, error) {
     Tokens:     [3]LexItem {},
     CurrentStackTop: -1,
     ParentStack:[]*ListNode {},
-    LocalVars: make(map[string]bool),
+    LocalVars: make(map[string]int),
   }
   b.Start(ctx)
   b.ParseStatements(ctx)
@@ -131,7 +134,10 @@ func (b *Builder) ParseTemplateOrText(ctx *BuilderCtx) Node {
   switch token := b.PeekNonSpace(ctx); token.Type() {
   case ItemRawString:
     b.NextNonSpace(ctx)
-    return NewTextNode(token.Pos(), token.Value())
+
+    n := NewPrintRawNode(token.Pos())
+    n.Append(NewTextNode(token.Pos(), token.Value()))
+    return n
   case ItemTagStart:
     node := b.ParseTemplate(ctx)
     if node == nil {
@@ -257,7 +263,8 @@ func (b *Builder) ParseAssignment(ctx *BuilderCtx) Node {
   node := NewAssignmentNode(symbol.Pos(), symbol.Value())
   node.Append(b.ParseExpression(ctx, false))
 
-  ctx.LocalVars[symbol.Value()] = true
+  ctx.LocalVars[symbol.Value()] = ctx.LocalVarIdx
+  ctx.LocalVarIdx++
   return node
 }
 
@@ -283,8 +290,8 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
       return b.ParseAssignment(ctx)
     case ItemTagEnd:
       var n Node
-      if ctx.LocalVars[token.Value()] {
-        n = NewLocalVarNode(token.Pos(), token.Value())
+      if idx, ok := ctx.LocalVars[token.Value()]; ok {
+        n = NewLocalVarNode(token.Pos(), token.Value(), idx)
       } else {
         n = NewFetchSymbolNode(token.Pos(), token.Value())
       }
@@ -332,9 +339,24 @@ func (b *Builder) ParseLiteral(ctx *BuilderCtx) Node {
   t := b.NextNonSpace(ctx)
   switch t.Type() {
   case ItemDoubleQuotedString, ItemSingleQuotedString:
-    return NewTextNode(t.Pos(), t.Value())
+    v := t.Value()
+    return NewTextNode(t.Pos(), v[1:len(v) - 1])
   case ItemNumber:
-    return NewNumberNode(t.Pos(), t.Value())
+    v := t.Value()
+    // XXX TODO: parse hex/oct/bin
+    if strings.Contains(v, ".") {
+      f, err := strconv.ParseFloat(v, 64)
+      if err != nil { // shouldn't happen, as we were able to lex it
+        b.Unexpected("Could not parse number: %s", err)
+      }
+      return NewFloatNode(t.Pos(), f)
+    } else {
+      i, err := strconv.ParseInt(v, 10, 64)
+      if err != nil {
+        b.Unexpected("Could not parse number: %s", err)
+      }
+      return NewIntNode(t.Pos(), i)
+    }
   default:
     b.Unexpected("Expected literal value, got %s", t)
   }
@@ -371,5 +393,5 @@ func (b *Builder) ParseList(ctx *BuilderCtx) Node {
     b.Unexpected("Expected identifier, got %s", list)
   }
 
-  return NewLocalVarNode(list.Pos(), list.Value())
+  return NewLocalVarNode(list.Pos(), list.Value(), 0) // TODO
 }

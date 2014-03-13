@@ -3,6 +3,7 @@ package vm
 import (
   "encoding/json"
   "fmt"
+  "reflect"
 )
 
 type OpType int
@@ -54,7 +55,8 @@ func (o *Op) Arg() interface {} {
 }
 
 func (o *Op) ArgInt() int {
-  return o.Arg().(int)
+  v := reflect.ValueOf(o.Arg())
+  return int(v.Int())
 }
 
 func (o *Op) ArgString() string {
@@ -63,7 +65,11 @@ func (o *Op) ArgString() string {
 
 func (o *Op) String() string {
   // TODO: also print out register id's and stuff
-  return fmt.Sprintf("Op[%s]", o.OpType())
+  if o.u_arg != nil {
+    return fmt.Sprintf("Op[%s] (%s)", o.OpType(), o.ArgString())
+  } else {
+    return fmt.Sprintf("Op[%s]", o.OpType())
+  }
 }
 
 

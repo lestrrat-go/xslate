@@ -1,6 +1,7 @@
 package xslate
 
-import(
+import (
+  "fmt"
   "io"
   "io/ioutil"
 
@@ -10,18 +11,24 @@ import(
   "github.com/lestrrat/go-xslate/vm"
 )
 
+const (
+  DUMP_BYTECODE = 1 << iota
+  DUMP_AST
+)
+
 type Xslate struct {
-  Vm        *vm.VM
-  Compiler  compiler.Compiler
-  Parser    parser.Parser
+  Flags    int32
+  Vm       *vm.VM
+  Compiler compiler.Compiler
+  Parser   parser.Parser
   // XXX Need to make syntax pluggable
 }
 
 func New() *Xslate {
-  return &Xslate {
-    Vm: vm.NewVM(),
+  return &Xslate{
+    Vm:       vm.NewVM(),
     Compiler: compiler.New(),
-    Parser: tterse.New(),
+    Parser:   tterse.New(),
   }
 }
 
@@ -44,9 +51,17 @@ func (x *Xslate) Render(template []byte, vars vm.Vars) (string, error) {
     return "", err
   }
 
+  if x.Flags & DUMP_AST != 0 {
+    fmt.Printf("%s\n", ast)
+  }
+
   bc, err := x.Compiler.Compile(ast)
   if err != nil {
     return "", err
+  }
+
+  if x.Flags & DUMP_BYTECODE != 0 {
+    fmt.Printf("%s\n", bc)
   }
 
   x.Vm.Run(bc, vars)
