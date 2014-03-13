@@ -16,6 +16,7 @@ const (
   DUMP_AST
 )
 
+type Vars vm.Vars
 type Xslate struct {
   Flags    int32
   Vm       *vm.VM
@@ -32,7 +33,7 @@ func New() *Xslate {
   }
 }
 
-func (x *Xslate) RenderReader(rdr io.Reader, vars vm.Vars) (string, error) {
+func (x *Xslate) RenderReader(rdr io.Reader, vars Vars) (string, error) {
   tmpl, err := ioutil.ReadAll(rdr)
   if err != nil {
     return "", err
@@ -41,11 +42,11 @@ func (x *Xslate) RenderReader(rdr io.Reader, vars vm.Vars) (string, error) {
   return x.Render(tmpl, vars)
 }
 
-func (x *Xslate) RenderString(template string, vars vm.Vars) (string, error) {
+func (x *Xslate) RenderString(template string, vars Vars) (string, error) {
   return x.Render([]byte(template), vars)
 }
 
-func (x *Xslate) Render(template []byte, vars vm.Vars) (string, error) {
+func (x *Xslate) Render(template []byte, vars Vars) (string, error) {
   ast, err := x.Parser.Parse(template)
   if err != nil {
     return "", err
@@ -64,7 +65,7 @@ func (x *Xslate) Render(template []byte, vars vm.Vars) (string, error) {
     fmt.Printf("%s\n", bc)
   }
 
-  x.Vm.Run(bc, vars)
+  x.Vm.Run(bc, vm.Vars(vars))
   str, err := x.Vm.OutputString()
   return str, err
 }

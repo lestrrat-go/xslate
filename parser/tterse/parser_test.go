@@ -41,6 +41,7 @@ func TestRawString(t *testing.T) {
   // Expect nodes to be in this order:
   expected := []parser.NodeType {
     parser.NodeRoot,
+    parser.NodePrintRaw,
     parser.NodeText,
   }
   matchNodeTypes(t, ast, expected)
@@ -55,9 +56,14 @@ func TestGetLocalVariable(t * testing.T) {
     parser.NodeAssignment,
     parser.NodeLocalVar,
     parser.NodeText,
+    parser.NodeInt,
+    parser.NodeText,
+    parser.NodePrintRaw,
     parser.NodeText,
     parser.NodePrint,
     parser.NodeLocalVar,
+    parser.NodeText,
+    parser.NodeInt,
   }
   matchNodeTypes(t, ast, expected)
 }
@@ -69,7 +75,12 @@ func TestForeachLoop(t *testing.T) {
     parser.NodeRoot,
     parser.NodeForeach,
     parser.NodeLocalVar, // index var
+    parser.NodeText,
+    parser.NodeInt,
     parser.NodeLocalVar, // list var
+    parser.NodeText,
+    parser.NodeInt,
+    parser.NodePrintRaw,
     parser.NodeText,
     parser.NodePrint,
     parser.NodeFetchSymbol,
@@ -104,9 +115,13 @@ func TestSimpleAssign(t *testing.T) {
     parser.NodeRoot,
     parser.NodeAssignment,
     parser.NodeLocalVar,
-    parser.NodeNumber,
+    parser.NodeText,
+    parser.NodeInt,
+    parser.NodeInt,
     parser.NodePrint,
     parser.NodeLocalVar,
+    parser.NodeText,
+    parser.NodeInt,
   }
 
   matchNodeTypes(t, ast, expected)

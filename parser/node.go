@@ -49,6 +49,10 @@ func (n NodeType) String() string {
     return "Text"
   case NodeNumber:
     return "Number"
+  case NodeInt:
+    return "Int"
+  case NodeFloat:
+    return "Float"
   case NodeList:
     return "List"
   case NodeForeach:
@@ -65,6 +69,8 @@ func (n NodeType) String() string {
     return "Methodcall"
   case NodePrint:
     return "Print"
+  case NodePrintRaw:
+    return "PrintRaw"
   case NodeFetchSymbol:
     return "FetchSymbol"
   default:

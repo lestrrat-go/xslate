@@ -2,7 +2,6 @@ package xslate
 
 import (
   "testing"
-  "github.com/lestrrat/go-xslate/vm"
 //  txtime "github.com/lestrrat/go-xslate/functions/time"
 )
 
@@ -14,8 +13,7 @@ func ExampleXslate () {
 */
 }
 
-// TODO: vm.Vars should be xslate.Vars?
-func executeAndCompare(t *testing.T, template string, vars vm.Vars, expected string) {
+func executeAndCompare(t *testing.T, template string, vars Vars, expected string) {
   x := New()
   x.Flags |= DUMP_AST
   x.Flags |= DUMP_BYTECODE
@@ -33,7 +31,7 @@ func TestXslate_SimpleString(t *testing.T) {
 }
 
 func TestXslate_Variable(t *testing.T) {
-  executeAndCompare(t, `Hello World, [% name %]!`, vm.Vars { "name": "Bob" }, `Hello World, Bob!`)
+  executeAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
 }
 
 func TestXslate_LocalVar(t *testing.T) {
