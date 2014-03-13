@@ -4,6 +4,7 @@ import (
   "fmt"
   "io"
   "io/ioutil"
+  "os"
 
   "github.com/lestrrat/go-xslate/compiler"
   "github.com/lestrrat/go-xslate/parser"
@@ -38,8 +39,16 @@ func (x *Xslate) RenderReader(rdr io.Reader, vars Vars) (string, error) {
   if err != nil {
     return "", err
   }
-
   return x.Render(tmpl, vars)
+}
+
+func (x *Xslate) RenderFile(filename string, vars Vars) (string, error) {
+  file, err := os.Open(filename)
+  if err != nil {
+    return "", err
+  }
+
+  return x.RenderReader(file, vars)
 }
 
 func (x *Xslate) RenderString(template string, vars Vars) (string, error) {
