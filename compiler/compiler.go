@@ -62,7 +62,6 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     ctx.AppendOp(vm.TXOP_literal, 0)
     iter := ctx.AppendOp(vm.TXOP_for_iter, 0)
     pos  := ctx.ByteCode.Len()
-    ctx.AppendOp(vm.TXOP_load_lvar, 0)
 
     children := n.(*parser.ForeachNode).Nodes
     for _, v := range children {
