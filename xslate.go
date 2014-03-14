@@ -2,11 +2,9 @@ package xslate
 
 import (
   "fmt"
-  "io"
-  "io/ioutil"
-  "os"
 
   "github.com/lestrrat/go-xslate/compiler"
+  "github.com/lestrrat/go-xslate/loader"
   "github.com/lestrrat/go-xslate/parser"
   "github.com/lestrrat/go-xslate/parser/tterse"
   "github.com/lestrrat/go-xslate/vm"
@@ -23,6 +21,7 @@ type Xslate struct {
   Vm       *vm.VM
   Compiler compiler.Compiler
   Parser   parser.Parser
+  Loader   loader.Loader
   // XXX Need to make syntax pluggable
 }
 
@@ -31,32 +30,23 @@ func New() *Xslate {
     Vm:       vm.NewVM(),
     Compiler: compiler.New(),
     Parser:   tterse.New(),
+    Loader:   nil, // Loader is not necessary if you're just doing
+                   // RenderString(). But to load files, you need to set
+                   // this up somehow
   }
 }
 
-func (x *Xslate) RenderReader(rdr io.Reader, vars Vars) (string, error) {
-  tmpl, err := ioutil.ReadAll(rdr)
-  if err != nil {
-    return "", err
-  }
-  return x.Render(tmpl, vars)
-}
-
-func (x *Xslate) RenderFile(filename string, vars Vars) (string, error) {
-  file, err := os.Open(filename)
+func (x *Xslate) Render(name string, vars Vars) (string, error) {
+  template, err := x.Loader.Load(name)
   if err != nil {
     return "", err
   }
 
-  return x.RenderReader(file, vars)
+  return x.RenderString(string(template), vars)
 }
 
 func (x *Xslate) RenderString(template string, vars Vars) (string, error) {
-  return x.Render([]byte(template), vars)
-}
-
-func (x *Xslate) Render(template []byte, vars Vars) (string, error) {
-  ast, err := x.Parser.Parse(template)
+  ast, err := x.Parser.ParseString(template)
   if err != nil {
     return "", err
   }

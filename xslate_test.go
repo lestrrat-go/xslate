@@ -5,11 +5,16 @@ import (
   "log"
   "os"
   "testing"
+
+  "github.com/lestrrat/go-xslate/loader"
 )
 
 func ExampleXslate () {
   tx := New()
-  output, err := tx.RenderFile("foo.tx", nil)
+  tx.Loader, _ = loader.NewLoadFile(
+    []string { "/path/to/templates" },
+  )
+  output, err := tx.Render("foo.tx", nil)
   if err != nil {
     log.Fatalf("Failed to render template: %s", err)
   }
