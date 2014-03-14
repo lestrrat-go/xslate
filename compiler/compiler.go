@@ -45,13 +45,8 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
   case parser.NodeFetchSymbol:
     ctx.AppendOp(vm.TXOP_fetch_s, n.(*parser.TextNode).Text)
   case parser.NodeLocalVar:
-    l := n.(*parser.ListNode)
-    val := l.Nodes[1].(*parser.NumberNode)
-    if val.Type() == parser.NodeInt {
-      ctx.AppendOp(vm.TXOP_load_lvar, val.Value.Int())
-    } else if val.Type() == parser.NodeFloat {
-      ctx.AppendOp(vm.TXOP_load_lvar, val.Value.Float())
-    }
+    l := n.(*parser.LocalVarNode)
+    ctx.AppendOp(vm.TXOP_load_lvar, l.Offset)
   case parser.NodeAssignment:
     c.compile(ctx, n.(*parser.ListNode).Nodes[1])
     ctx.AppendOp(vm.TXOP_save_to_lvar, 0) // XXX this 0 must be pre-computed

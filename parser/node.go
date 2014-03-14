@@ -184,12 +184,29 @@ func NewAssignmentNode(pos Pos, symbol string) *ListNode {
   return n
 }
 
-func NewLocalVarNode(pos Pos, symbol string, idx int) *ListNode {
-  n := NewListNode(pos)
-  n.NodeType = NodeLocalVar
-  n.Append(NewTextNode(pos, symbol))
-  n.Append(NewIntNode(pos, int64(idx)))
+type LocalVarNode struct {
+  NodeType
+  Pos
+  Name string
+  Offset int
+}
+
+func NewLocalVarNode(pos Pos, symbol string, idx int) *LocalVarNode {
+  n := &LocalVarNode {
+    NodeLocalVar,
+    pos,
+    symbol,
+    idx,
+  }
   return n
+}
+
+func (n *LocalVarNode) Copy() Node {
+  return NewLocalVarNode(n.Pos, n.Name, n.Offset)
+}
+
+func (n *LocalVarNode) Visit(c chan Node) {
+  c <- n
 }
 
 func NewForeachNode(pos Pos, symbol string) *ListNode {
