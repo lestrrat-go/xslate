@@ -34,8 +34,11 @@ func (ast *AST) Visit() <-chan Node {
 
 func (ast *AST) String() string {
   buf := &bytes.Buffer {}
-  for k, v := range ast.Root.Nodes {
-    buf.WriteString(fmt.Sprintf("%03d. %s\n", k + 1, v))
+  c := ast.Visit()
+  k := 0
+  for v := range c {
+    k++
+    fmt.Fprintf(buf, "%03d. %s\n", k, v)
   }
   return buf.String()
 }

@@ -7,6 +7,10 @@ import (
 
 type ByteCode []*Op
 
+func (l *ByteCode) Len() int {
+  return len(*l)
+}
+
 func (l *ByteCode) Get(i int) *Op {
   return (*l)[i]
 }
@@ -23,7 +27,9 @@ func (l *ByteCode) String() string {
   return buf.String()
 }
 
-func (l *ByteCode) AppendOp(o OpType, args ...interface{}) {
-  l.Append(NewOp(o, args...))
+func (l *ByteCode) AppendOp(o OpType, args ...interface{}) *Op {
+  x := NewOp(o, args...)
+  l.Append(x)
+  return x
 }
 

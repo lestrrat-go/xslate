@@ -50,6 +50,10 @@ func (o *Op) Code() *ExecCode {
   return o.code
 }
 
+func (o *Op) SetArg(v interface {}) {
+  o.u_arg = v
+}
+
 func (o *Op) Arg() interface {} {
   return o.u_arg
 }

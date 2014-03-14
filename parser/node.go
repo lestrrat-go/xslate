@@ -20,6 +20,11 @@ type Node interface {
   Visit(chan Node)
 }
 
+type NodeAppender interface {
+  Node
+  Append(Node)
+}
+
 const (
   NodeNoop NodeType = iota
   NodeRoot
@@ -147,11 +152,7 @@ func (l ListNode) Copy() Node {
 }
 
 func (l *ListNode) String() string {
-  b := &bytes.Buffer {}
-  for _, n := range l.Nodes {
-    fmt.Fprint(b, n)
-  }
-  return b.String()
+  return l.NodeType.String()
 }
 
 func (l *ListNode) Append(n Node) {
@@ -167,7 +168,7 @@ func (n *TextNode) Copy() Node {
 }
 
 func (n *TextNode) String() string {
-  return fmt.Sprintf(nodeTextFormat, n.Text)
+  return fmt.Sprintf("%s %s", n.NodeType, n.Text)
 }
 
 func NewWrapperNode(pos Pos, template string) *ListNode {
@@ -177,11 +178,41 @@ func NewWrapperNode(pos Pos, template string) *ListNode {
   return n
 }
 
-func NewAssignmentNode(pos Pos, symbol string) *ListNode {
-  n := NewListNode(pos)
-  n.NodeType = NodeAssignment
-  n.Append(NewLocalVarNode(pos, symbol, 0)) // TODO
+type AssignmentNode struct {
+  NodeType
+  Pos
+  Assignee *LocalVarNode
+  Expression Node
+}
+
+func NewAssignmentNode(pos Pos, symbol string) *AssignmentNode {
+  n := &AssignmentNode {
+    NodeAssignment,
+    pos,
+    NewLocalVarNode(pos, symbol, 0), // TODO
+    nil,
+  }
   return n
+}
+
+func (n *AssignmentNode) Copy() Node {
+  x := &AssignmentNode {
+    NodeAssignment,
+    n.Pos,
+    n.Assignee,
+    n.Expression,
+  }
+  return x
+}
+
+func (n *AssignmentNode) Visit(c chan Node) {
+  c <- n
+  c <- n.Assignee
+  c <- n.Expression
+}
+
+func (n *AssignmentNode) String() string {
+  return n.NodeType.String()
 }
 
 type LocalVarNode struct {
@@ -209,11 +240,51 @@ func (n *LocalVarNode) Visit(c chan Node) {
   c <- n
 }
 
-func NewForeachNode(pos Pos, symbol string) *ListNode {
-  n := NewListNode(pos)
+func (n *LocalVarNode) String() string {
+  return fmt.Sprintf("%s %s (%d)", n.NodeType, n.Name, n.Offset)
+}
+
+type ForeachNode struct {
+  *ListNode
+  IndexVarName  string
+  IndexVarIdx   int
+  List          Node
+}
+
+func NewForeachNode(pos Pos, symbol string) *ForeachNode {
+  n := &ForeachNode {
+    ListNode: NewListNode(pos),
+    IndexVarName: symbol,
+    IndexVarIdx: 0,
+    List: nil,
+  }
   n.NodeType = NodeForeach
-  n.Append(NewLocalVarNode(pos, symbol, 0)) // TODO
   return n
+}
+
+func (n *ForeachNode) Visit(c chan Node) {
+  c <- n
+  // Skip the list node that we contain
+  for _, child := range n.ListNode.Nodes {
+    child.Visit(c)
+  }
+}
+
+func (n *ForeachNode) Copy() Node {
+  x := &ForeachNode {
+    ListNode: NewListNode(n.Pos),
+    IndexVarName: n.IndexVarName,
+    IndexVarIdx: n.IndexVarIdx,
+    List: n.List.Copy(),
+  }
+  x.NodeType = NodeForeach
+  return n
+}
+
+func (n *ForeachNode) String() string {
+  b := &bytes.Buffer {}
+  fmt.Fprintf(b, "%s %s (%d)", n.NodeType, n.IndexVarName, n.IndexVarIdx)
+  return b.String()
 }
 
 func NewMethodcallNode(pos Pos, invocant, method string, args Node) *ListNode {

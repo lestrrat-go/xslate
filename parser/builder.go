@@ -9,6 +9,12 @@ type Builder struct {
 
 }
 
+type StackFrame struct {
+  Node        NodeAppender
+  LocalVars   map[string]int
+  LocalVarIdx int
+}
+
 type BuilderCtx struct{
   ParseName string
   Text      string
@@ -16,10 +22,8 @@ type BuilderCtx struct{
   Root      *ListNode
   PeekCount int
   Tokens    [3]LexItem
-  ParentStack []*ListNode
+  ParentStack []*StackFrame
   CurrentStackTop int
-  LocalVars map[string]int
-  LocalVarIdx int
 }
 
 func NewBuilder() *Builder {
@@ -35,8 +39,7 @@ func (b *Builder) Parse(name, text string, lex LexRunner) (*AST, error) {
     Root:       NewRootNode(),
     Tokens:     [3]LexItem {},
     CurrentStackTop: -1,
-    ParentStack:[]*ListNode {},
-    LocalVars: make(map[string]int),
+    ParentStack:[]*StackFrame {},
   }
   b.Start(ctx)
   b.ParseStatements(ctx)
@@ -97,24 +100,67 @@ func (b *Builder) Backup2(ctx *BuilderCtx, t1 LexItem) {
   ctx.PeekCount = 2
 }
 
-func (ctx *BuilderCtx) PushParentNode(n *ListNode) {
+func (ctx *BuilderCtx) HasLocalVar(symbol string) (int, bool) {
+  frame := ctx.CurrentStackFrame()
+  pos, ok := frame.LocalVars[symbol]
+  return pos, ok
+}
+
+func (ctx *BuilderCtx) DeclareLocalVar(symbol string) int {
+  frame := ctx.CurrentStackFrame()
+
+  frame.LocalVars[symbol] = frame.LocalVarIdx
+  frame.LocalVarIdx++
+
+  return frame.LocalVarIdx - 1
+}
+
+func (ctx *BuilderCtx) PushStackFrame() *StackFrame {
+  frame := &StackFrame {
+    LocalVars: make(map[string]int),
+    LocalVarIdx: 0,
+  }
+
   ctx.CurrentStackTop++
   if ctx.CurrentStackTop >= len(ctx.ParentStack) {
-    ctx.ParentStack = append(ctx.ParentStack, n)
+    ctx.ParentStack = append(ctx.ParentStack, frame)
   } else {
-    ctx.ParentStack[ctx.CurrentStackTop] = n
+    ctx.ParentStack[ctx.CurrentStackTop] = frame
   }
+
+  return frame
 }
 
-func (ctx *BuilderCtx) PopParentNode() Node {
-  cur := ctx.CurrentParentNode()
+func (ctx *BuilderCtx) PopStackFrame() *StackFrame {
+  n := ctx.ParentStack[ctx.CurrentStackTop]
   ctx.CurrentStackTop--
-  return cur
+  return n
 }
 
-func (ctx *BuilderCtx) CurrentParentNode() *ListNode {
-  if ctx.CurrentStackTop >= 0 {
+func (ctx *BuilderCtx) CurrentStackFrame() *StackFrame {
+  if ctx.CurrentStackTop > -1 {
     return ctx.ParentStack[ctx.CurrentStackTop]
+  }
+  return nil
+}
+
+func (ctx *BuilderCtx) PushParentNode(n NodeAppender) {
+  frame := ctx.PushStackFrame()
+  frame.Node = n
+}
+
+func (ctx *BuilderCtx) PopParentNode() NodeAppender {
+  frame := ctx.PopStackFrame()
+  if frame != nil {
+    return frame.Node
+  }
+  return nil
+}
+
+func (ctx *BuilderCtx) CurrentParentNode() NodeAppender {
+  frame := ctx.CurrentStackFrame()
+  if frame != nil {
+    return frame.Node
   }
   return nil
 }
@@ -145,7 +191,7 @@ func (b *Builder) ParseTemplateOrText(ctx *BuilderCtx) Node {
     }
 
     switch node.Type() {
-    case NodeForeach, NodeWrapper:
+    case NodeWrapper:
       ctx.CurrentParentNode().Append(node)
       ctx.PushParentNode(node.(*ListNode))
       node = nil
@@ -261,10 +307,9 @@ func (b *Builder) ParseAssignment(ctx *BuilderCtx) Node {
   }
 
   node := NewAssignmentNode(symbol.Pos(), symbol.Value())
-  node.Append(b.ParseExpression(ctx, false))
+  node.Expression = b.ParseExpression(ctx, false)
 
-  ctx.LocalVars[symbol.Value()] = ctx.LocalVarIdx
-  ctx.LocalVarIdx++
+  ctx.DeclareLocalVar(symbol.Value())
   return node
 }
 
@@ -290,7 +335,7 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
       return b.ParseAssignment(ctx)
     case ItemTagEnd:
       var n Node
-      if idx, ok := ctx.LocalVars[token.Value()]; ok {
+      if idx, ok := ctx.HasLocalVar(token.Value()); ok {
         n = NewLocalVarNode(token.Pos(), token.Value(), idx)
       } else {
         n = NewFetchSymbolNode(token.Pos(), token.Value())
@@ -381,10 +426,13 @@ func (b *Builder) ParseForeach(ctx *BuilderCtx) Node {
     b.Unexpected("Expected IN, got %s", in)
   }
 
-  list := b.ParseList(ctx)
-  forNode.Append(list)
+  forNode.List = b.ParseList(ctx)
 
-  return forNode
+  ctx.CurrentParentNode().Append(forNode)
+  ctx.PushParentNode(forNode)
+  ctx.DeclareLocalVar(localsym.Value())
+
+  return nil
 }
 
 func (b *Builder) ParseList(ctx *BuilderCtx) Node {
@@ -393,5 +441,11 @@ func (b *Builder) ParseList(ctx *BuilderCtx) Node {
     b.Unexpected("Expected identifier, got %s", list)
   }
 
-  return NewLocalVarNode(list.Pos(), list.Value(), 0) // TODO
+  var n Node
+  if idx, ok := ctx.HasLocalVar(list.Value()); ok {
+    n = NewLocalVarNode(list.Pos(), list.Value(), idx)
+  } else {
+    n = NewFetchSymbolNode(list.Pos(), list.Value())
+  }
+  return n
 }

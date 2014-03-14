@@ -70,12 +70,10 @@ func TestForeachLoop(t *testing.T) {
   expected := []parser.NodeType {
     parser.NodeRoot,
     parser.NodeForeach,
-    parser.NodeLocalVar, // index var
-    parser.NodeLocalVar, // list var
     parser.NodePrintRaw,
     parser.NodeText,
     parser.NodePrint,
-    parser.NodeFetchSymbol,
+    parser.NodeLocalVar,
   }
   matchNodeTypes(t, ast, expected)
 }
