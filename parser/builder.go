@@ -239,6 +239,8 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
     tmpl = NewNoopNode()
   case ItemIdentifier:
     tmpl = b.ParseExpression(ctx, true)
+  case ItemIf:
+    tmpl = b.ParseIfElse(ctx)
   default:
     b.Unexpected("%s", b.PeekNonSpace(ctx))
   }
@@ -333,7 +335,7 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
     case ItemAssign:
       b.Backup2(ctx, token)
       return b.ParseAssignment(ctx)
-    case ItemTagEnd:
+    case ItemTagEnd, ItemCloseParen:
       var n Node
       if idx, ok := ctx.HasLocalVar(token.Value()); ok {
         n = NewLocalVarNode(token.Pos(), token.Value(), idx)
@@ -455,3 +457,34 @@ func (b *Builder) ParseList(ctx *BuilderCtx) Node {
   }
   return n
 }
+
+func (b *Builder) ParseIfElse(ctx *BuilderCtx) Node {
+  ifToken := b.NextNonSpace(ctx)
+  if ifToken.Type() != ItemIf {
+    b.Unexpected("Expected if, got %s", ifToken)
+  }
+
+  // parenthesis are optional
+  expectCloseParen := false
+  if b.PeekNonSpace(ctx).Type() == ItemOpenParen {
+    b.NextNonSpace(ctx)
+    expectCloseParen = true
+  }
+
+  exp := b.ParseExpression(ctx, false)
+  ifNode := NewIfNode(ifToken.Pos(), exp)
+
+  if expectCloseParen {
+    closeParenToken := b.NextNonSpace(ctx)
+    if closeParenToken.Type() != ItemCloseParen {
+      b.Unexpected("Expected close parenthesis, got %s", closeParenToken)
+    }
+  }
+
+  ctx.CurrentParentNode().Append(ifNode)
+  ctx.PushParentNode(ifNode)
+
+  return nil
+}
+
+

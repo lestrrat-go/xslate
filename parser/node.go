@@ -32,6 +32,7 @@ const (
   NodeNumber
   NodeInt
   NodeFloat
+  NodeIf
   NodeList
   NodeForeach
   NodeWrapper
@@ -78,6 +79,8 @@ func (n NodeType) String() string {
     return "PrintRaw"
   case NodeFetchSymbol:
     return "FetchSymbol"
+  case NodeIf:
+    return "If"
   default:
     return "Unknown Node"
   }
@@ -376,4 +379,47 @@ func NewFetchSymbolNode(pos Pos, symbol string) *TextNode {
   n := NewTextNode(pos, symbol)
   n.NodeType = NodeFetchSymbol
   return n
+}
+
+type IfNode struct {
+  *ListNode
+  BooleanExpression Node
+  ElseNode          Node
+}
+
+func NewIfNode(pos Pos, exp Node) *IfNode {
+  n := &IfNode {
+    NewListNode(pos),
+    exp,
+    nil,
+  }
+  n.NodeType = NodeIf
+  return n
+}
+
+func (n *IfNode) Copy() Node {
+  x := &IfNode {
+    n.ListNode.Copy().(*ListNode),
+    nil,
+    nil,
+  }
+  if e := n.BooleanExpression; e != nil {
+    x.BooleanExpression = e.Copy()
+  }
+
+  if e := n.ElseNode; e != nil {
+    x.ElseNode = e.Copy()
+  }
+  return x
+}
+
+func (n *IfNode) Visit(c chan Node) {
+  c <- n
+  c <- n.BooleanExpression
+  for _, child := range n.ListNode.Nodes {
+    c <- child
+  }
+  if n.ElseNode != nil {
+    c <- n.ElseNode
+  }
 }

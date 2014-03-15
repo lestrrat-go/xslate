@@ -76,5 +76,15 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     ctx.AppendOp(vm.TXOP_goto, -1 * (ctx.ByteCode.Len() - pos + 2))
     iter.SetArg(ctx.ByteCode.Len() - pos + 1)
     ctx.AppendOp(vm.TXOP_popmark)
+  case parser.NodeIf:
+    x := n.(*parser.IfNode)
+    ctx.AppendOp(vm.TXOP_pushmark)
+    c.compile(ctx, x.BooleanExpression)
+    ifop := ctx.AppendOp(vm.TXOP_and, 0)
+    pos := ctx.ByteCode.Len()
+    for _, child := range x.ListNode.Nodes {
+      c.compile(ctx, child)
+    }
+    ifop.SetArg(ctx.ByteCode.Len() - pos + 1)
   }
 }
