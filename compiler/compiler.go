@@ -86,5 +86,6 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
       c.compile(ctx, child)
     }
     ifop.SetArg(ctx.ByteCode.Len() - pos + 1)
+    ctx.AppendOp(vm.TXOP_popmark)
   }
 }
