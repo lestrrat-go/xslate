@@ -61,6 +61,7 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     c.compile(ctx, n.(*parser.ListNode).Nodes[0])
     ctx.AppendOp(vm.TXOP_print_raw)
   case parser.NodeForeach:
+    ctx.AppendOp(vm.TXOP_pushmark)
     c.compile(ctx, n.(*parser.ForeachNode).List)
     ctx.AppendOp(vm.TXOP_for_start, 0)
     ctx.AppendOp(vm.TXOP_literal, 0)
@@ -74,5 +75,6 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
 
     ctx.AppendOp(vm.TXOP_goto, -1 * (ctx.ByteCode.Len() - pos + 2))
     iter.SetArg(ctx.ByteCode.Len() - pos + 1)
+    ctx.AppendOp(vm.TXOP_popmark)
   }
 }
