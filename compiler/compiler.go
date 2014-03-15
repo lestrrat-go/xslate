@@ -44,6 +44,10 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     ctx.AppendOp(vm.TXOP_literal, n.(*parser.TextNode).Text)
   case parser.NodeFetchSymbol:
     ctx.AppendOp(vm.TXOP_fetch_s, n.(*parser.TextNode).Text)
+  case parser.NodeFetchField:
+    ffnode := n.(*parser.FetchFieldNode)
+    c.compile(ctx, ffnode.Container)
+    ctx.AppendOp(vm.TXOP_fetch_field_s, ffnode.FieldName)
   case parser.NodeLocalVar:
     l := n.(*parser.LocalVarNode)
     ctx.AppendOp(vm.TXOP_load_lvar, l.Offset)

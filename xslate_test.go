@@ -42,6 +42,10 @@ func TestXslate_Variable(t *testing.T) {
   executeAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
 }
 
+func TestXslate_MapVariable(t *testing.T) {
+  executeAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": map[string]string { "name": "Bob" } }, `Hello World, Bob!`)
+}
+
 func TestXslate_LocalVar(t *testing.T) {
   executeAndCompare(t, `[% SET name = "Bob" %]Hello World, [% name %]!`, nil, `Hello World, Bob!`)
 }

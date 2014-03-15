@@ -248,17 +248,24 @@ func txFetchField(st *State) {
     st.sa = nil
   } else {
     t := reflect.TypeOf(container)
+    var f reflect.Value
     var v reflect.Value
+    name := st.CurrentOp().ArgString()
     switch t.Kind() {
     case reflect.Ptr, reflect.Struct:
+      // Uppercase first character of field name
+      r, size := utf8.DecodeRuneInString(name)
+      name = string(unicode.ToUpper(r)) + name[size:]
+
       v = reflect.ValueOf(container)
+      f = v.FieldByName(name)
+    case reflect.Map:
+      v = reflect.ValueOf(container)
+      f = v.MapIndex(reflect.ValueOf(name))
     default:
-      v = reflect.ValueOf(&container).Elem()
+      panic("XXX Put proper error handling here")
     }
-    name := st.CurrentOp().ArgString()
-    r, size := utf8.DecodeRuneInString(name)
-    name = string(unicode.ToUpper(r)) + name[size:]
-    f := v.FieldByName(name)
+
     st.sa = f.Interface()
   }
   st.Advance()

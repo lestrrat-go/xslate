@@ -296,12 +296,35 @@ func NewMethodcallNode(pos Pos, invocant, method string, args Node) *ListNode {
   return n
 }
 
-func NewFetchFieldNode(pos Pos, invocant, field string) *ListNode {
-  n := NewListNode(pos)
-  n.NodeType = NodeFetchField
-  n.Append(NewLocalVarNode(pos, invocant, 0)) // TODO
-  n.Append(NewTextNode(pos, field))
+type FetchFieldNode struct {
+  NodeType
+  Pos
+  Container Node
+  FieldName string
+}
+
+func NewFetchFieldNode(pos Pos, container Node, field string) *FetchFieldNode {
+  n := &FetchFieldNode {
+    NodeFetchField,
+    pos,
+    container,
+    field,
+  }
   return n
+}
+
+func (n *FetchFieldNode) Copy() Node {
+  return &FetchFieldNode {
+    NodeFetchField,
+    n.Pos,
+    n.Container.Copy(),
+    n.FieldName,
+  }
+}
+
+func (n *FetchFieldNode) Visit(c chan Node) {
+  c <- n
+  n.Container.Visit(c)
 }
 
 func NewRootNode() *ListNode {

@@ -367,7 +367,13 @@ func (b *Builder) ParseMethodOrFetch(ctx *BuilderCtx, symbol LexItem) Node {
 
   paren := b.PeekNonSpace(ctx)
   if paren.Type() != ItemOpenParen {
-    return NewFetchFieldNode(symbol.Pos(), symbol.Value(), next.Value())
+    var container Node
+    if idx, ok := ctx.HasLocalVar(symbol.Value()); ok {
+      container = NewLocalVarNode(symbol.Pos(), symbol.Value(), idx)
+    } else {
+      container = NewFetchSymbolNode(symbol.Pos(), symbol.Value())
+    }
+    return NewFetchFieldNode(symbol.Pos(), container, next.Value())
   }
 
   // Methodcall!
