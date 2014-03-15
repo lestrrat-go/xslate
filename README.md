@@ -18,9 +18,9 @@ Currently:
 
 * I'm aiming for port of most of TTerse syntax
 * See [VM Progress](https://github.com/lestrrat/go-xslate/wiki/VM-Progress) for what the this xslate virtual machine can handle
-* VM TODO: loops, macros, stuff involving external templates
-* Parser is about 30% finished.
-* Compiler is about 10% finished.
+* VM TODO: macros, stuff involving external templates
+* Parser is about 60% finished.
+* Compiler is about 30% finished.
 
 For very simple templates, you can already do:
 
@@ -45,6 +45,8 @@ func main() {
   log.Printf(output)
 }
 ```
+
+See [Supported Syntax (TTerse)](https://github.com/lestrrat/go-xslate/wiki/Supported-Syntax-(TTerse)) for what's currently available
 
 Caveats
 =======
