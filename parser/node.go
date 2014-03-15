@@ -33,6 +33,7 @@ const (
   NodeInt
   NodeFloat
   NodeIf
+  NodeElse
   NodeList
   NodeForeach
   NodeWrapper
@@ -81,6 +82,8 @@ func (n NodeType) String() string {
     return "FetchSymbol"
   case NodeIf:
     return "If"
+  case NodeElse:
+    return "Else"
   default:
     return "Unknown Node"
   }
@@ -147,7 +150,7 @@ func NewListNode(pos Pos) *ListNode {
   return &ListNode {NodeType: NodeList, Pos: pos, Nodes: []Node {}}
 }
 
-func (l ListNode) Copy() Node {
+func (l *ListNode) Copy() Node {
   n := NewListNode(l.Pos)
   n.Nodes = make([]Node, len(l.Nodes))
   copy(n.Nodes, l.Nodes)
@@ -384,14 +387,12 @@ func NewFetchSymbolNode(pos Pos, symbol string) *TextNode {
 type IfNode struct {
   *ListNode
   BooleanExpression Node
-  ElseNode          Node
 }
 
 func NewIfNode(pos Pos, exp Node) *IfNode {
   n := &IfNode {
     NewListNode(pos),
     exp,
-    nil,
   }
   n.NodeType = NodeIf
   return n
@@ -401,15 +402,13 @@ func (n *IfNode) Copy() Node {
   x := &IfNode {
     n.ListNode.Copy().(*ListNode),
     nil,
-    nil,
   }
   if e := n.BooleanExpression; e != nil {
     x.BooleanExpression = e.Copy()
   }
 
-  if e := n.ElseNode; e != nil {
-    x.ElseNode = e.Copy()
-  }
+  x.ListNode = n.ListNode.Copy().(*ListNode)
+
   return x
 }
 
@@ -419,7 +418,18 @@ func (n *IfNode) Visit(c chan Node) {
   for _, child := range n.ListNode.Nodes {
     c <- child
   }
-  if n.ElseNode != nil {
-    c <- n.ElseNode
+}
+
+type ElseNode struct {
+  *ListNode
+  IfNode Node
+}
+
+func NewElseNode(pos Pos) *ElseNode {
+  n := &ElseNode {
+    NewListNode(pos),
+    nil,
   }
+  n.NodeType = NodeElse
+  return n
 }

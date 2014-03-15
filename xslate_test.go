@@ -64,7 +64,13 @@ func TestXslate_Foreach(t *testing.T) {
 }
 
 func TestXslate_If(t *testing.T) {
-  template := `[% IF (first) %]Hello, World![% END %]`
-  executeAndCompare(t, template, Vars { "first": true }, `Hello, World!`)
-  executeAndCompare(t, template, Vars { "first": false }, ``)
+  template := `[% IF (foo) %]Hello, World![% END %]`
+  executeAndCompare(t, template, Vars { "foo": true }, `Hello, World!`)
+  executeAndCompare(t, template, Vars { "foo": false }, ``)
+}
+
+func TestXslate_IfElse(t *testing.T) {
+  template := `[% IF (foo) %]Hello, World![% ELSE %]Goodbye, World![% END %]`
+  executeAndCompare(t, template, Vars { "foo": true }, `Hello, World!`)
+  executeAndCompare(t, template, Vars { "foo": false }, `Goodbye, World!`)
 }

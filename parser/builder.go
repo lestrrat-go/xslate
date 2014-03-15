@@ -179,11 +179,7 @@ func (b *Builder) ParseStatements(ctx *BuilderCtx) Node {
 func (b *Builder) ParseTemplateOrText(ctx *BuilderCtx) Node {
   switch token := b.PeekNonSpace(ctx); token.Type() {
   case ItemRawString:
-    b.NextNonSpace(ctx)
-
-    n := NewPrintRawNode(token.Pos())
-    n.Append(NewTextNode(token.Pos(), token.Value()))
-    return n
+    return b.ParseRawString(ctx)
   case ItemTagStart:
     node := b.ParseTemplate(ctx)
     if node == nil {
@@ -201,6 +197,13 @@ func (b *Builder) ParseTemplateOrText(ctx *BuilderCtx) Node {
     panic(fmt.Sprintf("fuck %s", token))
   }
   return nil
+}
+
+func (b *Builder) ParseRawString(ctx *BuilderCtx) Node {
+  token := b.NextNonSpace(ctx)
+  n := NewPrintRawNode(token.Pos())
+  n.Append(NewTextNode(token.Pos(), token.Value()))
+  return n
 }
 
 func (b *Builder) Unexpected(format string, args ...interface{}) {
@@ -223,9 +226,16 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
   switch b.PeekNonSpace(ctx).Type() {
   case ItemEnd:
     b.NextNonSpace(ctx)
-    parent := ctx.PopParentNode()
-    if parent.Type() == NodeRoot {
-      b.Unexpected("Unexpected END")
+    for keepPopping := true; keepPopping; {
+      parent := ctx.PopParentNode()
+      switch parent.Type() {
+      case NodeRoot:
+        b.Unexpected("Unexpected END")
+      case NodeElse:
+        // no op
+      default:
+        keepPopping = false
+      }
     }
   case ItemSet:
     b.NextNonSpace(ctx)
@@ -240,7 +250,9 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
   case ItemIdentifier:
     tmpl = b.ParseExpression(ctx, true)
   case ItemIf:
-    tmpl = b.ParseIfElse(ctx)
+    tmpl = b.ParseIf(ctx)
+  case ItemElse:
+    tmpl = b.ParseElse(ctx)
   default:
     b.Unexpected("%s", b.PeekNonSpace(ctx))
   }
@@ -458,7 +470,7 @@ func (b *Builder) ParseList(ctx *BuilderCtx) Node {
   return n
 }
 
-func (b *Builder) ParseIfElse(ctx *BuilderCtx) Node {
+func (b *Builder) ParseIf(ctx *BuilderCtx) Node {
   ifToken := b.NextNonSpace(ctx)
   if ifToken.Type() != ItemIf {
     b.Unexpected("Expected if, got %s", ifToken)
@@ -487,4 +499,22 @@ func (b *Builder) ParseIfElse(ctx *BuilderCtx) Node {
   return nil
 }
 
+func (b *Builder) ParseElse(ctx *BuilderCtx) Node {
+  elseToken := b.NextNonSpace(ctx)
+  if elseToken.Type() != ItemElse {
+    b.Unexpected("Expected else, got %s", elseToken)
+  }
+
+  // CurrentParentNode must be "If" in order for "else" to work
+  if ctx.CurrentParentNode().Type() != NodeIf {
+    b.Unexpected("Found else without if")
+  }
+
+  elseNode := NewElseNode(elseToken.Pos())
+  elseNode.IfNode = ctx.CurrentParentNode()
+  ctx.CurrentParentNode().Append(elseNode)
+  ctx.PushParentNode(elseNode)
+
+  return nil
+}
 
