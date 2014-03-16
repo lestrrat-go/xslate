@@ -1,6 +1,7 @@
 package vm
 
 import (
+  "fmt"
   "html"
   "reflect"
   "unicode"
@@ -656,6 +657,10 @@ func txRange(st *State) {
 func txMakeArray(st *State) {
   start := st.CurrentMark() // start
   end   := st.StackTip()    // end
+
+  if end <= start {
+    panic(fmt.Sprintf("MakeArray: list start (%d) >= end (%d)", start, end))
+  }
 
   list := make([]interface {}, end - start + 1)
   for i := end; i >= start; i-- {

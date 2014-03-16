@@ -446,7 +446,7 @@ func (b *Builder) ParseForeach(ctx *BuilderCtx) Node {
     b.Unexpected("Expected IN, got %s", in)
   }
 
-  forNode.List = b.ParseList(ctx)
+  forNode.List = b.ParseListVariableOrMakeArray(ctx)
 
   ctx.CurrentParentNode().Append(forNode)
   ctx.PushParentNode(forNode)
@@ -476,7 +476,7 @@ func (b *Builder) ParseRange(ctx *BuilderCtx) Node {
   return NewRangeNode(start.Pos(), int(startN), int(endN))
 }
 
-func (b *Builder) ParseList(ctx *BuilderCtx) Node {
+func (b *Builder) ParseListVariableOrMakeArray(ctx *BuilderCtx) Node {
   list := b.PeekNonSpace(ctx)
 
   var n Node
@@ -502,8 +502,7 @@ func (b *Builder) ParseMakeArray(ctx *BuilderCtx) Node {
     b.Unexpected("Expected '[', got %s", openB.Value())
   }
 
-  // we want a range operator (or a literal list. unimplemented)
-  child := b.ParseRange(ctx)
+  child := b.ParseList(ctx)
 
   closeB := b.NextNonSpace(ctx)
   if closeB.Type() != ItemCloseSquareBracket {
@@ -511,6 +510,41 @@ func (b *Builder) ParseMakeArray(ctx *BuilderCtx) Node {
   }
 
   return NewMakeArrayNode(openB.Pos(), child)
+}
+
+func (b *Builder) ParseList(ctx *BuilderCtx) Node {
+  n := NewListNode(b.PeekNonSpace(ctx).Pos())
+  OUTER: for {
+    // At the beginning of this loop, we must see an
+    // identifier or a literal
+    switch item := b.PeekNonSpace(ctx); item.Type() {
+    case ItemIdentifier, ItemNumber, ItemDoubleQuotedString, ItemSingleQuotedString:
+      // okay, proceed
+    default:
+      break OUTER
+    }
+
+    // Depending on the next item, we have range operator or a literal list
+    var child Node
+    item := b.NextNonSpace(ctx)
+    switch nextN := b.PeekNonSpace(ctx); nextN.Type() {
+    case ItemRange:
+      b.Backup2(ctx, item)
+      child = b.ParseRange(ctx)
+    default:
+      b.Backup2(ctx, item)
+      child = b.ParseLiteral(ctx)
+    }
+
+    n.Append(child)
+
+    // Then, we must be followed by either a comma, or the it's the end of the
+    // list section
+    if b.PeekNonSpace(ctx).Type() == ItemComma {
+      b.NextNonSpace(ctx)
+    }
+  }
+  return n
 }
 
 func (b *Builder) ParseIf(ctx *BuilderCtx) Node {
