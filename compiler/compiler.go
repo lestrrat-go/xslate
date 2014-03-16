@@ -111,6 +111,16 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
       c.compile(ctx, child)
     }
     gotoOp.SetArg(ctx.ByteCode.Len() - pos + 1)
+  case parser.NodeMakeArray:
+    x := n.(*parser.MakeArrayNode)
+    c.compile(ctx, x.Child)
+    ctx.AppendOp(vm.TXOP_make_array)
+  case parser.NodeRange:
+    x := n.(*parser.RangeNode)
+    ctx.AppendOp(vm.TXOP_literal, x.Start)
+    ctx.AppendOp(vm.TXOP_move_to_sb)
+    ctx.AppendOp(vm.TXOP_literal, x.End)
+    ctx.AppendOp(vm.TXOP_range)
   default:
     fmt.Printf("Unknown node: %s\n", n.Type())
   }

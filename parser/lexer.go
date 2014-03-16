@@ -66,6 +66,8 @@ const (
   ItemComma
   ItemOpenParen   // '('
   ItemCloseParen  // ')'
+  ItemOpenSquareBracket   // '['
+  ItemCloseSquareBracket  // ']'
   ItemPeriod      // '.'
   ItemKeyword     // Delimiter
   ItemGet         // GET
@@ -168,6 +170,8 @@ func (i LexItemType) String() string {
     name = "EOF"
   case ItemSpace:
     name = "Space"
+  case ItemNumber:
+    name = "Number"
   case ItemIdentifier:
     name = "Identifier"
   case ItemTagStart:
@@ -238,6 +242,8 @@ func NewLexer() *Lexer {
   }
   l.AddSymbol("(", ItemOpenParen)
   l.AddSymbol(")", ItemCloseParen)
+  l.AddSymbol("[", ItemOpenSquareBracket)
+  l.AddSymbol("]", ItemCloseSquareBracket)
   l.AddSymbol(".", ItemPeriod)
   l.AddSymbol(",", ItemComma)
   // XXX TTerse specific
@@ -334,6 +340,26 @@ func (l *Lexer) atTerminator() bool {
   return false
 }
 
+func lexRange(l *Lexer) stateFn {
+  for i := 0; i < 2; i++ {
+    if l.peek() != '.' {
+      return l.errorf("bad range syntax: %q", l.input[l.start:l.pos])
+    }
+    l.next()
+  }
+  l.Emit(ItemRange)
+
+  return lexInteger
+}
+func lexInteger(l *Lexer) stateFn {
+  if l.scanInteger() {
+    l.Emit(ItemNumber)
+  } else {
+    l.errorf("bad integer syntax: %q", l.input[l.start:l.pos])
+  }
+  return lexInsideTag
+}
+
 func lexNumber(l *Lexer) stateFn {
   if !l.scanNumber() {
     return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
@@ -344,10 +370,21 @@ func lexNumber(l *Lexer) stateFn {
       return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
     }
     l.Emit(ItemComplex)
+  } else if dot := l.peek(); dot == '.' {
+    l.Emit(ItemNumber)
+    return lexRange
   } else {
     l.Emit(ItemNumber)
   }
   return lexInsideTag
+}
+
+func (l *Lexer) scanInteger() bool {
+  l.accept("+-")
+  digits := "0123456789"
+  ret := l.acceptRun(digits)
+//  l.backup()
+  return ret
 }
 
 func (l *Lexer) scanNumber() bool {
@@ -360,7 +397,10 @@ func (l *Lexer) scanNumber() bool {
   }
   l.acceptRun(digits)
   if l.accept(".") {
-    l.acceptRun(digits)
+    if ! l.acceptRun(digits) {
+      l.backup()
+    }
+    return true
   }
   if l.accept("eE") {
     l.accept("+-")
@@ -497,10 +537,13 @@ func (l *Lexer) accept(valid string) bool {
   return false
 }
 
-func (l *Lexer) acceptRun(valid string) {
+func (l *Lexer) acceptRun(valid string) bool {
+  count := 0
   for strings.IndexRune(valid, l.next()) >= 0 {
+    count++
   }
   l.backup()
+  return count > 0
 }
 
 func (l *Lexer) errorf(format string, args ...interface{}) stateFn {
@@ -508,8 +551,12 @@ func (l *Lexer) errorf(format string, args ...interface{}) stateFn {
   return nil
 }
 
+func (l *Lexer) Grab(t LexItemType) LexItem {
+  return LexItem { t, Pos(l.start), l.input[l.start:l.pos] }
+}
+
 func (l *Lexer) Emit(t LexItemType) {
-  l.items <-LexItem { t, Pos(l.start), l.input[l.start:l.pos] }
+  l.items <-l.Grab(t)
   l.start = l.pos
 }
 

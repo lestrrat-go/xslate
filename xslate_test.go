@@ -63,6 +63,11 @@ func TestXslate_Foreach(t *testing.T) {
   executeAndCompare(t, template, Vars { "list": list }, `0,1,2,3,4,5,6,7,8,9,`)
 }
 
+func TestXslate_ForeachMakeArray(t *testing.T) {
+  template := `[% FOREACH i IN [0..9] %][% i %],[% END %]`
+  executeAndCompare(t, template, nil, `0,1,2,3,4,5,6,7,8,9,`)
+}
+
 func TestXslate_If(t *testing.T) {
   template := `[% IF (foo) %]Hello, World![% END %]`
   executeAndCompare(t, template, Vars { "foo": true }, `Hello, World!`)

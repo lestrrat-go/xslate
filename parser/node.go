@@ -44,6 +44,8 @@ const (
   NodePrint
   NodePrintRaw
   NodeFetchSymbol
+  NodeRange
+  NodeMakeArray
 )
 
 func (n NodeType) String() string {
@@ -84,6 +86,10 @@ func (n NodeType) String() string {
     return "If"
   case NodeElse:
     return "Else"
+  case NodeRange:
+    return "Range"
+  case NodeMakeArray:
+    return "MakeArray"
   default:
     return "Unknown Node"
   }
@@ -432,4 +438,55 @@ func NewElseNode(pos Pos) *ElseNode {
   }
   n.NodeType = NodeElse
   return n
+}
+
+type RangeNode struct {
+  NodeType
+  Pos
+  Start int
+  End int
+}
+
+func NewRangeNode(pos Pos, start, end int) *RangeNode {
+  return &RangeNode {
+    NodeRange,
+    pos,
+    start,
+    end,
+  }
+}
+
+func (n *RangeNode) String() string {
+  return fmt.Sprintf("%s %d -> %d\n", n.NodeType, n.Start, n.End)
+}
+
+func (n *RangeNode) Copy() Node {
+  return NewRangeNode(n.Pos, n.Start, n.End)
+}
+
+func (n *RangeNode) Visit(c chan Node) {
+  c <- n
+}
+
+type MakeArrayNode struct {
+  NodeType
+  Pos
+  Child Node
+}
+
+func NewMakeArrayNode(pos Pos, child Node) *MakeArrayNode {
+  return &MakeArrayNode {
+    NodeMakeArray,
+    pos,
+    child,
+  }
+}
+
+func (n *MakeArrayNode) Copy() Node {
+  return NewMakeArrayNode(n.Pos, n.Child.Copy())
+}
+
+func (n *MakeArrayNode) Visit(c chan Node) {
+  c <- n
+  c <- n.Child
 }
