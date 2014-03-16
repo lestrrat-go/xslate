@@ -11,8 +11,11 @@ import (
 
 func ExampleXslate () {
   tx := New()
-  tx.Loader, _ = loader.NewLoadFile(
+  tx.Loader, _ = loader.DefaultLoader(
+    os.TempDir(),
     []string { "/path/to/templates" },
+    tx.Parser,
+    tx.Compiler,
   )
   output, err := tx.Render("foo.tx", nil)
   if err != nil {
@@ -87,4 +90,3 @@ func TestXslate_IfElse(t *testing.T) {
   executeAndCompare(t, template, Vars { "foo": true }, `Hello, World!`)
   executeAndCompare(t, template, Vars { "foo": false }, `Goodbye, World!`)
 }
-

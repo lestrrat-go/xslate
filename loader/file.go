@@ -8,12 +8,12 @@ import (
 )
 
 var ErrAbsolutePathNotAllowed = errors.New("Absolute paths are not allowed")
-type LoadFile struct {
+type FileTemplateLoader struct {
   Paths []string
 }
 
-func NewLoadFile(paths []string) (*LoadFile, error) {
-  l := &LoadFile {
+func NewFileTemplateLoader(paths []string) (*FileTemplateLoader, error) {
+  l := &FileTemplateLoader {
     Paths: make([]string, len(paths)),
   }
   for k, v := range paths {
@@ -26,7 +26,7 @@ func NewLoadFile(paths []string) (*LoadFile, error) {
   return l, nil
 }
 
-func (l *LoadFile) Load(path string) ([]byte, error) {
+func (l *FileTemplateLoader) Load(path string) ([]byte, error) {
   if filepath.IsAbs(path) {
     return nil, ErrAbsolutePathNotAllowed
   }
