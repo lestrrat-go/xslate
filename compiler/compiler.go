@@ -124,11 +124,13 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
   case parser.NodeInt:
     x := n.(*parser.NumberNode)
     ctx.AppendOp(vm.TXOP_literal, x.Value.Int())
-    ctx.AppendOp(vm.TXOP_push)
   case parser.NodeList:
     x := n.(*parser.ListNode)
     for _, v := range x.Nodes {
       c.compile(ctx, v)
+      if v.Type() != parser.NodeRange {
+        ctx.AppendOp(vm.TXOP_push)
+      }
     }
   default:
     fmt.Printf("Unknown node: %s\n", n.Type())

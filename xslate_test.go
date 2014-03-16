@@ -71,6 +71,9 @@ func TestXslate_ForeachMakeArrayRange(t *testing.T) {
 func TestXslate_ForeachMakeArrayList(t *testing.T) {
   template := `[% FOREACH i IN [0,1,2,3,4,5,6,7,8,9] %][% i %],[% END %]`
   executeAndCompare(t, template, nil, `0,1,2,3,4,5,6,7,8,9,`)
+
+  template = `[% FOREACH i IN ["Alice", "Bob", "Charlie"] %][% i %],[% END %]`
+  executeAndCompare(t, template, nil, `Alice,Bob,Charlie,`)
 }
 
 func TestXslate_If(t *testing.T) {
