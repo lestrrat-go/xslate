@@ -31,15 +31,12 @@ package main
 import (
   "log"
   "github.com/lestrrat/go-xslate"
-  "github.com/lestrrat/go-xslate/vm"
 )
 
 func main() {
   xt := xslate.New()
-  // vm.Vars will soon be just xslate.Vars, and the above import will
-  // not be necessary
   template := `Hello World, [% name %]!`
-  output, err := xt.RenderString(template, vm.Vars { "name": "Bob" })
+  output, err := xt.RenderString(template, xslate.Vars { "name": "Bob" })
   if err != nil {
     log.Fatalf("Failed to render template: %s", err)
   }
