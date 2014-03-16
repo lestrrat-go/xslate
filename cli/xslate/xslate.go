@@ -31,7 +31,12 @@ func main() {
     fmt.Fprintf(os.Stderr, "Failed to get current working directory: %s\n", err)
     os.Exit(1)
   }
-  tx.Loader, _ = loader.NewLoadFile([]string { pwd })
+  tx.Loader, _ = loader.DefaultLoader(
+    os.TempDir(),
+    []string { pwd },
+    tx.Parser,
+    tx.Compiler,
+  )
   for _, file := range args {
     output, err := tx.Render(file, nil)
     if err != nil {
