@@ -5,7 +5,6 @@ import (
   "fmt"
   "os"
   "github.com/lestrrat/go-xslate"
-  "github.com/lestrrat/go-xslate/loader"
 )
 
 func usage() {
@@ -24,19 +23,12 @@ func main() {
     os.Exit(1)
   }
 
-  tx := xslate.New()
   // TODO: Accept --path arguments
-  pwd, err := os.Getwd()
+  tx, err := xslate.New()
   if err != nil {
-    fmt.Fprintf(os.Stderr, "Failed to get current working directory: %s\n", err)
+    fmt.Fprintf(os.Stderr, "Failed to create Xslate instance: %s", err)
     os.Exit(1)
   }
-  tx.Loader, _ = loader.DefaultLoader(
-    os.TempDir(),
-    []string { pwd },
-    tx.Parser,
-    tx.Compiler,
-  )
   for _, file := range args {
     output, err := tx.Render(file, nil)
     if err != nil {
