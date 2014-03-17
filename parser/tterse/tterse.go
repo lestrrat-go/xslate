@@ -18,7 +18,6 @@ var symbols = map[string]parser.LexItemType{
   "ELSE":     parser.ItemElse,
   "UNLESS":   parser.ItemUnless,
   "FOREACH":  parser.ItemForeach,
-  "IN":       parser.ItemIn,
   "MACRO":    parser.ItemMacro,
   "BLOCK":    parser.ItemBlock,
   "END":      parser.ItemEnd,

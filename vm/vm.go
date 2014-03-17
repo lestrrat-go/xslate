@@ -19,12 +19,17 @@ import (
   "io/ioutil"
 )
 
+type ByteCodeLoader interface {
+  Load(string) (*ByteCode, error)
+}
+
 type VM struct {
   st *State
+  Loader ByteCodeLoader
 }
 
 func NewVM() (*VM) {
-  return &VM { NewState() }
+  return &VM { NewState(), nil }
 }
 
 func (vm *VM) CurrentOp() *Op {
@@ -57,6 +62,7 @@ func (vm *VM) Run(bc *ByteCode, v Vars) {
   if v != nil {
     st.vars = v
   }
+  st.Loader = vm.Loader
   for op := st.CurrentOp(); op.OpType() != TXOP_end; op = st.CurrentOp() {
     op.Call(st)
   }

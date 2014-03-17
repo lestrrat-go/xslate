@@ -7,8 +7,6 @@ package loader
 import (
   "errors"
 
-  "github.com/lestrrat/go-xslate/compiler"
-  "github.com/lestrrat/go-xslate/parser"
   "github.com/lestrrat/go-xslate/vm"
 )
 
@@ -24,19 +22,3 @@ type TemplateLoader interface {
 
 var ErrTemplateNotFound = errors.New("Specified template was not found")
 
-func DefaultLoader(
-  cacheDir string,
-  paths []string,
-  parser parser.Parser,
-  compiler compiler.Compiler,
-) (ByteCodeLoader, error) {
-  cache, err := NewFileCache(cacheDir)
-  if err != nil {
-    return nil, err
-  }
-  loader, err := NewFileTemplateLoader(paths)
-  if err != nil {
-    return nil, err
-  }
-  return NewCachedByteCodeLoader(cache, loader, parser, compiler), nil
-}

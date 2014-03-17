@@ -1,22 +1,85 @@
 package xslate
 
 import (
+  "errors"
   "fmt"
+  "io/ioutil"
   "log"
   "os"
+  "path/filepath"
   "testing"
-
-  "github.com/lestrrat/go-xslate/loader"
 )
 
+func createTx(path, cacheDir string) (*Xslate, error) {
+  x, err := New(Args {
+    // Compiler: DefaultCompiler, // don't need to specify
+    // Parser: DefaultParser, // don't need to specify
+    "Loader": Args {
+      "CacheDir": cacheDir,
+      "LoadPaths": []string { path },
+    },
+  })
+
+  if err != nil {
+    return nil, err
+  }
+
+  return x, nil
+}
+
+// Given key (relative path) => template content, creates physical files
+// in a temporary location. The root directory, along with any error
+// is returned
+func generateTemplates(files map[string]string) (string, error) {
+  baseDir, err := ioutil.TempDir("", "xslate-test-")
+  if err != nil {
+    panic("Failed to create temporary directory!")
+  }
+
+  for k, v := range files {
+    fullpath := filepath.Join(baseDir, k)
+
+    dir := filepath.Dir(fullpath)
+
+STAT:
+    fi, err := os.Stat(dir)
+    if err != nil { // non-existent
+      err = os.MkdirAll(dir, 0777)
+      if err != nil {
+        return "", err
+      }
+
+      goto STAT
+    }
+
+    if ! fi.IsDir() {
+      return "", errors.New("Directory location already occupied by non-dir")
+    }
+
+    fh, err := os.OpenFile(fullpath, os.O_CREATE|os.O_WRONLY, 0666)
+    if err != nil {
+      return "", err
+    }
+    defer fh.Close()
+
+    _, err = fh.WriteString(v)
+    if err != nil {
+      return "", err
+    }
+  }
+
+  return baseDir, nil
+}
+
 func ExampleXslate () {
-  tx := New()
-  tx.Loader, _ = loader.DefaultLoader(
-    os.TempDir(),
-    []string { "/path/to/templates" },
-    tx.Parser,
-    tx.Compiler,
-  )
+  tx, err := New(Args {
+    "Loader": Args {
+      "LoadPaths": []string { "/path/to/templates" },
+    },
+  })
+  if err != nil {
+    log.Fatalf("Failed to create Xslate: %s", err)
+  }
   output, err := tx.Render("foo.tx", nil)
   if err != nil {
     log.Fatalf("Failed to render template: %s", err)
@@ -24,37 +87,52 @@ func ExampleXslate () {
   fmt.Fprintf(os.Stdout, output)
 }
 
-func executeAndCompare(t *testing.T, template string, vars Vars, expected string) {
-  x := New()
+func renderStringAndCompare(t *testing.T, template string, vars Vars, expected string) {
+  x, _ := New()
   x.Flags |= DUMP_AST
   x.Flags |= DUMP_BYTECODE
   output, err := x.RenderString(template, vars)
+
   if err != nil {
     t.Fatalf("Failed to render template: %s", err)
   }
+  compareTemplateOutput(t, output, expected)
+}
+
+func renderAndCompare(t *testing.T, tx *Xslate, key string, vars Vars, expected string) {
+  tx.Flags |= DUMP_AST
+  tx.Flags |= DUMP_BYTECODE
+  output, err := tx.Render(key, vars)
+  if err != nil {
+    t.Fatalf("Failed to render template: %s", err)
+  }
+  compareTemplateOutput(t, output, expected)
+}
+
+func compareTemplateOutput(t *testing.T, output, expected string) {
   if output != expected {
     t.Errorf("Expected '%s', got '%s'", expected, output)
   }
 }
 
 func TestXslate_SimpleString(t *testing.T) {
-  executeAndCompare(t, `Hello, World!`, nil, `Hello, World!`)
+  renderStringAndCompare(t, `Hello, World!`, nil, `Hello, World!`)
 }
 
 func TestXslate_Variable(t *testing.T) {
-  executeAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
+  renderStringAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
 }
 
 func TestXslate_MapVariable(t *testing.T) {
-  executeAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": map[string]string { "name": "Bob" } }, `Hello World, Bob!`)
+  renderStringAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": map[string]string { "name": "Bob" } }, `Hello World, Bob!`)
 }
 
 func TestXslate_StructVariable(t *testing.T) {
-  executeAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": struct { Name string } { "Bob" } }, `Hello World, Bob!`)
+  renderStringAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": struct { Name string } { "Bob" } }, `Hello World, Bob!`)
 }
 
 func TestXslate_LocalVar(t *testing.T) {
-  executeAndCompare(t, `[% SET name = "Bob" %]Hello World, [% name %]!`, nil, `Hello World, Bob!`)
+  renderStringAndCompare(t, `[% SET name = "Bob" %]Hello World, [% name %]!`, nil, `Hello World, Bob!`)
 }
 
 func TestXslate_Foreach(t *testing.T) {
@@ -63,30 +141,49 @@ func TestXslate_Foreach(t *testing.T) {
     list[i] = i
   }
   template := `[% FOREACH i IN list %][% i %],[% END %]`
-  executeAndCompare(t, template, Vars { "list": list }, `0,1,2,3,4,5,6,7,8,9,`)
+  renderStringAndCompare(t, template, Vars { "list": list }, `0,1,2,3,4,5,6,7,8,9,`)
 }
 
 func TestXslate_ForeachMakeArrayRange(t *testing.T) {
   template := `[% FOREACH i IN [0..9] %][% i %],[% END %]`
-  executeAndCompare(t, template, nil, `0,1,2,3,4,5,6,7,8,9,`)
+  renderStringAndCompare(t, template, nil, `0,1,2,3,4,5,6,7,8,9,`)
 }
 
 func TestXslate_ForeachMakeArrayList(t *testing.T) {
   template := `[% FOREACH i IN [0,1,2,3,4,5,6,7,8,9] %][% i %],[% END %]`
-  executeAndCompare(t, template, nil, `0,1,2,3,4,5,6,7,8,9,`)
+  renderStringAndCompare(t, template, nil, `0,1,2,3,4,5,6,7,8,9,`)
 
   template = `[% FOREACH i IN ["Alice", "Bob", "Charlie"] %][% i %],[% END %]`
-  executeAndCompare(t, template, nil, `Alice,Bob,Charlie,`)
+  renderStringAndCompare(t, template, nil, `Alice,Bob,Charlie,`)
 }
 
 func TestXslate_If(t *testing.T) {
   template := `[% IF (foo) %]Hello, World![% END %]`
-  executeAndCompare(t, template, Vars { "foo": true }, `Hello, World!`)
-  executeAndCompare(t, template, Vars { "foo": false }, ``)
+  renderStringAndCompare(t, template, Vars { "foo": true }, `Hello, World!`)
+  renderStringAndCompare(t, template, Vars { "foo": false }, ``)
 }
 
 func TestXslate_IfElse(t *testing.T) {
   template := `[% IF (foo) %]Hello, World![% ELSE %]Goodbye, World![% END %]`
-  executeAndCompare(t, template, Vars { "foo": true }, `Hello, World!`)
-  executeAndCompare(t, template, Vars { "foo": false }, `Goodbye, World!`)
+  renderStringAndCompare(t, template, Vars { "foo": true }, `Hello, World!`)
+  renderStringAndCompare(t, template, Vars { "foo": false }, `Goodbye, World!`)
+}
+
+func TestXslate_Include(t *testing.T) {
+  files := map[string]string {
+    "include/index.tx": `[% INCLUDE "include/parts.tx" %]`,
+    "include/parts.tx": `Hello, World! I'm included!`,
+  }
+
+  root, err := generateTemplates(files)
+  if err != nil {
+    t.Fatalf("Failed to create template files: %s", err)
+  }
+  defer os.RemoveAll(root)
+
+  tx, err := createTx(root, filepath.Join(root, "cache"))
+  if err != nil {
+    t.Fatalf("Failed to create xslate instance: %s", err)
+  }
+  renderAndCompare(t, tx, "include/index.tx", nil, "Hello, World! I'm included!")
 }

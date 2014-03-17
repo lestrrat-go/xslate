@@ -37,6 +37,7 @@ const (
   NodeList
   NodeForeach
   NodeWrapper
+  NodeInclude
   NodeAssignment
   NodeLocalVar
   NodeFetchField
@@ -489,4 +490,27 @@ func (n *MakeArrayNode) Copy() Node {
 func (n *MakeArrayNode) Visit(c chan Node) {
   c <- n
   c <- n.Child
+}
+
+type IncludeNode struct {
+  NodeType
+  Pos
+  IncludeTarget Node
+}
+
+func NewIncludeNode(pos Pos, include Node) *IncludeNode {
+  return &IncludeNode {
+    NodeInclude,
+    pos,
+    include,
+  }
+}
+
+func (n *IncludeNode) Copy() Node {
+  return NewIncludeNode(n.Pos, n.IncludeTarget)
+}
+
+func (n *IncludeNode) Visit(c chan Node) {
+  c <- n
+  c <- n.IncludeTarget
 }

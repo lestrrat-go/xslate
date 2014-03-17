@@ -13,10 +13,41 @@ Once tagStart is found, real lexing starts.
 
 import (
   "fmt"
+  "sort"
   "strings"
   "unicode"
   "unicode/utf8"
 )
+
+type LexSymbol struct {
+  Name string
+  Type LexItemType
+  Priority float32
+}
+type LexSymbolList []LexSymbol
+
+type LexSymbolSorter struct {
+  list LexSymbolList
+}
+func (list LexSymbolList) Sort() LexSymbolList {
+  sorter := LexSymbolSorter {
+    list: list,
+  }
+  sort.Sort(sorter)
+  return sorter.list
+}
+
+func (s LexSymbolSorter) Len() int {
+  return len(s.list)
+}
+
+func (s LexSymbolSorter) Less(i, j int) bool {
+  return s.list[i].Priority < s.list[j].Priority
+}
+
+func (s LexSymbolSorter) Swap(i, j int) {
+  s.list[i], s.list[j] = s.list[j], s.list[i]
+}
 
 type LexItemType int
 type LexItem struct {
@@ -126,7 +157,8 @@ type Lexer struct {
   width int
   tagStart string
   tagEnd   string
-  symbols map[string]LexItemType
+  symbols map[string]LexSymbol
+  sortedSymbols LexSymbolList
   operators map[string]LexItemType
   items chan LexItem
 }
@@ -151,8 +183,15 @@ func (l *Lexer) SetTagEnd(s string) {
   l.tagEnd = s
 }
 
-func (l *Lexer) AddSymbol(s string, i LexItemType) {
-  l.symbols[s] = i
+func (l *Lexer) AddSymbol(s string, i LexItemType, prio ...float32) {
+  l.sortedSymbols = nil
+  var x float32
+  if len(prio) < 1 {
+    x = 1.0
+  } else {
+    x = prio[0]
+  }
+  l.symbols[s] = LexSymbol { s, i, x }
 }
 
 func (l *Lexer) AddOperator(s string, i LexItemType) {
@@ -237,18 +276,22 @@ func isNumeric(r rune) bool {
 func NewLexer() *Lexer {
   l := &Lexer {
     items: make(chan LexItem, 1),
-    symbols: make(map[string]LexItemType),
+    symbols: make(map[string]LexSymbol),
     operators: make(map[string]LexItemType),
   }
-  l.AddSymbol("(", ItemOpenParen)
-  l.AddSymbol(")", ItemCloseParen)
-  l.AddSymbol("[", ItemOpenSquareBracket)
-  l.AddSymbol("]", ItemCloseSquareBracket)
-  l.AddSymbol(".", ItemPeriod)
-  l.AddSymbol(",", ItemComma)
+
+  // These happen so often, they should be in the front
+  l.AddSymbol("(", ItemOpenParen, 0.0)
+  l.AddSymbol(")", ItemCloseParen, 0.0)
+  l.AddSymbol("[", ItemOpenSquareBracket, 0.0)
+  l.AddSymbol("]", ItemCloseSquareBracket, 0.0)
+  l.AddSymbol(".", ItemPeriod, 0.0)
+  l.AddSymbol(",", ItemComma, 0.0)
+
   // XXX TTerse specific
   l.AddSymbol("WITH", ItemWith)
-  l.AddSymbol("IN", ItemIn)
+  l.AddSymbol("INCLUDE", ItemInclude, 1.5)
+  l.AddSymbol("IN", ItemIn, 2.0)
   l.AddSymbol("END", ItemEnd)
   return l
 }
@@ -307,8 +350,8 @@ Loop:
         return l.errorf("bad character %#U", r)
       }
       switch {
-      case l.symbols[word] > ItemKeyword:
-        l.Emit(l.symbols[word])
+      case l.symbols[word].Type > ItemKeyword:
+        l.Emit(l.symbols[word].Type)
       case word[0] == '.':
         l.Emit(ItemField)
       case word == "true", word == "false":
@@ -454,16 +497,40 @@ func lexSingleQuotedString(l *Lexer) stateFn {
   return lexQuotedString(l, '\'', ItemSingleQuotedString)
 }
 
+func (l *Lexer) getSortedSymbols() LexSymbolList {
+  // Because symbols are parsed automatically in a loop, we need to make
+  // sure that we search starting with the longest term (e.g., "INCLUDE"
+  // must come before "IN")
+  // However, simply sorting the symbols using alphabetical sort then
+  // max-length forces us to make more comparisons than necessary.
+  // To get the best of both world, we allow passing a floating point
+  // "priority" parameter to sort the symbols
+  if l.sortedSymbols != nil {
+    return l.sortedSymbols
+  }
+
+  num := len(l.symbols)
+  list := make(LexSymbolList, num)
+  i := 0
+  for _, v := range l.symbols {
+    list[i] = v
+    i++
+  }
+  l.sortedSymbols = list.Sort() 
+
+  return l.sortedSymbols
+}
+
 func lexInsideTag(l *Lexer) stateFn {
   if strings.HasPrefix(l.input[l.pos:], l.tagEnd) {
     return lexTagEnd
   }
 
   // Find registered symbols
-  for v, k := range l.symbols {
-    if strings.HasPrefix(l.input[l.pos:], v) {
-      l.pos += len(v)
-      l.Emit(k)
+  for _, sym := range l.getSortedSymbols() {
+    if strings.HasPrefix(l.input[l.pos:], sym.Name) {
+      l.pos += len(sym.Name)
+      l.Emit(sym.Type)
       return lexInsideTag
     }
   }

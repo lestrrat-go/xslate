@@ -29,6 +29,8 @@ type State struct {
   // stack frame
   frames *Stack
   currentFrame int
+
+  Loader ByteCodeLoader
 }
 
 func NewState() *State {
@@ -116,4 +118,8 @@ func (st *State) StackPop() interface {} {
 
 func (st *State) StackPush(v interface {}) {
   st.stack.Push(v)
+}
+
+func (st *State) LoadByteCode(key string) (*ByteCode, error) {
+  return st.Loader.Load(key)
 }

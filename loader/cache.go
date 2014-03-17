@@ -66,11 +66,14 @@ type FileCache struct {
 
 func NewFileCache(dir string) (*FileCache, error) {
   f := &FileCache { dir }
+
+STAT:
   fi, err := os.Stat(dir)
   if err != nil { // non-existing dir
     if err = os.MkdirAll(dir, 0777); err != nil {
       return nil, err
     }
+    goto STAT
   }
 
   if ! fi.IsDir() {

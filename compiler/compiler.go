@@ -132,6 +132,10 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
         ctx.AppendOp(vm.TXOP_push)
       }
     }
+  case parser.NodeInclude:
+    x := n.(*parser.IncludeNode)
+    c.compile(ctx, x.IncludeTarget)
+    ctx.AppendOp(vm.TXOP_include)
   default:
     fmt.Printf("Unknown node: %s\n", n.Type())
   }

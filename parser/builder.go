@@ -244,6 +244,8 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
     tmpl = b.ParseWrapper(ctx)
   case ItemForeach:
     tmpl = b.ParseForeach(ctx)
+  case ItemInclude:
+    tmpl = b.ParseInclude(ctx)
   case ItemTagEnd: // Silly, but possible
     b.NextNonSpace(ctx)
     tmpl = NewNoopNode()
@@ -595,3 +597,15 @@ func (b *Builder) ParseElse(ctx *BuilderCtx) Node {
   return nil
 }
 
+func (b *Builder) ParseInclude(ctx *BuilderCtx) Node {
+  incToken := b.NextNonSpace(ctx)
+  if incToken.Type() != ItemInclude {
+    b.Unexpected("Expected include, got %s", incToken)
+  }
+
+  // Next thing must be the name of the included template
+  n := b.ParseExpression(ctx, false)
+  // XXX TODO Need to parse arguments
+
+  return NewIncludeNode(incToken.Pos(), n)
+}

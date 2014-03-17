@@ -46,6 +46,7 @@ const (
   TXOP_range
   TXOP_make_array
   TXOP_make_hash
+  TXOP_include
   TXOP_end
   TXOP_max
 )
@@ -163,6 +164,9 @@ func init () {
     case TXOP_make_hash:
       h = txMakeHash
       n = "make_hash"
+    case TXOP_include:
+      h = txInclude
+      n = "include"
     default:
       panic("No such optype")
     }
@@ -683,5 +687,21 @@ func txMakeHash(st *State) {
   }
 
   st.StackPush(hash)
+  st.Advance()
+}
+
+func txInclude(st *State) {
+  target := interfaceToString(st.sa)
+  bc, err := st.LoadByteCode(target)
+  if err != nil {
+    panic(fmt.Sprintf("Include: Failed to compile %s: %s", target, err))
+  }
+
+  vm := NewVM()
+  vm.Run(bc, nil)
+  output, err := vm.OutputString()
+  if err == nil {
+    st.AppendOutputString(output)
+  }
   st.Advance()
 }

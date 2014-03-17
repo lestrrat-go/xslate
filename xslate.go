@@ -10,7 +10,11 @@ significant effect on performance if you repeatedly call the same template
 package xslate
 
 import (
+  "errors"
   "fmt"
+  "io/ioutil"
+  "os"
+  "reflect"
 
   "github.com/lestrrat/go-xslate/compiler"
   "github.com/lestrrat/go-xslate/loader"
@@ -34,6 +38,137 @@ type Xslate struct {
   // XXX Need to make syntax pluggable
 }
 
+type ConfigureArgs interface {
+  Get(string) (interface {}, bool)
+}
+
+type Args map[string]interface {}
+
+func DefaultCompiler(tx *Xslate, args Args) error {
+  tx.Compiler = compiler.New()
+  return nil
+}
+
+func DefaultParser(tx *Xslate, args Args) error {
+  tx.Parser = tterse.New()
+  return nil
+}
+
+func DefaultLoader(tx *Xslate, args Args) error {
+  var tmp interface {}
+  tmp, ok := args.Get("CacheDir")
+  if !ok {
+    tmp, _ = ioutil.TempDir("", "go-xslate-cache-")
+  }
+  cacheDir := tmp.(string)
+
+  tmp, ok = args.Get("LoadPaths")
+  if !ok {
+    cwd, _ := os.Getwd()
+    tmp = []string { cwd }
+  }
+  paths := tmp.([]string)
+
+  cache, err := loader.NewFileCache(cacheDir)
+  if err != nil {
+    return err
+  }
+  fileloader, err := loader.NewFileTemplateLoader(paths)
+  if err != nil {
+    return err
+  }
+  tx.Loader = loader.NewCachedByteCodeLoader(cache, fileloader, tx.Parser, tx.Compiler)
+  return nil
+}
+
+func DefaultVm(tx *Xslate, args Args) error {
+  tx.Vm = vm.NewVM()
+  tx.Vm.Loader = tx.Loader
+  return nil
+}
+
+func (args Args) Get(key string) (interface {}, bool) {
+  ret, ok := args[key]
+  return ret, ok
+}
+
+func (tx *Xslate) configureGeneric(configuror interface {}, args Args) error {
+  ref := reflect.ValueOf(configuror)
+  switch ref.Type().Kind() {
+  case reflect.Func:
+    // If this is a function, it better take our Xslate instance as the
+    // sole argument, and initialize it as it pleases
+    if ref.Type().NumIn() != 2 && (ref.Type().In(0).Name() != "Xslate" || ref.Type().In(1).Name() != "Args") {
+      panic(fmt.Sprintf(`Expected function initializer "func (tx *Xslate ", but instead of %s`, ref.Type))
+    }
+    cb := configuror.(func(*Xslate, Args) error)
+    err := cb(tx, args)
+    return err
+  }
+  return errors.New("Bad configurator")
+}
+
+func (tx *Xslate) Configure(args ConfigureArgs) error {
+  // The compiler currently does not have any configurable options, but
+  // one may want to replace the entire compiler struct
+  defaults := map[string]func(*Xslate, Args) error {
+    "Compiler": DefaultCompiler,
+    "Parser":   DefaultParser,
+    "Loader":   DefaultLoader,
+    "Vm":       DefaultVm,
+  }
+
+  for _, key := range []string { "Parser", "Compiler", "Loader", "Vm" } {
+    configKey := "Configure" + key
+    configuror, ok := args.Get(configKey);
+    if !ok {
+      configuror = defaults[key]
+    }
+
+    args, ok := args.Get(key)
+    if !ok {
+      args = Args {}
+    }
+
+    err := tx.configureGeneric(configuror, args.(Args))
+    if err != nil {
+      return err
+    }
+  }
+
+  return nil
+}
+
+func New(args ...Args) (*Xslate, error) {
+  tx := &Xslate {}
+  if len(args) <= 0 {
+    args = []Args { Args {} }
+  }
+  err := tx.Configure(args[0])
+  if err != nil {
+    return nil, err
+  }
+  return tx, nil
+}
+
+/*
+  tx := NewEmpty()
+  tx.Compiler = compiler.New()
+  tx.Parser   = tterse.New()
+
+  // The loader takes a bit more effort
+  cache, err := NewFileCache(cacheDir)
+  if err != nil {
+    return nil, err
+  }
+  loader, err := NewFileTemplateLoader(paths)
+  if err != nil {
+    return nil, err
+  }
+  return NewCachedByteCodeLoader(cache, loader, parser, compiler), nil
+
+// NewEmpty() is for advance users, as it creates a totally unconfigured
+// Xslate instance
 func New() *Xslate {
   return &Xslate{
     Vm:       vm.NewVM(),
@@ -44,6 +179,7 @@ func New() *Xslate {
                    // this up somehow
   }
 }
+*/
 
 func (x *Xslate) Render(name string, vars Vars) (string, error) {
   bc, err := x.Loader.Load(name)
