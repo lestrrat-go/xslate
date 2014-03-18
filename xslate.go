@@ -23,11 +23,6 @@ import (
   "github.com/lestrrat/go-xslate/vm"
 )
 
-const (
-  DUMP_BYTECODE = 1 << iota
-  DUMP_AST
-)
-
 type Vars vm.Vars
 type Xslate struct {
   Flags    int32
@@ -155,19 +150,11 @@ func New(args ...Args) (*Xslate, error) {
 }
 
 func (tx *Xslate) DumpAST(b bool) {
-  if b {
-    tx.Flags |= DUMP_AST
-  } else {
-    tx.Flags &= ^DUMP_AST
-  }
+  tx.Loader.DumpAST(b)
 }
 
 func (tx *Xslate) DumpByteCode(b bool) {
-  if b {
-    tx.Flags |= DUMP_BYTECODE
-  } else {
-    tx.Flags &= ^DUMP_BYTECODE
-  }
+  tx.Loader.DumpByteCode(b)
 }
 
 func (x *Xslate) Render(name string, vars Vars) (string, error) {
@@ -181,24 +168,7 @@ func (x *Xslate) Render(name string, vars Vars) (string, error) {
 }
 
 func (x *Xslate) RenderString(template string, vars Vars) (string, error) {
-  ast, err := x.Parser.ParseString(template)
-  if err != nil {
-    return "", err
-  }
-
-  if x.Flags & DUMP_AST != 0 {
-    fmt.Printf("%s\n", ast)
-  }
-
-  bc, err := x.Compiler.Compile(ast)
-  if err != nil {
-    return "", err
-  }
-
-  if x.Flags & DUMP_BYTECODE != 0 {
-    fmt.Printf("%s\n", bc)
-  }
-
+  bc, err := x.Loader.LoadString(template)
   x.Vm.Run(bc, vm.Vars(vars))
   str, err := x.Vm.OutputString()
   return str, err

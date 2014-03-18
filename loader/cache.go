@@ -18,10 +18,9 @@ type Cache interface {
 }
 
 type CachedByteCodeLoader struct {
-  Cache Cache
+  *StringByteCodeLoader // gives us LoadString
   Loader TemplateLoader
-  Parser   parser.Parser
-  Compiler compiler.Compiler
+  Cache Cache
 }
 
 func NewCachedByteCodeLoader(
@@ -30,7 +29,11 @@ func NewCachedByteCodeLoader(
   parser parser.Parser,
   compiler compiler.Compiler,
 ) *CachedByteCodeLoader {
-  return &CachedByteCodeLoader { cache, loader, parser, compiler }
+  return &CachedByteCodeLoader { 
+    NewStringByteCodeLoader(parser, compiler),
+    loader,
+    cache,
+  }
 }
 
 func (l *CachedByteCodeLoader) Load(key string) (*vm.ByteCode, error) {
@@ -44,17 +47,13 @@ func (l *CachedByteCodeLoader) Load(key string) (*vm.ByteCode, error) {
     return nil, err
   }
 
-  ast, err := l.Parser.Parse(template)
-  if err != nil {
-    return nil, err
-  }
-
-  bc, err = l.Compiler.Compile(ast)
+  bc, err = l.LoadString(string(template))
   if err != nil {
     return nil, err
   }
 
   l.Cache.Set(key, bc)
+
   return bc, nil
 }
 
