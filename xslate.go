@@ -163,13 +163,15 @@ func (x *Xslate) Render(name string, vars Vars) (string, error) {
     return "", err
   }
   x.Vm.Run(bc, vm.Vars(vars))
-  str, err := x.Vm.OutputString()
-  return str, err
+  return x.Vm.OutputString()
 }
 
 func (x *Xslate) RenderString(template string, vars Vars) (string, error) {
   bc, err := x.Loader.LoadString(template)
+  if err != nil {
+    return "", err
+  }
+
   x.Vm.Run(bc, vm.Vars(vars))
-  str, err := x.Vm.OutputString()
-  return str, err
+  return x.Vm.OutputString()
 }
