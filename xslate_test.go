@@ -89,8 +89,10 @@ func ExampleXslate () {
 
 func renderStringAndCompare(t *testing.T, template string, vars Vars, expected string) {
   x, _ := New()
-  x.Flags |= DUMP_AST
-  x.Flags |= DUMP_BYTECODE
+
+  x.DumpAST(true)
+  x.DumpByteCode(true)
+
   output, err := x.RenderString(template, vars)
 
   if err != nil {
@@ -100,8 +102,9 @@ func renderStringAndCompare(t *testing.T, template string, vars Vars, expected s
 }
 
 func renderAndCompare(t *testing.T, tx *Xslate, key string, vars Vars, expected string) {
-  tx.Flags |= DUMP_AST
-  tx.Flags |= DUMP_BYTECODE
+  tx.DumpAST(true)
+  tx.DumpByteCode(true)
+
   output, err := tx.Render(key, vars)
   if err != nil {
     t.Fatalf("Failed to render template: %s", err)

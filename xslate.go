@@ -141,6 +141,9 @@ func (tx *Xslate) Configure(args ConfigureArgs) error {
 
 func New(args ...Args) (*Xslate, error) {
   tx := &Xslate {}
+
+  // We jump through hoops because there are A LOT of configuration options
+  // but most of them only need to use the default values
   if len(args) <= 0 {
     args = []Args { Args {} }
   }
@@ -151,35 +154,21 @@ func New(args ...Args) (*Xslate, error) {
   return tx, nil
 }
 
-/*
-  tx := NewEmpty()
-  tx.Compiler = compiler.New()
-  tx.Parser   = tterse.New()
-
-  // The loader takes a bit more effort
-  cache, err := NewFileCache(cacheDir)
-  if err != nil {
-    return nil, err
-  }
-  loader, err := NewFileTemplateLoader(paths)
-  if err != nil {
-    return nil, err
-  }
-  return NewCachedByteCodeLoader(cache, loader, parser, compiler), nil
-
-// NewEmpty() is for advance users, as it creates a totally unconfigured
-// Xslate instance
-func New() *Xslate {
-  return &Xslate{
-    Vm:       vm.NewVM(),
-    Compiler: compiler.New(),
-    Parser:   tterse.New(),
-    Loader:   nil, // Loader is not necessary if you're just doing
-                   // RenderString(). But to load files, you need to set
-                   // this up somehow
+func (tx *Xslate) DumpAST(b bool) {
+  if b {
+    tx.Flags |= DUMP_AST
+  } else {
+    tx.Flags &= ^DUMP_AST
   }
 }
-*/
+
+func (tx *Xslate) DumpByteCode(b bool) {
+  if b {
+    tx.Flags |= DUMP_BYTECODE
+  } else {
+    tx.Flags &= ^DUMP_BYTECODE
+  }
+}
 
 func (x *Xslate) Render(name string, vars Vars) (string, error) {
   bc, err := x.Loader.Load(name)
