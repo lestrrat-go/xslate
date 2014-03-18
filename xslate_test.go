@@ -173,6 +173,7 @@ func TestXslate_Include(t *testing.T) {
   files := map[string]string {
     "include/index.tx": `[% INCLUDE "include/parts.tx" %]`,
     "include/parts.tx": `Hello, World! I'm included!`,
+    "include/include_var.tx": `[% SET name = "include/parts.tx" %][% INCLUDE name %]`,
   }
 
   root, err := generateTemplates(files)
@@ -186,4 +187,5 @@ func TestXslate_Include(t *testing.T) {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }
   renderAndCompare(t, tx, "include/index.tx", nil, "Hello, World! I'm included!")
+  renderAndCompare(t, tx, "include/include_var.tx", nil, "Hello, World! I'm included!")
 }
