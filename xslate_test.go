@@ -235,7 +235,7 @@ func TestXslate_Cache(t *testing.T) {
     t.Logf("Iteration %d took %s", i, time.Since(t0))
   }
 
-  time.Sleep(time.Second)
+  time.Sleep(5 * time.Millisecond)
   now := time.Now()
   err = os.Chtimes(filepath.Join(root, "test.tx"), now, now)
   if err != nil {
