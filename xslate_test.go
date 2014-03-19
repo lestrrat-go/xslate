@@ -215,5 +215,18 @@ func TestXslate_Cache(t *testing.T) {
     renderAndCompare(t, tx, "test.tx", Vars { "name": "Alice" }, "Hello World, Alice!")
     t.Logf("Iteration %d took %s", i, time.Since(t0))
   }
+
+  time.Sleep(time.Second)
+  now := time.Now()
+  err = os.Chtimes(filepath.Join(root, "test.tx"), now, now)
+  if err != nil {
+    t.Logf("Chtimes failed: %s", err)
+  }
+
+  for i := range make([]struct {}, 10) {
+    t0 := time.Now()
+    renderAndCompare(t, tx, "test.tx", Vars { "name": "Alice" }, "Hello World, Alice!")
+    t.Logf("Iteration %d took %s", i, time.Since(t0))
+  }
 }
 

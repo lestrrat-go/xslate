@@ -6,6 +6,7 @@ import(
   "os"
   "path/filepath"
   "strings"
+
   "github.com/lestrrat/go-xslate/compiler"
   "github.com/lestrrat/go-xslate/parser"
   "github.com/lestrrat/go-xslate/vm"
@@ -23,35 +24,57 @@ type Cache interface {
 
 type CachedByteCodeLoader struct {
   *StringByteCodeLoader // gives us LoadString
-  Loader TemplateLoader
+  Fetcher TemplateFetcher
   Cache Cache
 }
 
 func NewCachedByteCodeLoader(
   cache Cache,
-  loader TemplateLoader,
+  fetcher TemplateFetcher,
   parser parser.Parser,
   compiler compiler.Compiler,
 ) *CachedByteCodeLoader {
-  return &CachedByteCodeLoader { 
+  return &CachedByteCodeLoader {
     NewStringByteCodeLoader(parser, compiler),
-    loader,
+    fetcher,
     cache,
   }
 }
 
 func (l *CachedByteCodeLoader) Load(key string) (*vm.ByteCode, error) {
   bc, err := l.Cache.Get(key)
+  var source TemplateSource
   if err == nil {
-    return bc, nil
+    // Need to be able to toggle this on/off
+    source, err := l.Fetcher.FetchTemplate(key)
+    if err != nil {
+      return nil, err
+    }
+
+    t, err := source.LastModified()
+    if err != nil {
+      return nil, err
+    }
+
+    if t.Before(bc.GeneratedOn) {
+      return bc, nil
+    }
   }
 
-  template, err := l.Loader.Load(key)
+  if source == nil {
+    source, err = l.Fetcher.FetchTemplate(key)
+  }
+
   if err != nil {
     return nil, err
   }
 
-  bc, err = l.LoadString(string(template))
+  content, err := source.Bytes()
+  if err != nil {
+    return nil, err
+  }
+
+  bc, err = l.LoadString(string(content))
   if err != nil {
     return nil, err
   }

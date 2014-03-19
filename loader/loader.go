@@ -6,6 +6,7 @@ package loader
 
 import (
   "errors"
+  "time"
 
   "github.com/lestrrat/go-xslate/vm"
 )
@@ -59,9 +60,15 @@ type ByteCodeLoader interface {
   Load(string) (*vm.ByteCode, error)
 }
 
-// The template loader loads the template string given a key
-type TemplateLoader interface {
-  Load(string) ([]byte, error)
+type TemplateFetcher interface {
+  FetchTemplate(string) (TemplateSource, error)
+}
+
+// Template Source is the an abstraction over the actual template,
+// which may live on a file system, cache, database, whatever
+type TemplateSource interface {
+  LastModified() (time.Time, error)
+  Bytes() ([]byte, error)
 }
 
 var ErrTemplateNotFound = errors.New("Specified template was not found")

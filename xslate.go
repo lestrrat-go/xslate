@@ -51,6 +51,8 @@ func DefaultParser(tx *Xslate, args Args) error {
 
 func DefaultLoader(tx *Xslate, args Args) error {
   var tmp interface {}
+
+fmt.Printf("Args = %s\n", args)
   tmp, ok := args.Get("CacheDir")
   if !ok {
     tmp, _ = ioutil.TempDir("", "go-xslate-cache-")
@@ -68,11 +70,11 @@ func DefaultLoader(tx *Xslate, args Args) error {
   if err != nil {
     return err
   }
-  fileloader, err := loader.NewFileTemplateLoader(paths)
+  fetcher, err := loader.NewFileTemplateFetcher(paths)
   if err != nil {
     return err
   }
-  tx.Loader = loader.NewCachedByteCodeLoader(cache, fileloader, tx.Parser, tx.Compiler)
+  tx.Loader = loader.NewCachedByteCodeLoader(cache, fetcher, tx.Parser, tx.Compiler)
   return nil
 }
 
