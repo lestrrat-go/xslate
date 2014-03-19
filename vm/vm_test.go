@@ -415,7 +415,7 @@ func TestVM_MethodCall(t *testing.T) {
   pc.AppendOp(TXOP_end)
 
   vm.Run(nil, nil)
-  assertOutput(t, vm, "false")
+  assertOutput(t, vm, "true")
 }
 
 func TestVM_RangeMakeArray(t *testing.T) {

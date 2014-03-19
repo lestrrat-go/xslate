@@ -572,13 +572,14 @@ func txFunCall(st *State) {
     }
   }
 
-  x := st.stack.Get(mark)
-  v := reflect.ValueOf(x)
-
+  x := st.sa
   st.sa = nil
-  if v.Type().Kind() == reflect.Func {
-    fun := reflect.ValueOf(x)
-    invokeFuncSingleReturn(st, fun, args)
+  if x != nil {
+    v := reflect.ValueOf(x)
+    if v.Type().Kind() == reflect.Func {
+      fun := reflect.ValueOf(x)
+      invokeFuncSingleReturn(st, fun, args)
+    }
   }
   st.Advance()
 }
@@ -623,8 +624,8 @@ func txMethodCall(st *State) {
 
   invocant := reflect.ValueOf(st.stack.Get(mark))
 
-  var args []reflect.Value = make([]reflect.Value, tip - mark)
-  for i := mark; tip > i; i++ {
+  var args []reflect.Value = make([]reflect.Value, tip - mark + 1)
+  for i := 0; tip >= i; i++ {
     args[i - mark] = reflect.ValueOf(st.stack.Get(i))
   }
 

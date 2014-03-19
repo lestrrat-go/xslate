@@ -26,6 +26,9 @@ func (f *Frame) GetLvar(i int) interface {} {
 // Sets the frame local variable at position i, which is relative from base
 func (f *Frame) SetLvar(i int, v interface {}) {
   f.stack.Set(i, v)
+  if i > f.stack.cur {
+    f.stack.cur = i
+  }
 }
 
 // Returns the index of the last element in our stack, relative from base
