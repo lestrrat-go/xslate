@@ -194,6 +194,25 @@ func TestXslate_Include(t *testing.T) {
   renderAndCompare(t, tx, "include/include_var.tx", nil, "Hello, World! I'm included!")
 }
 
+func TestXslate_IncludeWithArgs(t *testing.T) {
+  files := map[string]string {
+    "include/index.tx": `[% INCLUDE "include/parts.tx" WITH name = "Bob", foo = "Bar" %]`,
+    "include/parts.tx": `Hello World, [% name %]!`,
+  }
+
+  root, err := generateTemplates(files)
+  if err != nil {
+    t.Fatalf("Failed to create template files: %s", err)
+  }
+  defer os.RemoveAll(root)
+
+  tx, err := createTx(root, filepath.Join(root, "cache"))
+  if err != nil {
+    t.Fatalf("Failed to create xslate instance: %s", err)
+  }
+  renderAndCompare(t, tx, "include/index.tx", nil, "Hello World, Bob!")
+}
+
 func TestXslate_Cache(t *testing.T) {
   files := map[string]string {
     "test.tx": `Hello World, [% name %]!`,

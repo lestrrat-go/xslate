@@ -496,6 +496,7 @@ type IncludeNode struct {
   NodeType
   Pos
   IncludeTarget Node
+  AssignmentNodes []Node
 }
 
 func NewIncludeNode(pos Pos, include Node) *IncludeNode {
@@ -503,7 +504,12 @@ func NewIncludeNode(pos Pos, include Node) *IncludeNode {
     NodeInclude,
     pos,
     include,
+    []Node {},
   }
+}
+
+func (n *IncludeNode) AppendAssignment(a Node) {
+  n.AssignmentNodes = append(n.AssignmentNodes, a)
 }
 
 func (n *IncludeNode) Copy() Node {

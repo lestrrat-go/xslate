@@ -47,7 +47,7 @@ func NewState() *State {
   }
 
   st.Pushmark()
-  st.PushFrame(NewFrame(st.CurrentMark(), st.stack))
+  st.PushFrame(NewFrame())
   return st
 }
 

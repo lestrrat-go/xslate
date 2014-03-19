@@ -40,6 +40,7 @@ const (
   TXOP_popmark
   TXOP_pushmark
   TXOP_push
+  TXOP_pop
   TXOP_funcall
   TXOP_funcall_symbol
   TXOP_methodcall
@@ -140,6 +141,9 @@ func init () {
     case TXOP_push:
       h = txPush
       n = "push"
+    case TXOP_pop:
+      h = txPop
+      n = "pop"
     case TXOP_popmark:
       h = txPopmark
       n = "popmark"
@@ -507,6 +511,11 @@ func txPush(st *State) {
   st.Advance()
 }
 
+func txPop(st *State) {
+  st.sa = st.StackPop()
+  st.Advance()
+}
+
 var funcZero = reflect.Zero(reflect.ValueOf(func() {}).Type())
 
 func invokeFuncSingleReturn(st *State, fun reflect.Value, args []reflect.Value) {
@@ -679,18 +688,31 @@ func txMakeHash(st *State) {
   end   := st.StackTip()    // end
 
   hash := make(map[interface{}]interface{})
-  for i := end; i >= start; {
+  for i := end; i > start; {
     v := st.StackPop()
     k := st.StackPop()
     hash[k] = v
     i -= 2
   }
 
-  st.StackPush(hash)
+  st.sa = hash
   st.Advance()
 }
 
 func txInclude(st *State) {
+  // st.sa should contain the include target
+  // st.sb should contain the map[interface{}]interface{}
+  //   object that gets passed to the included template
+
+  vars := Vars {}
+  if x := st.sb; x != nil {
+    hash := x.(map[interface{}]interface{})
+    // Need to covert this to Vars (map[string]interface{})
+    for k, v := range hash {
+      vars.Set(interfaceToString(k), v)
+    }
+  }
+
   target := interfaceToString(st.sa)
   bc, err := st.LoadByteCode(target)
   if err != nil {
@@ -698,7 +720,7 @@ func txInclude(st *State) {
   }
 
   vm := NewVM()
-  vm.Run(bc, nil)
+  vm.Run(bc, vars)
   output, err := vm.OutputString()
   if err == nil {
     st.AppendOutputString(output)

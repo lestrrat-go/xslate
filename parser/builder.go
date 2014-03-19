@@ -607,5 +607,28 @@ func (b *Builder) ParseInclude(ctx *BuilderCtx) Node {
   n := b.ParseExpression(ctx, false)
   // XXX TODO Need to parse arguments
 
-  return NewIncludeNode(incToken.Pos(), n)
+
+  x := NewIncludeNode(incToken.Pos(), n)
+  ctx.PushStackFrame()
+
+  if b.PeekNonSpace(ctx).Type() != ItemWith {
+    ctx.PopStackFrame()
+    return x
+  }
+
+  b.NextNonSpace(ctx)
+  for {
+    a := b.ParseAssignment(ctx)
+    x.AppendAssignment(a)
+    next := b.PeekNonSpace(ctx)
+    if next.Type() != ItemComma {
+      break
+    } else if  next.Type() == ItemTagEnd {
+      break
+    }
+    b.NextNonSpace(ctx)
+  }
+  ctx.PopStackFrame()
+
+  return x
 }

@@ -83,6 +83,12 @@ func (o Op) MarshalBinary() ([]byte, error) {
       for _, v := range o.u_arg.([]byte) {
         binary.Write(buf, binary.LittleEndian, v)
       }
+    case reflect.String:
+      binary.Write(buf, binary.LittleEndian, int64(6))
+      binary.Write(buf, binary.LittleEndian, int64(len(o.u_arg.(string))))
+      for _, v := range []byte(o.u_arg.(string)) {
+        binary.Write(buf, binary.LittleEndian, v)
+      }
     default:
       panic("Unknown type " + tArg.String())
     }

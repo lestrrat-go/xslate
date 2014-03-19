@@ -134,8 +134,29 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     }
   case parser.NodeInclude:
     x := n.(*parser.IncludeNode)
+
     c.compile(ctx, x.IncludeTarget)
+    ctx.AppendOp(vm.TXOP_push)
+    // Arguments to include (WITH foo = "bar") need to be evaulated
+    // in the OUTER context, but the variables need to be set in the
+    // include context
+    if assignnodes := x.AssignmentNodes; len(assignnodes) > 0 {
+      ctx.AppendOp(vm.TXOP_pushmark)
+      for _, nv := range x.AssignmentNodes {
+        v := nv.(*parser.AssignmentNode)
+        ctx.AppendOp(vm.TXOP_literal, v.Assignee.Name)
+        ctx.AppendOp(vm.TXOP_push)
+        c.compile(ctx, v.Expression)
+        ctx.AppendOp(vm.TXOP_push)
+      }
+      ctx.AppendOp(vm.TXOP_make_hash)
+      ctx.AppendOp(vm.TXOP_move_to_sb)
+      ctx.AppendOp(vm.TXOP_popmark)
+    }
+    ctx.AppendOp(vm.TXOP_pop)
+    ctx.AppendOp(vm.TXOP_pushmark)
     ctx.AppendOp(vm.TXOP_include)
+    ctx.AppendOp(vm.TXOP_popmark)
   default:
     fmt.Printf("Unknown node: %s\n", n.Type())
   }

@@ -1,9 +1,12 @@
 package vm
 
+import (
+  "bytes"
+  "fmt"
+)
 type Stack struct {
-  mark int
   cur  int
-  data *[]interface {}
+  data []interface {}
 }
 
 func calcNewSize(base int) int {
@@ -11,11 +14,9 @@ func calcNewSize(base int) int {
 }
 
 func NewStack(size int) *Stack {
-  l := make([]interface{}, size)
   return &Stack {
-    mark: 0,
     cur: -1,
-    data: &l,
+    data: make([]interface {}, size),
   }
 }
 
@@ -31,7 +32,7 @@ func (s *Stack) Top() interface {} {
 }
 
 func (s *Stack) BufferSize() int {
-  return len(*s.data)
+  return len(s.data)
 }
 
 func (s *Stack) Size() int {
@@ -40,8 +41,8 @@ func (s *Stack) Size() int {
 
 func (s *Stack) Resize(size int) {
   newl := make([]interface {}, size)
-  copy(newl, *s.data)
-  *s.data = newl
+  copy(newl, s.data)
+  s.data = newl
 }
 
 func (s *Stack) Extend(extendBy int) {
@@ -59,7 +60,7 @@ func (s *Stack) Grow(min int) {
 }
 
 func (s *Stack) Get(i int) interface {} {
-  d := *s.data
+  d := s.data
   return d[i]
 }
 
@@ -68,12 +69,8 @@ func (s *Stack) Set(i int, v interface {}) {
     s.Resize(calcNewSize(i))
   }
 
-  d := *s.data
+  d := s.data
   d[i] = v
-
-  if s.cur < i {
-    s.cur = i
-  }
 }
 
 func (s *Stack) Push(v interface {}) {
@@ -81,14 +78,24 @@ func (s *Stack) Push(v interface {}) {
   if s.cur >= s.BufferSize() {
     s.Resize(calcNewSize(s.cur))
   }
-  d := *s.data
-  d[s.cur] = v
+  s.data[s.cur] = v
 }
 
 func (s *Stack) Pop() interface {} {
-  d := *s.data
-  v := d[s.cur]
-  d[s.cur] = nil
+  v := s.data[s.cur]
+  s.data[s.cur] = nil
   s.cur--
   return v
+}
+
+func (s *Stack) String() string {
+  buf := &bytes.Buffer {}
+  for k, v := range s.data {
+    mark := " "
+    if k == s.cur {
+      mark = "*"
+    }
+    fmt.Fprintf(buf, "%s %03d: %s\n", mark, k, v)
+  }
+  return buf.String()
 }

@@ -52,7 +52,6 @@ func DefaultParser(tx *Xslate, args Args) error {
 func DefaultLoader(tx *Xslate, args Args) error {
   var tmp interface {}
 
-fmt.Printf("Args = %s\n", args)
   tmp, ok := args.Get("CacheDir")
   if !ok {
     tmp, _ = ioutil.TempDir("", "go-xslate-cache-")
