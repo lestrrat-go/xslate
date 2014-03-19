@@ -111,6 +111,9 @@ func (c *FileCache) Get(key string) (*vm.ByteCode, error) {
 
 func (c *FileCache) Set(key string, bc *vm.ByteCode) error {
   path := c.GetCachePath(key)
+  if err := os.MkdirAll(filepath.Dir(path), 0777); err != nil {
+    return err
+  }
 
   // Need to avoid race condition
   file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)

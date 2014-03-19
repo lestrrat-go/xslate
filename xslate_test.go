@@ -8,6 +8,7 @@ import (
   "os"
   "path/filepath"
   "testing"
+  "time"
 )
 
 func createTx(path, cacheDir string) (*Xslate, error) {
@@ -192,3 +193,27 @@ func TestXslate_Include(t *testing.T) {
   renderAndCompare(t, tx, "include/index.tx", nil, "Hello, World! I'm included!")
   renderAndCompare(t, tx, "include/include_var.tx", nil, "Hello, World! I'm included!")
 }
+
+func TestXslate_Cache(t *testing.T) {
+  files := map[string]string {
+    "test.tx": `Hello World, [% name %]!`,
+  }
+
+  root, err := generateTemplates(files)
+  if err != nil {
+    t.Fatalf("Failed to create template files: %s", err)
+  }
+  defer os.RemoveAll(root)
+
+  tx, err := createTx(root, filepath.Join(root, "cache"))
+  if err != nil {
+    t.Fatalf("Failed to create xslate instance: %s", err)
+  }
+
+  for i := range make([]struct {}, 10) {
+    t0 := time.Now()
+    renderAndCompare(t, tx, "test.tx", Vars { "name": "Alice" }, "Hello World, Alice!")
+    t.Logf("Iteration %d took %s", i, time.Since(t0))
+  }
+}
+
