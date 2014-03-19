@@ -132,6 +132,16 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
         ctx.AppendOp(vm.TXOP_push)
       }
     }
+  case parser.NodeFunCall:
+    x := n.(*parser.FunCallNode)
+
+    for _, child := range x.Args.Nodes {
+      c.compile(ctx, child)
+      ctx.AppendOp(vm.TXOP_push)
+    }
+
+    c.compile(ctx, x.Invocant)
+    ctx.AppendOp(vm.TXOP_funcall)
   case parser.NodeInclude:
     x := n.(*parser.IncludeNode)
 

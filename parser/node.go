@@ -41,7 +41,8 @@ const (
   NodeAssignment
   NodeLocalVar
   NodeFetchField
-  NodeMethodcall
+  NodeMethodCall
+  NodeFunCall
   NodePrint
   NodePrintRaw
   NodeFetchSymbol
@@ -75,8 +76,10 @@ func (n NodeType) String() string {
     return "LocalVar"
   case NodeFetchField:
     return "FetchField"
-  case NodeMethodcall:
-    return "Methodcall"
+  case NodeMethodCall:
+    return "MethodCall"
+  case NodeFunCall:
+    return "FunCall"
   case NodePrint:
     return "Print"
   case NodePrintRaw:
@@ -300,13 +303,57 @@ func (n *ForeachNode) String() string {
   return b.String()
 }
 
-func NewMethodcallNode(pos Pos, invocant, method string, args Node) *ListNode {
-  n := NewListNode(pos)
-  n.NodeType = NodeMethodcall
-  n.Append(NewLocalVarNode(pos, invocant, 0)) // TODO
-  n.Append(NewTextNode(pos, method))
-  n.Append(args)
-  return n
+type MethodCallNode struct {
+  NodeType
+  Pos
+  Invocant string
+  MethodName string
+  Args *ListNode
+}
+
+func NewMethodCallNode(pos Pos, invocant, method string, args *ListNode) *MethodCallNode {
+  return &MethodCallNode {
+    NodeMethodCall,
+    pos,
+    invocant,
+    method,
+    args,
+  }
+}
+
+func (n *MethodCallNode) Copy() Node {
+  return NewMethodCallNode(n.Pos, n.Invocant, n.MethodName, n.Args)
+}
+
+func (n *MethodCallNode) Visit(c chan Node) {
+  c <- n
+  n.Args.Visit(c)
+}
+
+type FunCallNode struct {
+  NodeType
+  Pos
+  Invocant Node
+  Args *ListNode
+}
+
+func NewFunCallNode(pos Pos, invocant Node, args *ListNode) *FunCallNode {
+  return &FunCallNode {
+    NodeFunCall,
+    pos,
+    invocant,
+    args,
+  }
+}
+
+func (n *FunCallNode) Copy() Node {
+  return NewFunCallNode(n.Pos, n.Invocant, n.Args)
+}
+
+func (n *FunCallNode) Visit(c chan Node) {
+  c <- n
+  n.Invocant.Visit(c)
+  n.Args.Visit(c)
 }
 
 type FetchFieldNode struct {

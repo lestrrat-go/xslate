@@ -29,6 +29,7 @@ func main() {
     fmt.Fprintf(os.Stderr, "Failed to create Xslate instance: %s", err)
     os.Exit(1)
   }
+
   for _, file := range args {
     output, err := tx.Render(file, nil)
     if err != nil {

@@ -249,3 +249,8 @@ func TestXslate_Cache(t *testing.T) {
   }
 }
 
+func TestXslate_FunVariable(t *testing.T) {
+  template := `[% epoch() %]`
+  renderStringAndCompare(t, template, Vars { "epoch": func() time.Time { return time.Unix(0, 0).In(time.UTC) } }, `1970-01-01 00:00:00 +0000 UTC`)
+}
+

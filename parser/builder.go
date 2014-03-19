@@ -329,6 +329,14 @@ func (b *Builder) ParseAssignment(ctx *BuilderCtx) Node {
   return node
 }
 
+func (b *Builder) LocalVarOrFetchSymbol(ctx *BuilderCtx, token LexItem) Node {
+  if idx, ok := ctx.HasLocalVar(token.Value()); ok {
+    return NewLocalVarNode(token.Pos(), token.Value(), idx)
+  } else {
+    return NewFetchSymbolNode(token.Pos(), token.Value())
+  }
+}
+
 func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
   token := b.PeekNonSpace(ctx)
   switch token.Type() {
@@ -349,13 +357,20 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
     case ItemAssign:
       b.Backup2(ctx, token)
       return b.ParseAssignment(ctx)
-    case ItemTagEnd, ItemCloseParen:
-      var n Node
-      if idx, ok := ctx.HasLocalVar(token.Value()); ok {
-        n = NewLocalVarNode(token.Pos(), token.Value(), idx)
-      } else {
-        n = NewFetchSymbolNode(token.Pos(), token.Value())
+    case ItemOpenParen:
+      b.NextNonSpace(ctx)
+      args := b.ParseList(ctx)
+      closeParen := b.NextNonSpace(ctx)
+      if closeParen.Type() != ItemCloseParen {
+        b.Unexpected("Expected ')', got %s", closeParen)
       }
+      n := b.LocalVarOrFetchSymbol(ctx, token)
+      x := NewFunCallNode(token.Pos(), n, args.(*ListNode))
+      if canPrint {
+        return NewPrintNode(token.Pos(), x)
+      }
+    case ItemTagEnd, ItemCloseParen:
+      n := b.LocalVarOrFetchSymbol(ctx, token)
 
       if canPrint {
         return NewPrintNode(token.Pos(), n)
@@ -394,12 +409,12 @@ func (b *Builder) ParseMethodOrFetch(ctx *BuilderCtx, symbol LexItem) Node {
 
   // Methodcall!
   b.NextNonSpace(ctx) // "("
-  args := b.ParseExpression(ctx, false)
+  args := b.ParseList(ctx)
   paren = b.NextNonSpace(ctx)
   if paren.Type() != ItemCloseParen {
     b.Unexpected("Expected close parenthesis, got %s", paren)
   }
-  return NewMethodcallNode(symbol.Pos(), symbol.Value(), next.Value(), args)
+  return NewMethodCallNode(symbol.Pos(), symbol.Value(), next.Value(), args.(*ListNode))
 }
 
 func (b *Builder) ParseLiteral(ctx *BuilderCtx) Node {
