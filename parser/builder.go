@@ -398,14 +398,11 @@ func (b *Builder) ParseMethodOrFetch(ctx *BuilderCtx, symbol LexItem) Node {
 
   paren := b.PeekNonSpace(ctx)
   if paren.Type() != ItemOpenParen {
-    var container Node
-    if idx, ok := ctx.HasLocalVar(symbol.Value()); ok {
-      container = NewLocalVarNode(symbol.Pos(), symbol.Value(), idx)
-    } else {
-      container = NewFetchSymbolNode(symbol.Pos(), symbol.Value())
-    }
+    container := b.LocalVarOrFetchSymbol(ctx, symbol)
     return NewFetchFieldNode(symbol.Pos(), container, next.Value())
   }
+
+  n := b.LocalVarOrFetchSymbol(ctx, symbol)
 
   // Methodcall!
   b.NextNonSpace(ctx) // "("
@@ -414,7 +411,7 @@ func (b *Builder) ParseMethodOrFetch(ctx *BuilderCtx, symbol LexItem) Node {
   if paren.Type() != ItemCloseParen {
     b.Unexpected("Expected close parenthesis, got %s", paren)
   }
-  return NewMethodCallNode(symbol.Pos(), symbol.Value(), next.Value(), args.(*ListNode))
+  return NewMethodCallNode(symbol.Pos(), n, next.Value(), args.(*ListNode))
 }
 
 func (b *Builder) ParseLiteral(ctx *BuilderCtx) Node {
@@ -550,7 +547,7 @@ func (b *Builder) ParseList(ctx *BuilderCtx) Node {
       child = b.ParseRange(ctx)
     default:
       b.Backup2(ctx, item)
-      child = b.ParseLiteral(ctx)
+      child = b.ParseExpression(ctx, false)
     }
 
     n.Append(child)

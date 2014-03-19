@@ -306,12 +306,12 @@ func (n *ForeachNode) String() string {
 type MethodCallNode struct {
   NodeType
   Pos
-  Invocant string
+  Invocant Node
   MethodName string
   Args *ListNode
 }
 
-func NewMethodCallNode(pos Pos, invocant, method string, args *ListNode) *MethodCallNode {
+func NewMethodCallNode(pos Pos, invocant Node, method string, args *ListNode) *MethodCallNode {
   return &MethodCallNode {
     NodeMethodCall,
     pos,
@@ -327,6 +327,7 @@ func (n *MethodCallNode) Copy() Node {
 
 func (n *MethodCallNode) Visit(c chan Node) {
   c <- n
+  n.Invocant.Visit(c)
   n.Args.Visit(c)
 }
 
