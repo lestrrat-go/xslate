@@ -7,14 +7,27 @@ import (
   "log"
   "os"
   "path/filepath"
+  "strconv"
   "testing"
   "time"
 )
 
+var TEST_XSLATE_DEBUG = false
+func init() {
+  tmp := os.Getenv("XSLATE_DEBUG")
+  boolVar, err := strconv.ParseBool(tmp)
+  if err == nil {
+    TEST_XSLATE_DEBUG = boolVar
+  }
+}
+
 func createTx(path, cacheDir string) (*Xslate, error) {
   x, err := New(Args {
+    // Optional. Currently only supports TTerse
+    "Parser": Args {
+      "Syntax": "TTerse",
+    },
     // Compiler: DefaultCompiler, // don't need to specify
-    // Parser: DefaultParser, // don't need to specify
     "Loader": Args {
       "CacheDir": cacheDir,
       "LoadPaths": []string { path },
@@ -74,6 +87,9 @@ STAT:
 
 func ExampleXslate () {
   tx, err := New(Args {
+    "Parser": Args {
+      "Syntax": "TTerse",
+    },
     "Loader": Args {
       "LoadPaths": []string { "/path/to/templates" },
     },
@@ -91,8 +107,10 @@ func ExampleXslate () {
 func renderStringAndCompare(t *testing.T, template string, vars Vars, expected string) {
   x, _ := New()
 
-  x.DumpAST(true)
-  x.DumpByteCode(true)
+  if TEST_XSLATE_DEBUG {
+    x.DumpAST(true)
+    x.DumpByteCode(true)
+  }
 
   output, err := x.RenderString(template, vars)
 
@@ -103,8 +121,10 @@ func renderStringAndCompare(t *testing.T, template string, vars Vars, expected s
 }
 
 func renderAndCompare(t *testing.T, tx *Xslate, key string, vars Vars, expected string) {
-  tx.DumpAST(true)
-  tx.DumpByteCode(true)
+  if TEST_XSLATE_DEBUG {
+    tx.DumpAST(true)
+    tx.DumpByteCode(true)
+  }
 
   output, err := tx.Render(key, vars)
   if err != nil {
@@ -116,6 +136,19 @@ func renderAndCompare(t *testing.T, tx *Xslate, key string, vars Vars, expected 
 func compareTemplateOutput(t *testing.T, output, expected string) {
   if output != expected {
     t.Errorf("Expected '%s', got '%s'", expected, output)
+  }
+}
+
+func TestXslate_New_ParserSyntax(t *testing.T) {
+  var err error
+  _, err = New(Args { "Parser": Args { "Syntax": "Kolonish" } })
+  if err == nil {
+    t.Errorf("Expected Syntax: Kolonish to return an error, but got nothing")
+  }
+
+  _, err = New(Args { "Parser": Args { "Syntax": "TTerse" } })
+  if err != nil {
+    t.Errorf("Expected Syntax: TTerse to succeed, but got err: %s", err)
   }
 }
 

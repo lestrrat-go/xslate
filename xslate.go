@@ -39,13 +39,26 @@ type ConfigureArgs interface {
 
 type Args map[string]interface {}
 
+// Given an unconfigured Xslate instance and arguments, sets up
+// the compiler of said Xslate instance. Current implementation
+// just uses compiler.New()
 func DefaultCompiler(tx *Xslate, args Args) error {
   tx.Compiler = compiler.New()
   return nil
 }
 
 func DefaultParser(tx *Xslate, args Args) error {
-  tx.Parser = tterse.New()
+  syntax, ok := args.Get("Syntax")
+  if ! ok {
+    syntax = "TTerse"
+  }
+
+  switch syntax {
+  case "TTerse":
+    tx.Parser = tterse.New()
+  default:
+    return errors.New(fmt.Sprintf("Syntax '%s' not available", syntax))
+  }
   return nil
 }
 
