@@ -26,7 +26,7 @@ func New() *BasicCompiler {
 
 func (c *BasicCompiler) Compile(ast *parser.AST) (*vm.ByteCode, error) {
   ctx := &CompilerCtx {
-    ByteCode: &vm.ByteCode {},
+    ByteCode: vm.NewByteCode(),
   }
   for _, n := range ast.Root.Nodes {
     c.compile(ctx, n)

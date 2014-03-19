@@ -11,6 +11,10 @@ import(
   "github.com/lestrrat/go-xslate/vm"
 )
 
+func init() {
+
+}
+
 type Cache interface {
   Get(string) (*vm.ByteCode, error)
   Set(string, *vm.ByteCode) error
