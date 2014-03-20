@@ -735,9 +735,6 @@ func (b *Builder) ParseInclude(ctx *BuilderCtx) Node {
 
   // Next thing must be the name of the included template
   n := b.ParseExpression(ctx, false)
-  // XXX TODO Need to parse arguments
-
-
   x := NewIncludeNode(incToken.Pos(), n)
   ctx.PushStackFrame()
 

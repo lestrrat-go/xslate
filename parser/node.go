@@ -52,6 +52,7 @@ const (
   NodeMul
   NodeDiv
   NodeMakeArray
+  NodeMax
 )
 
 func (n NodeType) String() string {
@@ -74,6 +75,8 @@ func (n NodeType) String() string {
     return "Foreach"
   case NodeWrapper:
     return "Wrapper"
+  case NodeInclude:
+    return "Include"
   case NodeAssignment:
     return "Assignment"
   case NodeLocalVar:
@@ -173,10 +176,6 @@ func (l *ListNode) Copy() Node {
   n.Nodes = make([]Node, len(l.Nodes))
   copy(n.Nodes, l.Nodes)
   return n
-}
-
-func (l *ListNode) String() string {
-  return l.NodeType.String()
 }
 
 func (l *ListNode) Append(n Node) {
