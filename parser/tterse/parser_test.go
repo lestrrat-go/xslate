@@ -98,7 +98,7 @@ func TestBasic(t *testing.T) {
 }
 
 func TestSimpleAssign(t *testing.T) {
-  tmpl := `[% s = 1 %][% s %]`
+  tmpl := `[% SET s = 1 %][% s %]`
   ast := parse(t, tmpl)
 
   expected := []parser.NodeType {
