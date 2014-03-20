@@ -329,14 +329,6 @@ func (i LexItemType) String() string {
     name = "Incr"
   case ItemDecr:
     name = "Decr"
-  case ItemPlus:
-    name = "Plus"
-  case ItemMinus:
-    name = "Minus"
-  case ItemDiv:
-    name = "Div"
-  case ItemMul:
-    name = "Mul"
   case ItemMod:
     name = "Mod"
   case ItemEnd:

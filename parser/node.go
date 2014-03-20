@@ -105,6 +105,10 @@ func (n NodeType) String() string {
     return "Plus"
   case NodeMinus:
     return "Minus"
+  case NodeMul:
+    return "Multiply"
+  case NodeDiv:
+    return "Divide"
   default:
     return "Unknown Node"
   }
