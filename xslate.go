@@ -108,7 +108,7 @@ func (tx *Xslate) configureGeneric(configuror interface {}, args Args) error {
     // If this is a function, it better take our Xslate instance as the
     // sole argument, and initialize it as it pleases
     if ref.Type().NumIn() != 2 && (ref.Type().In(0).Name() != "Xslate" || ref.Type().In(1).Name() != "Args") {
-      panic(fmt.Sprintf(`Expected function initializer "func (tx *Xslate ", but instead of %s`, ref.Type.String()))
+      panic(fmt.Sprintf(`Expected function initializer "func (tx *Xslate ", but instead of %s`, ref.Type))
     }
     cb := configuror.(func(*Xslate, Args) error)
     err := cb(tx, args)
