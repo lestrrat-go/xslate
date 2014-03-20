@@ -292,3 +292,23 @@ func TestXslate_MethodCallVariable(t *testing.T) {
   renderStringAndCompare(t, template, Vars { "t1": time.Unix(0, 0), "t2": time.Unix(100, 0) }, `true`)
 }
 
+func TestXslate_ArithmeticPlus(t *testing.T) {
+  template := `[% 1 + 2 %]`
+  renderStringAndCompare(t, template, nil, `3`)
+}
+
+func TestXslate_ArithmeticMinus(t *testing.T) {
+  template := `[% 2 - 1 %]`
+  renderStringAndCompare(t, template, nil, `1`)
+}
+
+func TestXslate_ArithmeticMul(t *testing.T) {
+  template := `[% 2 * 5 %]`
+  renderStringAndCompare(t, template, nil, `10`)
+}
+
+func TestXslate_ArithmeticDiv(t *testing.T) {
+  template := `[% 10 / 2 %]`
+  renderStringAndCompare(t, template, nil, `5`)
+}
+

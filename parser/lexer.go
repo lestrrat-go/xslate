@@ -140,8 +140,8 @@ const (
   ItemDecr        // --
   ItemPlus
   ItemMinus
-  ItemDiv
-  ItemMul
+  ItemAsterisk
+  ItemSlash
   ItemMod
   ItemAssign      // =
 
@@ -221,6 +221,12 @@ func (i LexItemType) String() string {
     name = "Set"
   case ItemPlus:
     name = "Plus"
+  case ItemMinus:
+    name = "Minus"
+  case ItemAsterisk:
+    name = "Asterisk"
+  case ItemSlash:
+    name = "Slash"
   case ItemAssign:
     name = "Assign"
   case ItemWrapper:

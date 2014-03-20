@@ -6,6 +6,9 @@ import (
 
 var operators = map[string]parser.LexItemType{
   "+":  parser.ItemPlus,
+  "-":  parser.ItemMinus,
+  "*":  parser.ItemAsterisk,
+  "/":  parser.ItemSlash,
   "=":  parser.ItemAssign,
 }
 

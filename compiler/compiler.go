@@ -177,6 +177,24 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     ctx.AppendOp(vm.TXOP_pushmark)
     ctx.AppendOp(vm.TXOP_include)
     ctx.AppendOp(vm.TXOP_popmark)
+  case parser.NodePlus, parser.NodeMinus, parser.NodeMul, parser.NodeDiv:
+    x := n.(*parser.ArithmeticNode)
+
+    c.compile(ctx, x.Left)
+    ctx.AppendOp(vm.TXOP_move_to_sb)
+    c.compile(ctx, x.Right)
+    switch n.Type() {
+    case parser.NodePlus:
+      ctx.AppendOp(vm.TXOP_add)
+    case parser.NodeMinus:
+      ctx.AppendOp(vm.TXOP_sub)
+    case parser.NodeMul:
+      ctx.AppendOp(vm.TXOP_mul)
+    case parser.NodeDiv:
+      ctx.AppendOp(vm.TXOP_div)
+    default:
+      panic("Unknown arithmetic")
+    }
   default:
     fmt.Printf("Unknown node: %s\n", n.Type())
   }

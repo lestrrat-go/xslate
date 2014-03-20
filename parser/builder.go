@@ -249,7 +249,7 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
   case ItemTagEnd: // Silly, but possible
     b.NextNonSpace(ctx)
     tmpl = NewNoopNode()
-  case ItemIdentifier:
+  case ItemIdentifier, ItemNumber, ItemDoubleQuotedString, ItemSingleQuotedString:
     tmpl = b.ParseExpression(ctx, true)
   case ItemIf:
     tmpl = b.ParseIf(ctx)
@@ -337,8 +337,128 @@ func (b *Builder) LocalVarOrFetchSymbol(ctx *BuilderCtx, token LexItem) Node {
   }
 }
 
-func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
-  token := b.PeekNonSpace(ctx)
+func (b *Builder) ParseTerm(ctx *BuilderCtx) Node {
+  switch token := b.NextNonSpace(ctx); token.Type() {
+  case ItemIdentifier:
+    return b.LocalVarOrFetchSymbol(ctx, token)
+  case ItemNumber, ItemDoubleQuotedString, ItemSingleQuotedString:
+    b.Backup(ctx)
+    return b.ParseLiteral(ctx)
+  default:
+    b.Backup(ctx)
+    return nil
+  }
+}
+
+func (b *Builder) ParseFunCall(ctx *BuilderCtx, invocant Node) Node {
+  next := b.NextNonSpace(ctx)
+  if next.Type() != ItemOpenParen {
+    b.Unexpected("Expected '(', got %s", next.Type())
+  }
+
+  args := b.ParseList(ctx)
+  closeParen := b.NextNonSpace(ctx)
+  if closeParen.Type() != ItemCloseParen {
+    b.Unexpected("Expected ')', got %s", closeParen.Type())
+  }
+  return NewFunCallNode(invocant.Position(), invocant, args.(*ListNode))
+}
+
+func (b *Builder) ParseMethodCallOrMapLookup(ctx *BuilderCtx, invocant Node) Node {
+  // We have already seen identifier followed by a period
+  symbol := b.NextNonSpace(ctx)
+  if symbol.Type() != ItemIdentifier {
+    b.Unexpected("Expected identifier for method call or map lookup, got %s", symbol.Type())
+  }
+
+  next := b.NextNonSpace(ctx)
+  if next.Type() == ItemOpenParen {
+    // It's a method call! Parse the list
+    args := b.ParseList(ctx)
+    closeParen := b.NextNonSpace(ctx)
+    if closeParen.Type() != ItemCloseParen {
+      b.Unexpected("Expected ')', got %s", closeParen.Type())
+    }
+    return NewMethodCallNode(invocant.Position(), invocant, symbol.Value(), args.(*ListNode))
+  }
+
+  // Otherwise it's a map lookup. Put back that extra token we read
+  b.Backup(ctx)
+
+  return NewFetchFieldNode(invocant.Position(), invocant, symbol.Value())
+}
+
+func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
+  defer func() {
+    if n != nil && canPrint {
+      n = NewPrintNode(n.Position(), n)
+    }
+  }()
+
+  n = b.ParseTerm(ctx)
+  if n == nil {
+    panic("TODO")
+  }
+
+  // ANY term can be followed by arithmetic operators
+  next := b.NextNonSpace(ctx);
+
+  switch next.Type() {
+  case ItemPlus:
+    tmp := NewPlusNode(next.Pos())
+    tmp.Left = n
+    tmp.Right = b.ParseExpression(ctx, false)
+    n = tmp
+    return
+  case ItemMinus:
+    tmp := NewMinusNode(next.Pos())
+    tmp.Left = n
+    tmp.Right = b.ParseExpression(ctx, false)
+    n = tmp
+    return
+  case ItemAsterisk:
+    tmp := NewMulNode(next.Pos())
+    tmp.Left = n
+    tmp.Right = b.ParseExpression(ctx, false)
+    n = tmp
+    return
+  case ItemSlash:
+    tmp := NewDivNode(next.Pos())
+    tmp.Left = n
+    tmp.Right = b.ParseExpression(ctx, false)
+    n = tmp
+    return
+  }
+
+  // Okay, now we need to change what to do next depending on contex
+  switch n.Type() {
+  case NodeLocalVar, NodeFetchSymbol:
+    switch next.Type() {
+    case ItemPeriod:
+      // It's either a method call, or a map lookup
+      n = b.ParseMethodCallOrMapLookup(ctx, n)
+    case ItemOpenParen:
+      b.Backup(ctx) // put back the open paren
+      // A variable followed by an open paren is a function call
+      n = b.ParseFunCall(ctx, n)
+    default:
+      b.Backup(ctx)
+    }
+    return
+  }
+
+  b.Backup(ctx)
+
+  return
+}
+/*
+
+
+
+    case ItemAssign:
+      b.Backup2(ctx, token)
+      return b.ParseAssignment(ctx)
+
   switch token.Type() {
   case ItemIdentifier:
     // Could be a single var, or a method call
@@ -354,9 +474,6 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
         return NewPrintNode(next.Pos(), n)
       }
       return n
-    case ItemAssign:
-      b.Backup2(ctx, token)
-      return b.ParseAssignment(ctx)
     case ItemOpenParen:
       b.NextNonSpace(ctx)
       args := b.ParseList(ctx)
@@ -388,6 +505,7 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) Node {
   }
   return nil
 }
+*/
 
 func (b *Builder) ParseMethodOrFetch(ctx *BuilderCtx, symbol LexItem) Node {
   // must find another identifier node

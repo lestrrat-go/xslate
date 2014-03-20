@@ -47,6 +47,10 @@ const (
   NodePrintRaw
   NodeFetchSymbol
   NodeRange
+  NodePlus
+  NodeMinus
+  NodeMul
+  NodeDiv
   NodeMakeArray
 )
 
@@ -94,6 +98,10 @@ func (n NodeType) String() string {
     return "Range"
   case NodeMakeArray:
     return "MakeArray"
+  case NodePlus:
+    return "Plus"
+  case NodeMinus:
+    return "Minus"
   default:
     return "Unknown Node"
   }
@@ -567,4 +575,57 @@ func (n *IncludeNode) Copy() Node {
 func (n *IncludeNode) Visit(c chan Node) {
   c <- n
   c <- n.IncludeTarget
+}
+
+type ArithmeticNode struct {
+  NodeType
+  Pos
+  Left Node
+  Right Node
+}
+
+func NewPlusNode(pos Pos) *ArithmeticNode {
+  return &ArithmeticNode {
+    NodePlus,
+    pos,
+    nil,
+    nil,
+  }
+}
+
+func NewMinusNode(pos Pos) *ArithmeticNode {
+  return &ArithmeticNode {
+    NodeMinus,
+    pos,
+    nil,
+    nil,
+  }
+}
+
+func NewMulNode(pos Pos) *ArithmeticNode {
+  return &ArithmeticNode {
+    NodeMul,
+    pos,
+    nil,
+    nil,
+  }
+}
+
+func NewDivNode(pos Pos) *ArithmeticNode {
+  return &ArithmeticNode {
+    NodeDiv,
+    pos,
+    nil,
+    nil,
+  }
+}
+
+func (n *ArithmeticNode) Copy() Node {
+  return &ArithmeticNode { n.NodeType, n.Pos, n.Left.Copy(), n.Right.Copy() }
+}
+
+func (n *ArithmeticNode) Visit(c chan Node) {
+  c <- n
+  n.Left.Visit(c)
+  n.Right.Visit(c)
 }
