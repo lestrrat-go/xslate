@@ -207,22 +207,36 @@ func (i LexItemType) String() string {
     name = "RawString"
   case ItemEOF:
     name = "EOF"
+  case ItemComment:
+    name = "Comment"
+  case ItemComplex:
+    name = "Complex" // may not need this
+  case ItemChar:
+    name = "Char"
   case ItemSpace:
     name = "Space"
   case ItemNumber:
     name = "Number"
+  case ItemSymbol:
+    name = "Symbol"
   case ItemIdentifier:
     name = "Identifier"
   case ItemTagStart:
     name = "TagStart"
   case ItemTagEnd:
     name = "TagEnd"
+  case ItemBool:
+    name = "Bool"
+  case ItemField:
+    name = "Field"
   case ItemSet:
     name = "Set"
-  case ItemPlus:
-    name = "Plus"
   case ItemAssign:
     name = "Assign"
+  case ItemOpenSquareBracket:
+    name = "OpenSquareBracket"
+  case ItemCloseSquareBracket:
+    name = "CloseSquareBracket"
   case ItemWrapper:
     name = "Wrapper"
   case ItemComma:
@@ -233,6 +247,14 @@ func (i LexItemType) String() string {
     name = "CloseParen"
   case ItemPeriod:
     name = "Period"
+  case ItemKeyword:
+    name = "Keyword"
+  case ItemGet:
+    name = "GET"
+  case ItemMacro:
+    name = "Macro"
+  case ItemBlock:
+    name = "Block"
   case ItemDoubleQuotedString:
     name = "DoubleQuotedString"
   case ItemSingleQuotedString:
@@ -241,6 +263,74 @@ func (i LexItemType) String() string {
     name = "With"
   case ItemForeach:
     name = "Foreach"
+  case ItemIn:
+    name = "In"
+  case ItemInclude:
+    name = "Include"
+  case ItemIf:
+    name = "If"
+  case ItemElse:
+    name = "Else"
+  case ItemElseIf:
+    name = "ElseIf"
+  case ItemUnless:
+    name = "Unless"
+  case ItemSwitch:
+    name = "Switch"
+  case ItemCase:
+    name = "Case"
+  case ItemDefault:
+    name = "Default"
+  case ItemCall:
+    name = "Call"
+  case ItemOperator:
+    name = "Operator (INTERNAL)"
+  case ItemRange:
+    name = "Range"
+  case ItemEquals:
+    name = "Equals"
+  case ItemNotEqual:
+    name = "NotEquals"
+  case ItemCmp:
+    name = "Cmp"
+  case ItemLE:
+    name = "LessThanEquals"
+  case ItemGE:
+    name = "GreterThanEquals"
+  case ItemShiftLeft:
+    name = "ShiftLeft"
+  case ItemShiftRight:
+    name = "ShiftRight"
+  case ItemAssignAdd:
+    name = "AssignAdd"
+  case ItemAssignSub:
+    name = "AssignSub"
+  case ItemAssignMul:
+    name = "AssignMul"
+  case ItemAssignDiv:
+    name = "AssignDiv"
+  case ItemAssignMod:
+    name = "AssignMod"
+  case ItemAnd:
+    name = "And"
+  case ItemOr:
+    name = "Or"
+  case ItemFatComma:
+    name = "FatComma"
+  case ItemIncr:
+    name = "Incr"
+  case ItemDecr:
+    name = "Decr"
+  case ItemPlus:
+    name = "Plus"
+  case ItemMinus:
+    name = "Minus"
+  case ItemDiv:
+    name = "Div"
+  case ItemMul:
+    name = "Mul"
+  case ItemMod:
+    name = "Mod"
   case ItemEnd:
     name = "End"
   default:

@@ -14,15 +14,6 @@ type AST struct {
   text      string
 }
 
-/*
-func NewAST () *AST {
-  return &AST {
-    Timestamp: time.Now(),
-    Root: NewNodeList(),
-  }
-}
-*/
-
 func (ast *AST) Visit() <-chan Node {
   c := make(chan Node)
   go func () {
