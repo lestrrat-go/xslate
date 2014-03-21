@@ -52,6 +52,7 @@ const (
   NodeMul
   NodeDiv
   NodeMakeArray
+  NodeGroup
   NodeMax
 )
 
@@ -109,6 +110,8 @@ func (n NodeType) String() string {
     return "Multiply"
   case NodeDiv:
     return "Divide"
+  case NodeGroup:
+    return "Group"
   default:
     return "Unknown Node"
   }
@@ -631,4 +634,23 @@ func (n *ArithmeticNode) Visit(c chan Node) {
   c <- n
   n.Left.Visit(c)
   n.Right.Visit(c)
+}
+
+type GroupNode struct {
+  NodeType
+  Pos
+  Child Node
+}
+
+func NewGroupNode(pos Pos) *GroupNode {
+  return &GroupNode { NodeGroup, pos, nil }
+}
+
+func (n *GroupNode) Copy() Node {
+  return &GroupNode { NodeGroup, n.Pos, n.Child.Copy() }
+}
+
+func (n *GroupNode) Visit(c chan Node) {
+  c <-n
+  n.Child.Visit(c)
 }

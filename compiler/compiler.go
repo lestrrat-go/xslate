@@ -177,12 +177,23 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     ctx.AppendOp(vm.TXOP_pushmark)
     ctx.AppendOp(vm.TXOP_include)
     ctx.AppendOp(vm.TXOP_popmark)
+  case parser.NodeGroup:
+    c.compile(ctx, n.(*parser.GroupNode).Child)
   case parser.NodePlus, parser.NodeMinus, parser.NodeMul, parser.NodeDiv:
     x := n.(*parser.ArithmeticNode)
 
-    c.compile(ctx, x.Left)
-    ctx.AppendOp(vm.TXOP_move_to_sb)
-    c.compile(ctx, x.Right)
+    if x.Right.Type() == parser.NodeGroup {
+      // Grouped node
+      c.compile(ctx, x.Right)
+      ctx.AppendOp(vm.TXOP_push)
+      c.compile(ctx, x.Left)
+      ctx.AppendOp(vm.TXOP_move_to_sb)
+      ctx.AppendOp(vm.TXOP_pop)
+    } else {
+      c.compile(ctx, x.Left)
+      ctx.AppendOp(vm.TXOP_move_to_sb)
+      c.compile(ctx, x.Right)
+    }
     switch n.Type() {
     case parser.NodePlus:
       ctx.AppendOp(vm.TXOP_add)

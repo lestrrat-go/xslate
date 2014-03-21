@@ -249,7 +249,7 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
   case ItemTagEnd: // Silly, but possible
     b.NextNonSpace(ctx)
     tmpl = NewNoopNode()
-  case ItemIdentifier, ItemNumber, ItemDoubleQuotedString, ItemSingleQuotedString:
+  case ItemIdentifier, ItemNumber, ItemDoubleQuotedString, ItemSingleQuotedString, ItemOpenParen:
     tmpl = b.ParseExpression(ctx, true)
   case ItemIf:
     tmpl = b.ParseIf(ctx)
@@ -395,9 +395,13 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
     }
   }()
 
-  n = b.ParseTerm(ctx)
-  if n == nil {
-    panic("TODO")
+  if b.PeekNonSpace(ctx).Type() == ItemOpenParen {
+    n = b.ParseGroup(ctx)
+  } else {
+    n = b.ParseTerm(ctx)
+    if n == nil {
+      panic("TODO")
+    }
   }
 
   // ANY term can be followed by arithmetic operators
@@ -678,4 +682,21 @@ func (b *Builder) ParseInclude(ctx *BuilderCtx) Node {
   ctx.PopStackFrame()
 
   return x
+}
+
+func (b *Builder) ParseGroup(ctx *BuilderCtx) Node {
+  openParenToken := b.NextNonSpace(ctx)
+  if openParenToken.Type() != ItemOpenParen {
+    b.Unexpected("Expected '(', got %s", openParenToken)
+  }
+
+  n := NewGroupNode(openParenToken.Pos())
+  n.Child = b.ParseExpression(ctx, false)
+
+  closeParenToken := b.NextNonSpace(ctx)
+  if closeParenToken.Type() != ItemCloseParen {
+    b.Unexpected("Expected ')', got %s", closeParenToken)
+  }
+
+  return n
 }

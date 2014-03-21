@@ -312,3 +312,11 @@ func TestXslate_ArithmeticDiv(t *testing.T) {
   renderStringAndCompare(t, template, nil, `5`)
 }
 
+func TestXslate_GroupedArithmetic(t *testing.T) {
+  var template string
+  template = `[% (1 + 2) * 3 %]`
+  renderStringAndCompare(t, template, nil, `9`)
+  template = `[% 6 / ( 3 - 1) %]`
+  renderStringAndCompare(t, template, nil, `3`)
+}
+
