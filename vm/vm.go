@@ -19,27 +19,34 @@ import (
   "io/ioutil"
 )
 
-type ByteCodeLoader interface {
+// This interface exists solely to avoid importing loader.ByteCodeLoader
+// which is a cause for import loop
+type byteCodeLoader interface {
   Load(string) (*ByteCode, error)
 }
 
+// VM represents the Xslate Virtual Machine
 type VM struct {
   st *State
-  Loader ByteCodeLoader
+  Loader byteCodeLoader
 }
 
+// NewVM creates a new VM
 func NewVM() (*VM) {
   return &VM { NewState(), nil }
 }
 
+// CurrentOp returns the current Op to be executed
 func (vm *VM) CurrentOp() *Op {
   return vm.st.CurrentOp()
 }
 
+// Output returns the output accumulated so far
 func (vm *VM) Output() ([]byte, error) {
   return ioutil.ReadAll(vm.st.output)
 }
 
+// OutputString returns the output accumulated so far in string format
 func (vm *VM) OutputString() (string, error) {
   buf, err := vm.Output()
   if err != nil {
@@ -48,11 +55,15 @@ func (vm *VM) OutputString() (string, error) {
   return string(buf), nil
 }
 
+// Reset reinitializes certain state variables
 func (vm *VM) Reset() {
   vm.st.opidx = 0
   vm.st.output = &bytes.Buffer {}
 }
 
+// Run executes the given vm.ByteCode using the given variables. For historical
+// reasons, it also allows re-executing the previous bytecode instructions
+// given to a virtual machine, but this will probably be removed in the future
 func (vm *VM) Run(bc *ByteCode, v Vars) {
   vm.Reset()
   st := vm.st
@@ -63,7 +74,7 @@ func (vm *VM) Run(bc *ByteCode, v Vars) {
     st.vars = v
   }
   st.Loader = vm.Loader
-  for op := st.CurrentOp(); op.OpType() != TXOP_end; op = st.CurrentOp() {
+  for op := st.CurrentOp(); op.Type() != TXOPEnd; op = st.CurrentOp() {
     op.Call(st)
   }
 }

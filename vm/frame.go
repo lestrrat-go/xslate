@@ -1,29 +1,28 @@
 package vm
 
+// Frame represents a stack frame
 type Frame struct {
   name string
-
   stack *Stack
-  base int // base index into the main stack
-
-  output interface {} // TODO: what's this?
-  retaddr interface {} // TODO: what's this?
 }
 
-// a Frame uses the stack, starting at position `base`. The base is determined
-// by calling st.Pushmark() before calling NewFrame()
+// NewFrame creates a new Frame instance.
 func NewFrame() *Frame {
   return &Frame {
     stack: NewStack(5),
   }
 }
 
-// Gets the frame local variable at position i, which is relative from base
+// GetLvar gets the frame local variable at position i
 func (f *Frame) GetLvar(i int) interface {} {
-  return f.stack.Get(i)
+  v, err := f.stack.Get(i)
+  if err != nil {
+    return nil
+  }
+  return v
 }
 
-// Sets the frame local variable at position i, which is relative from base
+// SetLvar sets the frame local variable at position i
 func (f *Frame) SetLvar(i int, v interface {}) {
   f.stack.Set(i, v)
   if i > f.stack.cur {
@@ -31,7 +30,7 @@ func (f *Frame) SetLvar(i int, v interface {}) {
   }
 }
 
-// Returns the index of the last element in our stack, relative from base
+// LastLvarIndex returns the index of the last element in our stack.
 func (f *Frame) LastLvarIndex() int {
   return f.stack.Cur()
 }

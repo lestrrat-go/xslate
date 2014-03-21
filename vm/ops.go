@@ -11,177 +11,172 @@ import (
   "github.com/lestrrat/go-xslate/functions/hash"
 )
 
+// These TXOP... constants are identifiers for each op
 const (
-  TXOP_noop OpType = iota
-  TXOP_nil
-  TXOP_move_to_sb
-  TXOP_move_from_sb
-  TXOP_literal
-  TXOP_fetch_s
-  TXOP_fetch_field_s
-  TXOP_mark_raw
-  TXOP_unmark_raw
-  TXOP_print
-  TXOP_print_raw
-  TXOP_save_to_lvar
-  TXOP_load_lvar
-  TXOP_add
-  TXOP_sub
-  TXOP_mul
-  TXOP_div
-  TXOP_and
-  TXOP_goto
-  TXOP_for_start
-  TXOP_for_iter
-  TXOP_html_escape
-  TXOP_uri_escape
-  TXOP_eq
-  TXOP_ne
-  TXOP_popmark
-  TXOP_pushmark
-  TXOP_push
-  TXOP_pop
-  TXOP_funcall
-  TXOP_funcall_symbol
-  TXOP_methodcall
-  TXOP_range
-  TXOP_make_array
-  TXOP_make_hash
-  TXOP_include
-  TXOP_end
-  TXOP_max
+  TXOPNoop OpType = iota
+  TXOPNil
+  TXOPMoveToSb
+  TXOPMoveFromSb
+  TXOPLiteral
+  TXOPFetchSymbol
+  TXOPFetchFieldSymbol
+  TXOPMarkRaw
+  TXOPUnmarkRaw
+  TXOPPrint
+  TXOPPrintRaw
+  TXOPSaveToLvar
+  TXOPLoadLvar
+  TXOPAdd
+  TXOPSub
+  TXOPMul
+  TXOPDiv
+  TXOPAnd
+  TXOPGoto
+  TXOPForStart
+  TXOPForIter
+  TXOPHTMLEscape
+  TXOPUriEscape
+  TXOPEq
+  TXOPNe
+  TXOPPopmark
+  TXOPPushmark
+  TXOPPush
+  TXOPPop
+  TXOPFunCall
+  TXOPFunCallSymbol
+  TXOPMethodCall
+  TXOPRange
+  TXOPMakeArray
+  TXOPMakeHash
+  TXOPInclude
+  TXOPEnd
+  TXOPMax
 )
 
-var opnames    []string    = make([]string, TXOP_max)
-var ophandlers []OpHandler = make([]OpHandler, TXOP_max)
-var execcodes  []*ExecCode = make([]*ExecCode, TXOP_max)
+var opnames    = make([]string, TXOPMax)
+var ophandlers = make([]OpHandler, TXOPMax)
 func init () {
-  for i := TXOP_noop; i < TXOP_max; i++ {
+  for i := TXOPNoop; i < TXOPMax; i++ {
     var h OpHandler
     n := "Unknown"
     switch i {
-    case TXOP_noop:
+    case TXOPNoop:
       h = txNoop
       n = "noop"
-    case TXOP_end:
+    case TXOPEnd:
       h = txEnd
       n = "end"
-    case TXOP_move_to_sb:
+    case TXOPMoveToSb:
       h = txMoveToSb
       n = "move_to_sb"
-    case TXOP_move_from_sb:
+    case TXOPMoveFromSb:
       h = txMoveFromSb
       n = "move_from_sb"
-    case TXOP_mark_raw:
+    case TXOPMarkRaw:
       h = txMarkRaw
       n = "mark_raw"
-    case TXOP_unmark_raw:
+    case TXOPUnmarkRaw:
       h = txUnmarkRaw
       n = "unmark_raw"
-    case TXOP_print:
+    case TXOPPrint:
       h = txPrint
       n = "print"
-    case TXOP_print_raw:
+    case TXOPPrintRaw:
       h = txPrintRaw
       n = "print_raw"
-    case TXOP_literal:
+    case TXOPLiteral:
       h = txLiteral
       n = "literal"
-    case TXOP_fetch_s:
+    case TXOPFetchSymbol:
       h = txFetchSymbol
       n = "fetch_s"
-    case TXOP_fetch_field_s:
+    case TXOPFetchFieldSymbol:
       h = txFetchField
       n = "fetch_field_s"
-    case TXOP_save_to_lvar:
+    case TXOPSaveToLvar:
       h = txSaveToLvar
       n = "save_to_lvar"
-    case TXOP_load_lvar:
+    case TXOPLoadLvar:
       h = txLoadLvar
       n = "load_lvar"
-    case TXOP_nil:
+    case TXOPNil:
       h = txNil
       n = "nil"
-    case TXOP_add:
+    case TXOPAdd:
       h = txAdd
       n = "add"
-    case TXOP_sub:
+    case TXOPSub:
       h = txSub
       n = "sub"
-    case TXOP_mul:
+    case TXOPMul:
       h = txMul
       n = "mul"
-    case TXOP_div:
+    case TXOPDiv:
       h = txDiv
       n = "div"
-    case TXOP_and:
+    case TXOPAnd:
       h = txAnd
       n = "and"
-    case TXOP_goto:
+    case TXOPGoto:
       h = txGoto
       n = "goto"
-    case TXOP_for_start:
+    case TXOPForStart:
       h = txForStart
       n = "for_start"
-    case TXOP_for_iter:
+    case TXOPForIter:
       h = txForIter
       n = "for_iter"
-    case TXOP_html_escape:
-      h = txHtmlEscape
+    case TXOPHTMLEscape:
+      h = txHTMLEscape
       n = "html_escape"
-    case TXOP_uri_escape:
+    case TXOPUriEscape:
       h = txUriEscape
       n = "uri_escape"
-    case TXOP_eq:
+    case TXOPEq:
       h = txEq
       n = "eq"
-    case TXOP_ne:
+    case TXOPNe:
       h = txNe
       n = "ne"
-    case TXOP_push:
+    case TXOPPush:
       h = txPush
       n = "push"
-    case TXOP_pop:
+    case TXOPPop:
       h = txPop
       n = "pop"
-    case TXOP_popmark:
+    case TXOPPopmark:
       h = txPopmark
       n = "popmark"
-    case TXOP_pushmark:
+    case TXOPPushmark:
       h = txPushmark
       n = "pushmark"
-    case TXOP_funcall:
+    case TXOPFunCall:
       h = txFunCall
       n = "funcall"
-    case TXOP_funcall_symbol:
+    case TXOPFunCallSymbol:
       h = txFunCallSymbol
       n = "funcall_symbol"
-    case TXOP_methodcall:
+    case TXOPMethodCall:
       h = txMethodCall
       n = "methodcall"
-    case TXOP_range:
+    case TXOPRange:
       h = txRange
       n = "range"
-    case TXOP_make_array:
+    case TXOPMakeArray:
       h = txMakeArray
       n = "make_array"
-    case TXOP_make_hash:
+    case TXOPMakeHash:
       h = txMakeHash
       n = "make_hash"
-    case TXOP_include:
+    case TXOPInclude:
       h = txInclude
       n = "include"
     default:
       panic("No such optype")
     }
     ophandlers[i] = h
-    execcodes[i]  = &ExecCode { OpType(i), h}
     opnames[i]    = n
   }
-}
-
-func optypeToExecCode(o OpType) *ExecCode {
-  return execcodes[o]
 }
 
 func optypeToHandler(o OpType) OpHandler {
@@ -461,7 +456,7 @@ func txUriEscape(st *State) {
   st.Advance()
 }
 
-func txHtmlEscape(st *State) {
+func txHTMLEscape(st *State) {
   v := interfaceToString(st.sa)
   st.sa = html.EscapeString(v)
   st.Advance()
@@ -568,7 +563,8 @@ func txFunCall(st *State) {
   if tip - mark - 1  > 0{
     args = make([]reflect.Value, tip - mark - 1)
     for i := mark + 1; tip > i; i++ {
-      args[i - mark] = reflect.ValueOf(st.stack.Get(i))
+      v, _ := st.stack.Get(i)
+      args[i - mark] = reflect.ValueOf(v)
     }
   }
 
@@ -593,11 +589,12 @@ func txFunCallSymbol(st *State) {
   if tip - mark - 1  > 0{
     args = make([]reflect.Value, tip - mark - 1)
     for i := mark + 1; tip > i; i++ {
-      args[i - mark] = reflect.ValueOf(st.stack.Get(i))
+      v, _ := st.stack.Get(i)
+      args[i - mark] = reflect.ValueOf(v)
     }
   }
 
-  x := st.stack.Get(mark)
+  x, _ := st.stack.Get(mark)
   v := reflect.ValueOf(x)
 
   st.sa = nil
@@ -622,15 +619,16 @@ func txMethodCall(st *State) {
   mark := st.CurrentMark()
   tip  := st.stack.Cur()
 
-  invocant := reflect.ValueOf(st.stack.Get(mark))
+  v, _ := st.stack.Get(mark)
+  invocant := reflect.ValueOf(v)
 
-  var args []reflect.Value = make([]reflect.Value, tip - mark + 1)
+  var args = make([]reflect.Value, tip - mark + 1)
   for i := 0; tip >= i; i++ {
-    args[i - mark] = reflect.ValueOf(st.stack.Get(i))
+    v, _ := st.stack.Get(i)
+    args[i - mark] = reflect.ValueOf(v)
   }
 
   // For maps, arrays, slices, we call virtual methods, if they are available
-
   switch invocant.Kind() {
   case reflect.Map:
     fun, ok := hash.Depot().Get(name)
@@ -720,8 +718,11 @@ func txInclude(st *State) {
     panic(fmt.Sprintf("Include: Failed to compile %s: %s", target, err))
   }
 
+fmt.Printf("Running external template\n")
+fmt.Printf("bytecode -> %s\n", bc)
   vm := NewVM()
   vm.Run(bc, vars)
+fmt.Printf("Done running\n")
   output, err := vm.OutputString()
   if err == nil {
     st.AppendOutputString(output)

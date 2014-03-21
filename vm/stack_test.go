@@ -17,7 +17,10 @@ func TestStack_Grow(t *testing.T) {
   }
 
   for i := 0; i < 10; i++ {
-    x := s.Get(i)
+    x, err := s.Get(i)
+    if err != nil {
+      t.Fatalf("failed to get %d: %s", i, err)
+    }
     if i % 2 == 0 {
       if x.(int) != i {
         t.Errorf("Get(%d): Expected %d, got %s\n", i, i, x)

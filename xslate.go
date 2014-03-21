@@ -74,7 +74,7 @@ func DefaultParser(tx *Xslate, args Args) error {
   case "TTerse":
     tx.Parser = tterse.New()
   default:
-    return errors.New(fmt.Sprintf("Syntax '%s' not available", syntax))
+    return fmt.Errorf("Syntax '%s' not available", syntax)
   }
   return nil
 }

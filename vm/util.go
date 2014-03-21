@@ -6,7 +6,7 @@ import (
   "strconv"
 )
 
-var hexdigits []byte = []byte("0123456789ABCDEF")
+var hexdigits = []byte("0123456789ABCDEF")
 func escapeUri(thing []byte) []byte {
   ret := make([]byte, 0, len(thing))
   for _, v := range thing {

@@ -6,26 +6,32 @@ import (
   "github.com/lestrrat/go-xslate/vm"
 )
 
+// Compiler is the interface to objects that can convert AST trees to
+// actual Xslate Virtual Machine bytecode (see vm.ByteCode)
 type Compiler interface {
   Compile(* parser.AST) (*vm.ByteCode, error)
 }
 
-type CompilerCtx struct {
+type context struct {
   ByteCode *vm.ByteCode
 }
 
-func (ctx *CompilerCtx) AppendOp(o vm.OpType, args ...interface {}) *vm.Op {
+func (ctx *context) AppendOp(o vm.OpType, args ...interface {}) *vm.Op {
   return ctx.ByteCode.AppendOp(o, args...)
 }
 
+// BasicCompiler is the default compiler used by Xslate
 type BasicCompiler struct {}
 
+// New creates a new BasicCompiler instance
 func New() *BasicCompiler {
   return &BasicCompiler {}
 }
 
+// Compile satisfies the compiler.Compiler interface. It accepts an AST
+// created by parser.Parser, and returns vm.ByteCode or an error
 func (c *BasicCompiler) Compile(ast *parser.AST) (*vm.ByteCode, error) {
-  ctx := &CompilerCtx {
+  ctx := &context {
     ByteCode: vm.NewByteCode(),
   }
   for _, n := range ast.Root.Nodes {
@@ -33,40 +39,40 @@ func (c *BasicCompiler) Compile(ast *parser.AST) (*vm.ByteCode, error) {
   }
 
   // When we're done compiling, always append an END op
-  ctx.ByteCode.AppendOp(vm.TXOP_end)
+  ctx.ByteCode.AppendOp(vm.TXOPEnd)
 
   return ctx.ByteCode, nil
 }
 
-func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
+func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
   switch n.Type() {
   case parser.NodeText:
     // XXX probably not true all the time
-    ctx.AppendOp(vm.TXOP_literal, n.(*parser.TextNode).Text)
+    ctx.AppendOp(vm.TXOPLiteral, n.(*parser.TextNode).Text)
   case parser.NodeFetchSymbol:
-    ctx.AppendOp(vm.TXOP_fetch_s, n.(*parser.TextNode).Text)
+    ctx.AppendOp(vm.TXOPFetchSymbol, n.(*parser.TextNode).Text)
   case parser.NodeFetchField:
     ffnode := n.(*parser.FetchFieldNode)
     c.compile(ctx, ffnode.Container)
-    ctx.AppendOp(vm.TXOP_fetch_field_s, ffnode.FieldName)
+    ctx.AppendOp(vm.TXOPFetchFieldSymbol, ffnode.FieldName)
   case parser.NodeLocalVar:
     l := n.(*parser.LocalVarNode)
-    ctx.AppendOp(vm.TXOP_load_lvar, l.Offset)
+    ctx.AppendOp(vm.TXOPLoadLvar, l.Offset)
   case parser.NodeAssignment:
     c.compile(ctx, n.(*parser.AssignmentNode).Expression)
-    ctx.AppendOp(vm.TXOP_save_to_lvar, 0) // XXX this 0 must be pre-computed
+    ctx.AppendOp(vm.TXOPSaveToLvar, 0) // XXX this 0 must be pre-computed
   case parser.NodePrint:
     c.compile(ctx, n.(*parser.ListNode).Nodes[0])
-    ctx.AppendOp(vm.TXOP_print)
+    ctx.AppendOp(vm.TXOPPrint)
   case parser.NodePrintRaw:
     c.compile(ctx, n.(*parser.ListNode).Nodes[0])
-    ctx.AppendOp(vm.TXOP_print_raw)
+    ctx.AppendOp(vm.TXOPPrintRaw)
   case parser.NodeForeach:
-    ctx.AppendOp(vm.TXOP_pushmark)
+    ctx.AppendOp(vm.TXOPPushmark)
     c.compile(ctx, n.(*parser.ForeachNode).List)
-    ctx.AppendOp(vm.TXOP_for_start, 0)
-    ctx.AppendOp(vm.TXOP_literal, 0)
-    iter := ctx.AppendOp(vm.TXOP_for_iter, 0)
+    ctx.AppendOp(vm.TXOPForStart, 0)
+    ctx.AppendOp(vm.TXOPLiteral, 0)
+    iter := ctx.AppendOp(vm.TXOPForIter, 0)
     pos  := ctx.ByteCode.Len()
 
     children := n.(*parser.ForeachNode).Nodes
@@ -74,14 +80,14 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
       c.compile(ctx, v)
     }
 
-    ctx.AppendOp(vm.TXOP_goto, -1 * (ctx.ByteCode.Len() - pos + 2))
+    ctx.AppendOp(vm.TXOPGoto, -1 * (ctx.ByteCode.Len() - pos + 2))
     iter.SetArg(ctx.ByteCode.Len() - pos + 1)
-    ctx.AppendOp(vm.TXOP_popmark)
+    ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeIf:
     x := n.(*parser.IfNode)
-    ctx.AppendOp(vm.TXOP_pushmark)
+    ctx.AppendOp(vm.TXOPPushmark)
     c.compile(ctx, x.BooleanExpression)
-    ifop := ctx.AppendOp(vm.TXOP_and, 0)
+    ifop := ctx.AppendOp(vm.TXOPAnd, 0)
     pos := ctx.ByteCode.Len()
 
     var elseNode parser.Node
@@ -103,9 +109,9 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     }
 
 
-    ctx.AppendOp(vm.TXOP_popmark)
+    ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeElse:
-    gotoOp := ctx.AppendOp(vm.TXOP_goto, 0)
+    gotoOp := ctx.AppendOp(vm.TXOPGoto, 0)
     pos := ctx.ByteCode.Len()
     for _, child := range n.(*parser.ElseNode).ListNode.Nodes {
       c.compile(ctx, child)
@@ -114,22 +120,22 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
   case parser.NodeMakeArray:
     x := n.(*parser.MakeArrayNode)
     c.compile(ctx, x.Child)
-    ctx.AppendOp(vm.TXOP_make_array)
+    ctx.AppendOp(vm.TXOPMakeArray)
   case parser.NodeRange:
     x := n.(*parser.RangeNode)
-    ctx.AppendOp(vm.TXOP_literal, x.Start)
-    ctx.AppendOp(vm.TXOP_move_to_sb)
-    ctx.AppendOp(vm.TXOP_literal, x.End)
-    ctx.AppendOp(vm.TXOP_range)
+    ctx.AppendOp(vm.TXOPLiteral, x.Start)
+    ctx.AppendOp(vm.TXOPMoveToSb)
+    ctx.AppendOp(vm.TXOPLiteral, x.End)
+    ctx.AppendOp(vm.TXOPRange)
   case parser.NodeInt:
     x := n.(*parser.NumberNode)
-    ctx.AppendOp(vm.TXOP_literal, x.Value.Int())
+    ctx.AppendOp(vm.TXOPLiteral, x.Value.Int())
   case parser.NodeList:
     x := n.(*parser.ListNode)
     for _, v := range x.Nodes {
       c.compile(ctx, v)
       if v.Type() != parser.NodeRange {
-        ctx.AppendOp(vm.TXOP_push)
+        ctx.AppendOp(vm.TXOPPush)
       }
     }
   case parser.NodeFunCall:
@@ -137,46 +143,46 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
 
     for _, child := range x.Args.Nodes {
       c.compile(ctx, child)
-      ctx.AppendOp(vm.TXOP_push)
+      ctx.AppendOp(vm.TXOPPush)
     }
 
     c.compile(ctx, x.Invocant)
-    ctx.AppendOp(vm.TXOP_funcall)
+    ctx.AppendOp(vm.TXOPFunCall)
   case parser.NodeMethodCall:
     x := n.(*parser.MethodCallNode)
 
     c.compile(ctx, x.Invocant)
-    ctx.AppendOp(vm.TXOP_push)
+    ctx.AppendOp(vm.TXOPPush)
     for _, child := range x.Args.Nodes {
       c.compile(ctx, child)
-      ctx.AppendOp(vm.TXOP_push)
+      ctx.AppendOp(vm.TXOPPush)
     }
-    ctx.AppendOp(vm.TXOP_methodcall, x.MethodName)
+    ctx.AppendOp(vm.TXOPMethodCall, x.MethodName)
   case parser.NodeInclude:
     x := n.(*parser.IncludeNode)
 
     c.compile(ctx, x.IncludeTarget)
-    ctx.AppendOp(vm.TXOP_push)
+    ctx.AppendOp(vm.TXOPPush)
     // Arguments to include (WITH foo = "bar") need to be evaulated
     // in the OUTER context, but the variables need to be set in the
     // include context
     if assignnodes := x.AssignmentNodes; len(assignnodes) > 0 {
-      ctx.AppendOp(vm.TXOP_pushmark)
+      ctx.AppendOp(vm.TXOPPushmark)
       for _, nv := range x.AssignmentNodes {
         v := nv.(*parser.AssignmentNode)
-        ctx.AppendOp(vm.TXOP_literal, v.Assignee.Name)
-        ctx.AppendOp(vm.TXOP_push)
+        ctx.AppendOp(vm.TXOPLiteral, v.Assignee.Name)
+        ctx.AppendOp(vm.TXOPPush)
         c.compile(ctx, v.Expression)
-        ctx.AppendOp(vm.TXOP_push)
+        ctx.AppendOp(vm.TXOPPush)
       }
-      ctx.AppendOp(vm.TXOP_make_hash)
-      ctx.AppendOp(vm.TXOP_move_to_sb)
-      ctx.AppendOp(vm.TXOP_popmark)
+      ctx.AppendOp(vm.TXOPMakeHash)
+      ctx.AppendOp(vm.TXOPMoveToSb)
+      ctx.AppendOp(vm.TXOPPopmark)
     }
-    ctx.AppendOp(vm.TXOP_pop)
-    ctx.AppendOp(vm.TXOP_pushmark)
-    ctx.AppendOp(vm.TXOP_include)
-    ctx.AppendOp(vm.TXOP_popmark)
+    ctx.AppendOp(vm.TXOPPop)
+    ctx.AppendOp(vm.TXOPPushmark)
+    ctx.AppendOp(vm.TXOPInclude)
+    ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeGroup:
     c.compile(ctx, n.(*parser.GroupNode).Child)
   case parser.NodePlus, parser.NodeMinus, parser.NodeMul, parser.NodeDiv:
@@ -185,24 +191,24 @@ func (c *BasicCompiler) compile(ctx *CompilerCtx, n parser.Node) {
     if x.Right.Type() == parser.NodeGroup {
       // Grouped node
       c.compile(ctx, x.Right)
-      ctx.AppendOp(vm.TXOP_push)
+      ctx.AppendOp(vm.TXOPPush)
       c.compile(ctx, x.Left)
-      ctx.AppendOp(vm.TXOP_move_to_sb)
-      ctx.AppendOp(vm.TXOP_pop)
+      ctx.AppendOp(vm.TXOPMoveToSb)
+      ctx.AppendOp(vm.TXOPPop)
     } else {
       c.compile(ctx, x.Left)
-      ctx.AppendOp(vm.TXOP_move_to_sb)
+      ctx.AppendOp(vm.TXOPMoveToSb)
       c.compile(ctx, x.Right)
     }
     switch n.Type() {
     case parser.NodePlus:
-      ctx.AppendOp(vm.TXOP_add)
+      ctx.AppendOp(vm.TXOPAdd)
     case parser.NodeMinus:
-      ctx.AppendOp(vm.TXOP_sub)
+      ctx.AppendOp(vm.TXOPSub)
     case parser.NodeMul:
-      ctx.AppendOp(vm.TXOP_mul)
+      ctx.AppendOp(vm.TXOPMul)
     case parser.NodeDiv:
-      ctx.AppendOp(vm.TXOP_div)
+      ctx.AppendOp(vm.TXOPDiv)
     default:
       panic("Unknown arithmetic")
     }
