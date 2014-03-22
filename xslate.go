@@ -190,14 +190,14 @@ func (tx *Xslate) Configure(args ConfigureArgs) error {
 // To pass parameters, use `xslate.Vars`
 //
 // Possible Options:
-// * ConfigureLoader: Callback to setup the Loader. See DefaultLoader
-// * ConfigureParser: Callback to setup the Parser. See DefaultParser
-// * ConfigureCompiler: Callback to setup the Compiler. See DefaultCompiler
-// * ConfigureVM: Callback to setup the Virtual Machine. See DefaultVM
-// * Parser: Arbitrary arguments passed to ConfigureParser function
-// * Loader: Arbitrary arguments passed to ConfigureLoader function
-// * Compiler: Arbitrary arguments passed to ConfigureCompiler function
-// * VM: Arbitrary arguments passed to ConfigureVM function
+//    * ConfigureLoader: Callback to setup the Loader. See DefaultLoader
+//    * ConfigureParser: Callback to setup the Parser. See DefaultParser
+//    * ConfigureCompiler: Callback to setup the Compiler. See DefaultCompiler
+//    * ConfigureVM: Callback to setup the Virtual Machine. See DefaultVM
+//    * Parser: Arbitrary arguments passed to ConfigureParser function
+//    * Loader: Arbitrary arguments passed to ConfigureLoader function
+//    * Compiler: Arbitrary arguments passed to ConfigureCompiler function
+//    * VM: Arbitrary arguments passed to ConfigureVM function
 func New(args ...Args) (*Xslate, error) {
   tx := &Xslate {}
 

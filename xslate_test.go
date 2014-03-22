@@ -323,4 +323,3 @@ func TestXslate_GroupedArithmetic(t *testing.T) {
   template = `[% 6 / ( ( 4 - 1 ) - 1 ) %]`
   renderStringAndCompare(t, template, nil, `3`)
 }
-

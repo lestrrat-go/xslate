@@ -5,8 +5,6 @@ import (
   "reflect"
 )
 
-var nodeTextFormat = "%s"
-
 type NodeType int
 func (n NodeType) Type() NodeType {
   return n
