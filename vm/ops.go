@@ -718,11 +718,8 @@ func txInclude(st *State) {
     panic(fmt.Sprintf("Include: Failed to compile %s: %s", target, err))
   }
 
-fmt.Printf("Running external template\n")
-fmt.Printf("bytecode -> %s\n", bc)
   vm := NewVM()
   vm.Run(bc, vars)
-fmt.Printf("Done running\n")
   output, err := vm.OutputString()
   if err == nil {
     st.AppendOutputString(output)
