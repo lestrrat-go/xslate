@@ -12,12 +12,12 @@ import (
   "time"
 )
 
-var TEST_XSLATE_DEBUG = false
+var TestDebug = false
 func init() {
   tmp := os.Getenv("XSLATE_DEBUG")
   boolVar, err := strconv.ParseBool(tmp)
   if err == nil {
-    TEST_XSLATE_DEBUG = boolVar
+    TestDebug = boolVar
   }
 }
 
@@ -67,7 +67,7 @@ STAT:
     }
 
     if ! fi.IsDir() {
-      return "", errors.New("Directory location already occupied by non-dir")
+      return "", errors.New("error: Directory location already occupied by non-dir")
     }
 
     fh, err := os.OpenFile(fullpath, os.O_CREATE|os.O_WRONLY, 0666)
@@ -107,7 +107,7 @@ func ExampleXslate () {
 func renderStringAndCompare(t *testing.T, template string, vars Vars, expected string) {
   x, _ := New()
 
-  if TEST_XSLATE_DEBUG {
+  if TestDebug {
     x.DumpAST(true)
     x.DumpByteCode(true)
   }
@@ -121,7 +121,7 @@ func renderStringAndCompare(t *testing.T, template string, vars Vars, expected s
 }
 
 func renderAndCompare(t *testing.T, tx *Xslate, key string, vars Vars, expected string) {
-  if TEST_XSLATE_DEBUG {
+  if TestDebug {
     tx.DumpAST(true)
     tx.DumpByteCode(true)
   }
