@@ -332,9 +332,8 @@ func (b *Builder) ParseAssignment(ctx *BuilderCtx) Node {
 func (b *Builder) LocalVarOrFetchSymbol(ctx *BuilderCtx, token LexItem) Node {
   if idx, ok := ctx.HasLocalVar(token.Value()); ok {
     return NewLocalVarNode(token.Pos(), token.Value(), idx)
-  } else {
-    return NewFetchSymbolNode(token.Pos(), token.Value())
   }
+  return NewFetchSymbolNode(token.Pos(), token.Value())
 }
 
 func (b *Builder) ParseTerm(ctx *BuilderCtx) Node {
@@ -471,13 +470,12 @@ func (b *Builder) ParseLiteral(ctx *BuilderCtx) Node {
         b.Unexpected("Could not parse number: %s", err)
       }
       return NewFloatNode(t.Pos(), f)
-    } else {
-      i, err := strconv.ParseInt(v, 10, 64)
-      if err != nil {
-        b.Unexpected("Could not parse number: %s", err)
-      }
-      return NewIntNode(t.Pos(), i)
     }
+    i, err := strconv.ParseInt(v, 10, 64)
+    if err != nil {
+      b.Unexpected("Could not parse number: %s", err)
+    }
+    return NewIntNode(t.Pos(), i)
   default:
     b.Unexpected("Expected literal value, got %s", t)
   }

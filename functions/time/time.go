@@ -15,6 +15,7 @@ func init () {
   depot.Set("Since", time.Since)
 }
 
+// Depot returns the FuncDepot in the "time" namespace
 func Depot() *functions.FuncDepot {
   return depot
 }

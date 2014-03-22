@@ -153,8 +153,8 @@ func (l *ListNode) Visit(c chan Node) {
   }
 }
 
-func (t *TextNode) Visit(c chan Node) {
-  c <- t
+func (n *TextNode) Visit(c chan Node) {
+  c <- n
 }
 
 var noop = &NoopNode {NodeType: NodeNoop}

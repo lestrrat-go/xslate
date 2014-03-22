@@ -9,10 +9,10 @@ func makeItem(t parser.LexItemType, p int, v string) parser.LexItem {
   return parser.NewLexItem(t, parser.Pos(p), v)
 }
 
-var space     parser.LexItem = makeItem(parser.ItemSpace, 0, " ")
-var tagStart  parser.LexItem = makeItem(parser.ItemTagStart, 0, "[%")
-var tagEnd    parser.LexItem = makeItem(parser.ItemTagEnd, 0, "[%")
-var dollar    parser.LexItem = makeItem(ItemDollar, 0, "")
+var space     = makeItem(parser.ItemSpace, 0, " ")
+var tagStart  = makeItem(parser.ItemTagStart, 0, "[%")
+var tagEnd    = makeItem(parser.ItemTagEnd, 0, "[%")
+var dollar    = makeItem(ItemDollar, 0, "")
 func makeLexer(input string) *Lexer {
   l := NewLexer()
   l.SetInput(input)

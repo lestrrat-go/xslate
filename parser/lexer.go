@@ -339,7 +339,7 @@ func (i LexItemType) String() string {
   return name
 }
 
-func (i LexItem) String() string {
+func (l LexItem) String() string {
   return fmt.Sprintf("%s (%s)", i.typ, i.val)
 }
 
