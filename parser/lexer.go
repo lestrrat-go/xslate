@@ -340,7 +340,7 @@ func (i LexItemType) String() string {
 }
 
 func (l LexItem) String() string {
-  return fmt.Sprintf("%s (%s)", i.typ, i.val)
+  return fmt.Sprintf("%s (%s)", l.typ, l.val)
 }
 
 func isSpace(r rune) bool {
