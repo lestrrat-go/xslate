@@ -476,7 +476,7 @@ func txUriEscape(st *State) {
 
 func txHTMLEscape(st *State) {
   v := interfaceToString(st.sa)
-  st.sa = html.EscapeString(v)
+  st.sa = rawString(html.EscapeString(v))
   st.Advance()
 }
 
