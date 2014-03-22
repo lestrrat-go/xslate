@@ -1,4 +1,5 @@
 /*
+Package xslate is the main interface to the Go version of Xslate.
 Xslate is an extremely powerful template engine, based on Perl5's Text::Xslate
 module (http://xslate.org/). Xslate uses a virtual machine to execute 
 pre-compiled template bytecode, which gives its flexibility while maitaining 
@@ -40,23 +41,33 @@ import (
   "github.com/lestrrat/go-xslate/vm"
 )
 
+// Vars is an alias to vm.Vars, declared so that you (the end user) does
+// not have to import two packages just to use Xslate
 type Vars vm.Vars
+
+// Xslate is the main package containing all the goodies to execute and
+// render an Xslate template
 type Xslate struct {
   Flags    int32
-  Vm       *vm.VM
+  VM       *vm.VM
   Compiler compiler.Compiler
   Parser   parser.Parser
   Loader   loader.ByteCodeLoader
   // XXX Need to make syntax pluggable
 }
 
+// ConfigureArgs is the interface to be passed to `Configure()` method.
+// It just needs to be able to access fields by name like a map
 type ConfigureArgs interface {
   Get(string) (interface {}, bool)
 }
 
+// Args is the concret type that implements `ConfigureArgs`. Normally
+// this is all you need to pass to `New()`
 type Args map[string]interface {}
 
-// Given an unconfigured Xslate instance and arguments, sets up
+// DefaultCompiler sets up and assigns the default compiler to be used by
+// Xslate. Given an unconfigured Xslate instance and arguments, sets up
 // the compiler of said Xslate instance. Current implementation
 // just uses compiler.New()
 func DefaultCompiler(tx *Xslate, args Args) error {
@@ -64,6 +75,8 @@ func DefaultCompiler(tx *Xslate, args Args) error {
   return nil
 }
 
+
+// DefaultParser sets up and assigns the default parser to be used by Xslate.
 func DefaultParser(tx *Xslate, args Args) error {
   syntax, ok := args.Get("Syntax")
   if ! ok {
@@ -74,11 +87,12 @@ func DefaultParser(tx *Xslate, args Args) error {
   case "TTerse":
     tx.Parser = tterse.New()
   default:
-    return fmt.Errorf("Syntax '%s' not available", syntax)
+    return fmt.Errorf("error: Syntax '%s' not available", syntax)
   }
   return nil
 }
 
+// DefaultLoader sets up and assigns the default loader to be used by Xslate.
 func DefaultLoader(tx *Xslate, args Args) error {
   var tmp interface {}
 
@@ -108,12 +122,14 @@ func DefaultLoader(tx *Xslate, args Args) error {
   return nil
 }
 
-func DefaultVm(tx *Xslate, args Args) error {
-  tx.Vm = vm.NewVM()
-  tx.Vm.Loader = tx.Loader
+// DefaultVM sets up and assigns the default VM to be used by Xslate
+func DefaultVM(tx *Xslate, args Args) error {
+  tx.VM = vm.NewVM()
+  tx.VM.Loader = tx.Loader
   return nil
 }
 
+// Get retrieves the value assigned to `key`
 func (args Args) Get(key string) (interface {}, bool) {
   ret, ok := args[key]
   return ret, ok
@@ -132,9 +148,11 @@ func (tx *Xslate) configureGeneric(configuror interface {}, args Args) error {
     err := cb(tx, args)
     return err
   }
-  return errors.New("Bad configurator")
+  return errors.New("error: Bad configurator")
 }
 
+// Configure is called automatically from `New()` to configure the xslate 
+// instance from arguments
 func (tx *Xslate) Configure(args ConfigureArgs) error {
   // The compiler currently does not have any configurable options, but
   // one may want to replace the entire compiler struct
@@ -142,10 +160,10 @@ func (tx *Xslate) Configure(args ConfigureArgs) error {
     "Compiler": DefaultCompiler,
     "Parser":   DefaultParser,
     "Loader":   DefaultLoader,
-    "Vm":       DefaultVm,
+    "VM":       DefaultVM,
   }
 
-  for _, key := range []string { "Parser", "Compiler", "Loader", "Vm" } {
+  for _, key := range []string { "Parser", "Compiler", "Loader", "VM" } {
     configKey := "Configure" + key
     configuror, ok := args.Get(configKey);
     if !ok {
@@ -166,7 +184,7 @@ func (tx *Xslate) Configure(args ConfigureArgs) error {
   return nil
 }
 
-// Creates a new Xslate instance. If called without any arguments,
+// New creates a new Xslate instance. If called without any arguments,
 // creates a new Xslate instance using all default settings.
 //
 // To pass parameters, use `xslate.Vars`
@@ -175,11 +193,11 @@ func (tx *Xslate) Configure(args ConfigureArgs) error {
 // * ConfigureLoader: Callback to setup the Loader. See DefaultLoader
 // * ConfigureParser: Callback to setup the Parser. See DefaultParser
 // * ConfigureCompiler: Callback to setup the Compiler. See DefaultCompiler
-// * ConfigureVm: Callback to setup the Virtual Machine. See DefaultVm
+// * ConfigureVM: Callback to setup the Virtual Machine. See DefaultVM
 // * Parser: Arbitrary arguments passed to ConfigureParser function
 // * Loader: Arbitrary arguments passed to ConfigureLoader function
 // * Compiler: Arbitrary arguments passed to ConfigureCompiler function
-// * Vm: Arbitrary arguments passed to ConfigureVm function
+// * VM: Arbitrary arguments passed to ConfigureVM function
 func New(args ...Args) (*Xslate, error) {
   tx := &Xslate {}
 
@@ -195,21 +213,21 @@ func New(args ...Args) (*Xslate, error) {
   return tx, nil
 }
 
-// Sets the flag to dump the abstract syntax tree after parsing the template.
-// Use of this method is only really useful if you know the internal 
+// DumpAST sets the flag to dump the abstract syntax tree after parsing the 
+// template. Use of this method is only really useful if you know the internal 
 // repreentation of the templates
 func (tx *Xslate) DumpAST(b bool) {
   tx.Loader.DumpAST(b)
 }
 
-// Sets the flag to dump the bytecode after compiling the template.
-// Use of this method is only really useful if you know the internal 
+// DumpByteCode sets the flag to dump the bytecode after compiling the 
+// template. Use of this method is only really useful if you know the internal 
 // repreentation of the templates
 func (tx *Xslate) DumpByteCode(b bool) {
   tx.Loader.DumpByteCode(b)
 }
 
-// `Render()` loads the template specified by the given name string.
+// Render loads the template specified by the given name string.
 // By default Xslate looks for files in the local file system, and caches
 // the generated bytecode too.
 //
@@ -225,16 +243,16 @@ func (tx *Xslate) DumpByteCode(b bool) {
 //
 // `Render()` returns the resulting text from processing the template.
 // `err` is nil on success, otherwise it contains an `error` value.
-func (x *Xslate) Render(name string, vars Vars) (string, error) {
-  bc, err := x.Loader.Load(name)
+func (tx *Xslate) Render(name string, vars Vars) (string, error) {
+  bc, err := tx.Loader.Load(name)
   if err != nil {
     return "", err
   }
-  x.Vm.Run(bc, vm.Vars(vars))
-  return x.Vm.OutputString()
+  tx.VM.Run(bc, vm.Vars(vars))
+  return tx.VM.OutputString()
 }
 
-// `RenderString()` takes a string argument and treats it as the template
+// RenderString takes a string argument and treats it as the template
 // content. Like `Render()`, this template is parsed and compiled. Because 
 // there's no way to establish template "freshness", the resulting bytecode
 // from `RenderString()` is not cached for reuse.
@@ -242,12 +260,12 @@ func (x *Xslate) Render(name string, vars Vars) (string, error) {
 // If you *really* want to change this behavior, it's not impossible to
 // bend Xslate's Loader mechanism to cache strings as well, but the main
 // Xslate library will probably not adopt this feature.
-func (x *Xslate) RenderString(template string, vars Vars) (string, error) {
-  bc, err := x.Loader.LoadString(template)
+func (tx *Xslate) RenderString(template string, vars Vars) (string, error) {
+  bc, err := tx.Loader.LoadString(template)
   if err != nil {
     return "", err
   }
 
-  x.Vm.Run(bc, vm.Vars(vars))
-  return x.Vm.OutputString()
+  tx.VM.Run(bc, vm.Vars(vars))
+  return tx.VM.OutputString()
 }
