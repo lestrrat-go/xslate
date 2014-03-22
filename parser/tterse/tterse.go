@@ -89,42 +89,15 @@ func (p *TTerse) Peek() parser.LexItem {
   return item
 }
 
+// Parse parses the given template and creates an AST
 func (p *TTerse) Parse(template []byte) (*parser.AST, error) {
   return p.ParseString(string(template))
 }
 
+// ParseString is the same as Parse, but receives a string instead of []byte
 func (p *TTerse) ParseString(template string) (*parser.AST, error) {
   b := parser.NewBuilder()
   lex := NewLexer()
   lex.SetInput(template)
   return b.Parse("foo", template, lex)
 }
-
-/*
-
-  p.lexer.SetInput(input)
-  go p.lexer.Run()
-
-Loop:
-  for {
-    item := p.NextNonSpaceItem()
-    fmt.Printf("item -> %v\n", item)
-    switch item.Type() {
-    case parser.ItemEnd, parser.ItemEOF:
-      break Loop
-    case parser.ItemIdentifier:
-      next := p.Peek()
-      if next.Type() == parser.ItemAssign {
-        p.ParseAssignment(item)
-      }
-    case parser.ItemAssign:
-      // st.stack[st.curstack]
-    case parser.ItemRawString:
-    case parser.ItemSpace, parser.ItemTagStart, parser.ItemTagEnd:
-      // Nothing to do
-    }
-  }
-
-  return nil, nil
-}
-*/
