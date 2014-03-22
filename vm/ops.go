@@ -49,6 +49,7 @@ const (
   TXOPMakeArray
   TXOPMakeHash
   TXOPInclude
+  TXOPFilter
   TXOPEnd
   TXOPMax
 )
@@ -171,6 +172,9 @@ func init () {
     case TXOPInclude:
       h = txInclude
       n = "include"
+    case TXOPFilter:
+      h = txFilter
+      n = "filter"
     default:
       panic("No such optype")
     }
@@ -448,6 +452,20 @@ func txForIter(st *State) {
 
   // loop done
   st.AdvanceBy(st.CurrentOp().ArgInt())
+}
+
+func txFilter(st *State) {
+  name := st.CurrentOp().Arg().(string)
+
+  // XXX Check for local vars first?
+  switch name {
+  case "html":
+    txHTMLEscape(st)
+  case "uri":
+    txUriEscape(st)
+  default:
+    panic("User-specified filters not implemented yet")
+  }
 }
 
 func txUriEscape(st *State) {

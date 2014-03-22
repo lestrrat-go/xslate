@@ -323,3 +323,8 @@ func TestXslate_GroupedArithmetic(t *testing.T) {
   template = `[% 6 / ( ( 4 - 1 ) - 1 ) %]`
   renderStringAndCompare(t, template, nil, `3`)
 }
+
+func TestXslate_Filter(t *testing.T) {
+  template := `[% "日本語" | uri %]`
+  renderStringAndCompare(t, template, nil, `%E6%97%A5%E6%9C%AC%E8%AA%9E`)
+}

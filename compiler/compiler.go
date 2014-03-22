@@ -1,3 +1,4 @@
+
 package compiler
 
 import (
@@ -212,6 +213,11 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     default:
       panic("Unknown arithmetic")
     }
+  case parser.NodeFilter:
+    x := n.(*parser.FilterNode)
+
+    c.compile(ctx, x.Child)
+    ctx.AppendOp(vm.TXOPFilter, x.Name)
   default:
     fmt.Printf("Unknown node: %s\n", n.Type())
   }

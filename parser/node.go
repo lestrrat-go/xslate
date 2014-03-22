@@ -51,6 +51,7 @@ const (
   NodeDiv
   NodeMakeArray
   NodeGroup
+  NodeFilter
   NodeMax
 )
 
@@ -110,6 +111,8 @@ func (n NodeType) String() string {
     return "Divide"
   case NodeGroup:
     return "Group"
+  case NodeFilter:
+    return "Filter"
   default:
     return "Unknown Node"
   }
@@ -652,3 +655,24 @@ func (n *GroupNode) Visit(c chan Node) {
   c <-n
   n.Child.Visit(c)
 }
+
+type FilterNode struct {
+  NodeType
+  Pos
+  Name string
+  Child Node
+}
+
+func NewFilterNode(pos Pos, name string, child Node) *FilterNode {
+  return &FilterNode { NodeFilter, pos, name, child }
+}
+
+func (n *FilterNode) Copy() Node {
+  return &FilterNode { NodeFilter, n.Pos, n.Name, n.Child.Copy() }
+}
+
+func (n *FilterNode) Visit(c chan Node) {
+  c <-n
+  n.Child.Visit(c)
+}
+

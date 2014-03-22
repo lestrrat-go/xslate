@@ -142,6 +142,7 @@ const (
   ItemMinus
   ItemAsterisk
   ItemSlash
+  ItemVerticalSlash
   ItemMod
   ItemAssign      // =
 
@@ -239,6 +240,8 @@ func (i LexItemType) String() string {
     name = "Asterisk"
   case ItemSlash:
     name = "Slash"
+  case ItemVerticalSlash:
+    name = "VerticalSlash"
   case ItemAssign:
     name = "Assign"
   case ItemOpenSquareBracket:
@@ -377,6 +380,7 @@ func NewLexer() *Lexer {
   l.AddSymbol("]", ItemCloseSquareBracket, 0.0)
   l.AddSymbol(".", ItemPeriod, 0.0)
   l.AddSymbol(",", ItemComma, 0.0)
+  l.AddSymbol("|", ItemVerticalSlash, 0.0)
 
   // XXX TTerse specific
   l.AddSymbol("WITH", ItemWith)

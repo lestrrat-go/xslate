@@ -447,12 +447,36 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
     default:
       b.Backup(ctx)
     }
-    return
+  default:
+    b.Backup(ctx)
   }
 
-  b.Backup(ctx)
+  // The whole expression can be passed to a filter
+  if b.PeekNonSpace(ctx).Type() == ItemVerticalSlash {
+    n = b.ParseFilter(ctx, n)
+  }
 
   return
+}
+
+func (b *Builder) ParseFilter(ctx *BuilderCtx, n Node) Node {
+  vslash := b.NextNonSpace(ctx)
+  if vslash.Type() != ItemVerticalSlash {
+    b.Unexpected("Expected '|', got %s", vslash.Type())
+  }
+
+  id := b.NextNonSpace(ctx)
+  if id.Type() != ItemIdentifier {
+    b.Unexpected("Expected idenfitier, got %s", id.Type())
+  }
+
+  filter := NewFilterNode(id.Pos(), id.Value(), n)
+
+  if b.PeekNonSpace(ctx).Type() == ItemVerticalSlash {
+    filter = b.ParseFilter(ctx, filter).(*FilterNode)
+  }
+
+  return filter
 }
 
 func (b *Builder) ParseLiteral(ctx *BuilderCtx) Node {
