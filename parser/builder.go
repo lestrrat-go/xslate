@@ -275,27 +275,26 @@ func (b *Builder) ParseWrapper(ctx *BuilderCtx) Node {
   ctx.CurrentParentNode().Append(n)
   ctx.PushParentNode(n)
 
+  ctx.PushStackFrame()
+
   // If we have parameters, we have WITH. otherwise we want TagEnd
-  if token := b.PeekNonSpace(ctx); token.Type() == ItemWith {
-    b.NextNonSpace(ctx) // WITH
-
-    for {
-      token := b.PeekNonSpace(ctx)
-      if token.Type() == ItemTagEnd {
-        break
-      }
-
-      assignment := b.ParseAssignment(ctx)
-      n.Append(assignment)
-
-      if b.PeekNonSpace(ctx).Type() != ItemComma {
-        break
-      }
-
-      // comma
-      b.NextNonSpace(ctx)
-    }
+  if token := b.PeekNonSpace(ctx); token.Type() != ItemWith {
+    ctx.PopStackFrame()
+    return nil
   }
+  b.NextNonSpace(ctx) // WITH
+  for {
+    a := b.ParseAssignment(ctx)
+    n.AppendAssignment(a)
+    next := b.PeekNonSpace(ctx)
+    if next.Type() != ItemComma {
+      break
+    } else if  next.Type() == ItemTagEnd {
+      break
+    }
+    b.NextNonSpace(ctx)
+  }
+  ctx.PopStackFrame()
 
   return nil
 }

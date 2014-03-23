@@ -353,3 +353,23 @@ func TestXslate_Wrapper(t *testing.T) {
   renderAndCompare(t, tx, "wrapper/index.tx", nil, "Hello World Bob!")
 }
 
+func TestXslate_WrapperWithArgs(t *testing.T) {
+  files := map[string]string {
+    "wrapper/index.tx": `[% WRAPPER "wrapper/wrapper.tx" WITH name = "Bob" %]Hello, Hello![% END %]`,
+    "wrapper/wrapper.tx": `Hello World [% name %]! [% content %] Hello World [% name %]!`,
+  }
+
+  root, err := generateTemplates(files)
+  if err != nil {
+    t.Fatalf("Failed to create template files: %s", err)
+  }
+  defer os.RemoveAll(root)
+
+  tx, err := createTx(root, filepath.Join(root, "cache"))
+  if err != nil {
+    t.Fatalf("Failed to create xslate instance: %s", err)
+  }
+  renderAndCompare(t, tx, "wrapper/index.tx", nil, "Hello World Bob! Hello, Hello! Hello World Bob!")
+}
+
+

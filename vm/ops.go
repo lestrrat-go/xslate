@@ -765,6 +765,17 @@ func txInclude(st *State) {
 }
 
 func txWrapper(st *State) {
+  // See txInclude
+  vars := Vars {}
+  if x := st.sb; x != nil {
+    hash := x.(map[interface{}]interface{})
+    // Need to covert this to Vars (map[string]interface{})
+    for k, v := range hash {
+      vars.Set(interfaceToString(k), v)
+    }
+  }
+  vars.Set("content", st.sa)
+
   target := interfaceToString(st.CurrentOp().Arg())
   bc, err := st.LoadByteCode(target)
   if err != nil {
@@ -772,7 +783,7 @@ func txWrapper(st *State) {
   }
 
   vm := NewVM()
-  vm.Run(bc, Vars { "content": st.sa })
+  vm.Run(bc, vars)
   output, err := vm.OutputString()
   if err == nil {
     st.AppendOutputString(output)

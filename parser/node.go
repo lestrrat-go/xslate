@@ -207,26 +207,40 @@ type WrapperNode struct {
   WrapperName string
   // XXX need to make this configurable. currently it's only "content"
   // WrapInto string
+  AssignmentNodes []Node
 }
 
 func NewWrapperNode(pos Pos, template string) *WrapperNode {
   n := &WrapperNode {
     NewListNode(pos),
     template,
+    []Node {},
   }
   n.NodeType = NodeWrapper
   return n
 }
 
+func (n *WrapperNode) AppendAssignment(a Node) {
+  n.AssignmentNodes = append(n.AssignmentNodes, a)
+}
+
 func (n *WrapperNode) Copy() Node {
+  anodes := make([]Node, len(n.AssignmentNodes))
+  for i, v := range n.AssignmentNodes {
+    anodes[i] = v.Copy()
+  }
   return &WrapperNode {
     n.ListNode.Copy().(*ListNode),
     n.WrapperName,
+    anodes,
   }
 }
 
 func (n *WrapperNode) Visit(c chan Node) {
   c <- n
+  for _, v := range n.AssignmentNodes {
+    v.Visit(c)
+  }
   n.ListNode.Visit(c)
 }
 
