@@ -21,11 +21,12 @@ Currently:
 
 * I'm aiming for port of most of TTerse syntax
 * See [VM Progress](https://github.com/lestrrat/go-xslate/wiki/VM-Progress) for what the this xslate virtual machine can handle
-* VM TODO: macros, stuff involving external templates
-* Parser is about 60% finished.
-* Compiler is about 30% finished.
+* VM TODO: macros, prechomp + postchomp
+* Parser is about 80% finished.
+* Compiler is about 60% finished.
+* Pluggable syntax isn't implemented at all.
 
-For very simple templates, you can already do:
+For simple templates, you can already do:
 
 ```go
 package main
