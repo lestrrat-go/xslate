@@ -181,18 +181,7 @@ func (b *Builder) ParseTemplateOrText(ctx *BuilderCtx) Node {
   case ItemRawString:
     return b.ParseRawString(ctx)
   case ItemTagStart:
-    node := b.ParseTemplate(ctx)
-    if node == nil {
-      return nil
-    }
-
-    switch node.Type() {
-    case NodeWrapper:
-      ctx.CurrentParentNode().Append(node)
-      ctx.PushParentNode(node.(*ListNode))
-      node = nil
-    }
-    return node
+    return b.ParseTemplate(ctx)
   default:
     panic(fmt.Sprintf("fuck %s", token))
   }
@@ -273,20 +262,22 @@ func (b *Builder) ParseWrapper(ctx *BuilderCtx) Node {
   }
 
   tmpl := b.NextNonSpace(ctx)
+  var template string
   switch tmpl.Type() {
   case ItemDoubleQuotedString, ItemSingleQuotedString:
-    // no op
+    template = tmpl.Value()
+    template = template[1:len(template)-1]
   default:
     b.Unexpected("Expected identifier, got %s", tmpl)
   }
 
+  n := NewWrapperNode(wrapper.Pos(), template)
+  ctx.CurrentParentNode().Append(n)
+  ctx.PushParentNode(n)
+
   // If we have parameters, we have WITH. otherwise we want TagEnd
-  switch token := b.PeekNonSpace(ctx); token.Type() {
-  case ItemTagEnd:
-    return NewWrapperNode(token.Pos(), tmpl.Value())
-  case ItemWith:
+  if token := b.PeekNonSpace(ctx); token.Type() == ItemWith {
     b.NextNonSpace(ctx) // WITH
-    wrapper := NewWrapperNode(token.Pos(), tmpl.Value())
 
     for {
       token := b.PeekNonSpace(ctx)
@@ -295,7 +286,7 @@ func (b *Builder) ParseWrapper(ctx *BuilderCtx) Node {
       }
 
       assignment := b.ParseAssignment(ctx)
-      wrapper.Append(assignment)
+      n.Append(assignment)
 
       if b.PeekNonSpace(ctx).Type() != ItemComma {
         break
@@ -304,10 +295,8 @@ func (b *Builder) ParseWrapper(ctx *BuilderCtx) Node {
       // comma
       b.NextNonSpace(ctx)
     }
-    return wrapper
-  default:
-    panic( b.PeekNonSpace(ctx).Type() )
   }
+
   return nil
 }
 

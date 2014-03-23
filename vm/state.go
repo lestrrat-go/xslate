@@ -4,6 +4,7 @@ import (
   "bytes"
   "fmt"
   "io"
+  "io/ioutil"
   "os"
 )
 
@@ -110,6 +111,20 @@ func (st *State) AppendOutput(b []byte) {
 // AppendOutputString is the same as AppendOutput, but uses a string
 func (st *State) AppendOutputString(o string) {
   st.output.Write([]byte(o))
+}
+
+// Output returns the accumulated output
+func (st *State) Output() ([]byte, error) {
+  return ioutil.ReadAll(st.output)
+}
+
+// OutputString returns the accumulated output as string
+func (st *State) OutputString() (string, error) {
+  buf, err := st.Output()
+  if err != nil {
+    return "", err
+  }
+  return string(buf), nil
 }
 
 // Pushmark records the current stack tip so we can remember

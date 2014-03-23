@@ -6,6 +6,7 @@ import (
   "time"
 )
 
+// AST is represents the syntax tree for an Xslate template
 type AST struct {
   Name      string // name of the template
   ParseName string // name of the top-level template during parsing
@@ -14,6 +15,8 @@ type AST struct {
   text      string
 }
 
+// Visit returns a channel which you can receive Node structs in order that
+// that they would be processed
 func (ast *AST) Visit() <-chan Node {
   c := make(chan Node)
   go func () {
@@ -23,6 +26,7 @@ func (ast *AST) Visit() <-chan Node {
   return c
 }
 
+// String returns the textual representation of this AST
 func (ast *AST) String() string {
   buf := &bytes.Buffer {}
   c := ast.Visit()

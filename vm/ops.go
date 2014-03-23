@@ -1,8 +1,11 @@
 package vm
 
 import (
+  "bytes"
   "fmt"
   "html"
+  "io"
+  "io/ioutil"
   "reflect"
   "unicode"
   "unicode/utf8"
@@ -49,7 +52,11 @@ const (
   TXOPMakeArray
   TXOPMakeHash
   TXOPInclude
+  TXOPWrapper
   TXOPFilter
+  TXOPPopOutput
+  TXOPPushOutput
+  TXOPNewOutput
   TXOPEnd
   TXOPMax
 )
@@ -172,9 +179,21 @@ func init () {
     case TXOPInclude:
       h = txInclude
       n = "include"
+    case TXOPWrapper:
+      h = txWrapper
+      n = "wrapper"
     case TXOPFilter:
       h = txFilter
       n = "filter"
+    case TXOPPushOutput:
+      h = txPushOutput
+      n = "push_output"
+    case TXOPPopOutput:
+      h = txPopOutput
+      n = "pop_output"
+    case TXOPNewOutput:
+      h = txNewOutput
+      n = "new_output"
     default:
       panic("No such optype")
     }
@@ -744,3 +763,37 @@ func txInclude(st *State) {
   }
   st.Advance()
 }
+
+func txWrapper(st *State) {
+  target := interfaceToString(st.CurrentOp().Arg())
+  bc, err := st.LoadByteCode(target)
+  if err != nil {
+    panic(fmt.Sprintf("Wrapper: Failed to compile %s: %s", target, err))
+  }
+
+  vm := NewVM()
+  vm.Run(bc, Vars { "content": st.sa })
+  output, err := vm.OutputString()
+  if err == nil {
+    st.AppendOutputString(output)
+  }
+  st.Advance()
+}
+
+func txPushOutput(st *State) {
+  st.StackPush(st.output)
+  st.Advance()
+}
+
+func txPopOutput(st *State) {
+  oldOutput := st.StackPop().(io.ReadWriter)
+  st.sa, _ = ioutil.ReadAll(st.output.(io.ReadWriter))
+  st.output = oldOutput
+  st.Advance()
+}
+
+func txNewOutput(st *State) {
+  st.output = &bytes.Buffer {}
+  st.Advance()
+}
+

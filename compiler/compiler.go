@@ -159,6 +159,15 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
       ctx.AppendOp(vm.TXOPPush)
     }
     ctx.AppendOp(vm.TXOPMethodCall, x.MethodName)
+  case parser.NodeWrapper:
+    x := n.(*parser.WrapperNode)
+    ctx.AppendOp(vm.TXOPPushOutput)
+    ctx.AppendOp(vm.TXOPNewOutput)
+    for _, v := range x.ListNode.Nodes {
+      c.compile(ctx, v)
+    }
+    ctx.AppendOp(vm.TXOPPopOutput)
+    ctx.AppendOp(vm.TXOPWrapper, x.WrapperName)
   case parser.NodeInclude:
     x := n.(*parser.IncludeNode)
 

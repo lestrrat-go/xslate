@@ -16,7 +16,6 @@ package vm
 
 import (
   "bytes"
-  "io/ioutil"
 )
 
 // This interface exists solely to avoid importing loader.ByteCodeLoader
@@ -43,16 +42,12 @@ func (vm *VM) CurrentOp() *Op {
 
 // Output returns the output accumulated so far
 func (vm *VM) Output() ([]byte, error) {
-  return ioutil.ReadAll(vm.st.output)
+  return vm.st.Output()
 }
 
 // OutputString returns the output accumulated so far in string format
 func (vm *VM) OutputString() (string, error) {
-  buf, err := vm.Output()
-  if err != nil {
-    return "", err
-  }
-  return string(buf), nil
+  return vm.st.OutputString()
 }
 
 // Reset reinitializes certain state variables

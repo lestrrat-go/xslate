@@ -202,11 +202,32 @@ func (n *TextNode) String() string {
   return fmt.Sprintf("%s %s", n.NodeType, n.Text)
 }
 
-func NewWrapperNode(pos Pos, template string) *ListNode {
-  n := NewListNode(pos)
+type WrapperNode struct {
+  *ListNode
+  WrapperName string
+  // XXX need to make this configurable. currently it's only "content"
+  // WrapInto string
+}
+
+func NewWrapperNode(pos Pos, template string) *WrapperNode {
+  n := &WrapperNode {
+    NewListNode(pos),
+    template,
+  }
   n.NodeType = NodeWrapper
-  n.Append(NewTextNode(pos, template))
   return n
+}
+
+func (n *WrapperNode) Copy() Node {
+  return &WrapperNode {
+    n.ListNode.Copy().(*ListNode),
+    n.WrapperName,
+  }
+}
+
+func (n *WrapperNode) Visit(c chan Node) {
+  c <- n
+  n.ListNode.Visit(c)
 }
 
 type AssignmentNode struct {

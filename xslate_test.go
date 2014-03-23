@@ -328,7 +328,28 @@ func TestXslate_FilterHTML(t *testing.T) {
   template := `[% "<abc>" | html %]`
   renderStringAndCompare(t, template, nil, `&lt;abc&gt;`)
 }
+
 func TestXslate_FilterUri(t *testing.T) {
   template := `[% "日本語" | uri %]`
   renderStringAndCompare(t, template, nil, `%E6%97%A5%E6%9C%AC%E8%AA%9E`)
 }
+
+func TestXslate_Wrapper(t *testing.T) {
+  files := map[string]string {
+    "wrapper/index.tx": `[% WRAPPER "wrapper/wrapper.tx" %]World[% END %]`,
+    "wrapper/wrapper.tx": `Hello [% content %] Bob!`,
+  }
+
+  root, err := generateTemplates(files)
+  if err != nil {
+    t.Fatalf("Failed to create template files: %s", err)
+  }
+  defer os.RemoveAll(root)
+
+  tx, err := createTx(root, filepath.Join(root, "cache"))
+  if err != nil {
+    t.Fatalf("Failed to create xslate instance: %s", err)
+  }
+  renderAndCompare(t, tx, "wrapper/index.tx", nil, "Hello World Bob!")
+}
+
