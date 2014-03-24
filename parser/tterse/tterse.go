@@ -26,15 +26,18 @@ var symbols = map[string]parser.LexItemType{
   "END":      parser.ItemEnd,
 }
 
+// Lexer lexes tempaltes in TTerse syntax
 type Lexer struct {
   *parser.Lexer
 }
 
+// TTerse is the main parser for TTerse
 type TTerse struct {
   lexer *Lexer
   items []parser.LexItem
 }
 
+// NewLexer creates a new lexer
 func NewLexer() *Lexer {
   l := &Lexer {
     parser.NewLexer(),
@@ -50,43 +53,11 @@ func NewLexer() *Lexer {
   return l
 }
 
+// New creates a new TTerse parser
 func New() *TTerse {
   return &TTerse {
     lexer: NewLexer(),
   }
-}
-
-func (p *TTerse) next() parser.LexItem {
-  return p.lexer.NextItem()
-}
-
-func (p *TTerse) NextItem() parser.LexItem {
-  if len(p.items) > 0 {
-    item := p.items[0]
-    p.items = p.items[1:]
-    return item
-  }
-  return p.next()
-}
-
-func (p *TTerse) NextNonSpaceItem() parser.LexItem {
-  for {
-    n := p.NextItem()
-    switch n.Type() {
-    case parser.ItemEOF, parser.ItemError:
-      return parser.NewLexItem(parser.ItemEOF, 0, "")
-    case parser.ItemSpace:
-      continue
-    default:
-      return n
-    }
-  }
-}
-
-func (p *TTerse) Peek() parser.LexItem {
-  item := p.NextNonSpaceItem()
-  p.items = append(p.items, item)
-  return item
 }
 
 // Parse parses the given template and creates an AST
