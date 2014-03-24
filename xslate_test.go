@@ -1,6 +1,7 @@
 package xslate
 
 import (
+  "bytes"
   "errors"
   "fmt"
   "io/ioutil"
@@ -372,4 +373,31 @@ func TestXslate_WrapperWithArgs(t *testing.T) {
   renderAndCompare(t, tx, "wrapper/index.tx", nil, "Hello World Bob! Hello, Hello! Hello World Bob!")
 }
 
+func TestXslate_RenderInto(t *testing.T) {
+  files := map[string]string {
+    "render_into/index.tx": `Hello World, [% name %]!`,
+  }
+
+  root, err := generateTemplates(files)
+  if err != nil {
+    t.Fatalf("Failed to create template files: %s", err)
+  }
+  defer os.RemoveAll(root)
+
+  tx, err := createTx(root, filepath.Join(root, "cache"))
+  if err != nil {
+    t.Fatalf("Failed to create xslate instance: %s", err)
+  }
+
+  b := &bytes.Buffer {}
+  err = tx.RenderInto(b, "render_into/index.tx", Vars { "name": "Bob" })
+
+  if err != nil {
+    t.Fatalf("Failed to call RenderInto: %s", err)
+  }
+
+  if b.String() != "Hello World, Bob!" {
+    t.Errorf("Expected 'Hello World, Bob!', got '%s'", b.String())
+  }
+}
 

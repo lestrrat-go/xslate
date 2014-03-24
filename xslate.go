@@ -30,6 +30,7 @@ package xslate
 import (
   "errors"
   "fmt"
+  "io"
   "io/ioutil"
   "os"
   "reflect"
@@ -268,4 +269,19 @@ func (tx *Xslate) RenderString(template string, vars Vars) (string, error) {
 
   tx.VM.Run(bc, vm.Vars(vars))
   return tx.VM.OutputString()
+}
+
+// RenderInto combines Render() and writing its results into an io.Writer.
+// This is a convenience method for frameworks providing a Writer interface,
+// such as net/http's ServeHTTP()
+func (tx *Xslate) RenderInto(w io.Writer, template string, vars Vars) error {
+  output, err := tx.Render(template, vars)
+  if err != nil {
+    return err
+  }
+  _, err = w.Write([]byte(output))
+  if err != nil {
+    return err
+  }
+  return nil
 }

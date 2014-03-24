@@ -39,7 +39,7 @@ type State struct {
 func NewState() *State {
   st := &State {
     opidx: 0,
-    pc: &ByteCode {},
+    pc: NewByteCode(),
     stack: NewStack(5),
     markstack: NewStack(5),
     vars: make(Vars),
