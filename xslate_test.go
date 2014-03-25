@@ -337,8 +337,8 @@ func TestXslate_FilterUri(t *testing.T) {
 
 func TestXslate_Wrapper(t *testing.T) {
   files := map[string]string {
-    "wrapper/index.tx": `[% WRAPPER "wrapper/wrapper.tx" %]World[% END %]`,
-    "wrapper/wrapper.tx": `Hello [% content %] Bob!`,
+    "wrapper/index.tx": `[% WRAPPER "wrapper/wrapper.tx" %]<b>World</b>[% END %]`,
+    "wrapper/wrapper.tx": `<html><body><h1>Hello [% content %] Bob!</h1></body></html>`,
   }
 
   root, err := generateTemplates(files)
@@ -351,7 +351,7 @@ func TestXslate_Wrapper(t *testing.T) {
   if err != nil {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }
-  renderAndCompare(t, tx, "wrapper/index.tx", nil, "Hello World Bob!")
+  renderAndCompare(t, tx, "wrapper/index.tx", nil, "<html><body><h1>Hello <b>World</b> Bob!</h1></body></html>")
 }
 
 func TestXslate_WrapperWithArgs(t *testing.T) {

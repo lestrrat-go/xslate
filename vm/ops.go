@@ -774,7 +774,7 @@ func txWrapper(st *State) {
       vars.Set(interfaceToString(k), v)
     }
   }
-  vars.Set("content", st.sa)
+  vars.Set("content", rawString(interfaceToString(st.sa)))
 
   target := interfaceToString(st.CurrentOp().Arg())
   bc, err := st.LoadByteCode(target)
