@@ -14,6 +14,30 @@ This is an attempt to port [Text::Xslate](https://github.com/xslate/p5-Text-Xsla
 
 Xslate is an extremely powerful virtual machine based template engine.
 
+Why Would I Choose xslate over text/template?
+=============================================
+
+I believe there are at least two reasons you would choose Xslate over the basic
+text/template or html/template packages:
+
+*Template flexibility*
+
+IMHO, the default TTerse syntax is much more expressive and flexible.
+With WRAPPERs and INCLUDEs, it is possible to write a very module set of 
+templates. YMMV
+
+*Dynamic/Automatic Reloading*
+
+By default Xslate expects that your template live in the file system -- i.e.
+outside of your go code. While text/template expects that you manage loading
+of templates yourself. Xslate handles all this for you. It searches for
+templates in the specified path, does the compilation, and handles caching,
+both on memory and on file system.
+
+Xslate is also designed to allow you to customize this behavior: It should be
+easy to create a template loader that loads from databases and cache into
+memcached and the like.
+
 Current Status
 =======
 
