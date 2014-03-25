@@ -226,6 +226,9 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
         keepPopping = false
       }
     }
+  case ItemComment:
+    b.NextNonSpace(ctx)
+    // no op
   case ItemSet:
     b.NextNonSpace(ctx)
     tmpl = b.ParseAssignment(ctx)

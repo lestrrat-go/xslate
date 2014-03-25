@@ -157,6 +157,10 @@ func TestXslate_SimpleString(t *testing.T) {
   renderStringAndCompare(t, `Hello, World!`, nil, `Hello, World!`)
 }
 
+func TestXslate_Comment(t *testing.T) {
+  renderStringAndCompare(t, `[% # This is a comment %]Hello, World!`, nil, `Hello, World!`)
+}
+
 func TestXslate_Variable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
 }
