@@ -119,7 +119,13 @@ func DefaultLoader(tx *Xslate, args Args) error {
   if err != nil {
     return err
   }
-  tx.Loader = loader.NewCachedByteCodeLoader(cache, fetcher, tx.Parser, tx.Compiler)
+
+  tmp, ok = args.Get("CacheLevel")
+  if ! ok {
+    tmp = 1
+  }
+  cacheLevel := tmp.(int)
+  tx.Loader = loader.NewCachedByteCodeLoader(cache, cacheLevel, fetcher, tx.Parser, tx.Compiler)
   return nil
 }
 

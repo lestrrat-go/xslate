@@ -22,7 +22,11 @@ func init() {
   }
 }
 
-func createTx(path, cacheDir string) (*Xslate, error) {
+func createTx(path, cacheDir string, cacheLevel ...int) (*Xslate, error) {
+  if len(cacheLevel) == 0 {
+    cacheLevel = []int { 1 }
+  }
+
   x, err := New(Args {
     // Optional. Currently only supports TTerse
     "Parser": Args {
@@ -31,6 +35,7 @@ func createTx(path, cacheDir string) (*Xslate, error) {
     // Compiler: DefaultCompiler, // don't need to specify
     "Loader": Args {
       "CacheDir": cacheDir,
+      "CacheLevel": cacheLevel[0],
       "LoadPaths": []string { path },
     },
   })
