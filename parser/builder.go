@@ -380,7 +380,15 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *BuilderCtx, invocant Node) Nod
   // Otherwise it's a map lookup. Put back that extra token we read
   b.Backup(ctx)
 
-  return NewFetchFieldNode(invocant.Position(), invocant, symbol.Value())
+  n := NewFetchFieldNode(invocant.Position(), invocant, symbol.Value())
+
+  // If we are followed by another period, we are going to have to
+  // check for another level of methodcall / lookup
+  if b.PeekNonSpace(ctx).Type() == ItemPeriod {
+    b.NextNonSpace(ctx) // consume period
+    return b.ParseMethodCallOrMapLookup(ctx, n)
+  }
+  return n
 }
 
 func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {

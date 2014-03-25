@@ -177,6 +177,12 @@ func TestXslate_StructVariable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": struct { Name string } { "Bob" } }, `Hello World, Bob!`)
 }
 
+func TestXslate_NestedStructVariable(t *testing.T) {
+  inner := struct { Name string } { "Bob" }
+  outer := struct { Inner struct { Name string } } { inner }
+  renderStringAndCompare(t, `Hello World, [% data.inner.name %]!`, Vars { "data": outer }, `Hello World, Bob!`)
+}
+
 func TestXslate_LocalVar(t *testing.T) {
   renderStringAndCompare(t, `[% SET name = "Bob" %]Hello World, [% name %]!`, nil, `Hello World, Bob!`)
 }
