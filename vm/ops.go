@@ -285,6 +285,9 @@ func txFetchField(st *State) {
       name = string(unicode.ToUpper(r)) + name[size:]
 
       v = reflect.ValueOf(container)
+      if t.Kind() == reflect.Ptr {
+        v = v.Elem()
+      }
       f = v.FieldByName(name)
     case reflect.Map:
       v = reflect.ValueOf(container)
