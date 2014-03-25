@@ -250,6 +250,11 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
   default:
     b.Unexpected("%s", b.PeekNonSpace(ctx))
   }
+
+  for b.PeekNonSpace(ctx).Type() == ItemComment {
+    b.NextNonSpace(ctx)
+  }
+
   // Consume tag end
   end := b.NextNonSpace(ctx)
   if end.Type() != ItemTagEnd {

@@ -161,6 +161,10 @@ func TestXslate_Comment(t *testing.T) {
   renderStringAndCompare(t, `[% # This is a comment %]Hello, World!`, nil, `Hello, World!`)
 }
 
+func TestXslate_CommentAfterTag(t *testing.T) {
+  renderStringAndCompare(t, `[% IF foo %]Hello, World![% END # DONE IF %]`, Vars { "foo": true }, `Hello, World!`)
+}
+
 func TestXslate_Variable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
 }
