@@ -570,6 +570,10 @@ func (b *Builder) ParseListVariableOrMakeArray(ctx *BuilderCtx) Node {
     } else {
       n = NewFetchSymbolNode(list.Pos(), list.Value())
     }
+    if b.PeekNonSpace(ctx).Type() == ItemPeriod {
+      b.NextNonSpace(ctx)
+      n = b.ParseMethodCallOrMapLookup(ctx, n)
+    }
   case ItemOpenSquareBracket:
     n = b.ParseMakeArray(ctx)
   default:

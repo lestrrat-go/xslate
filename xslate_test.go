@@ -209,6 +209,14 @@ func TestXslate_ForeachMakeArrayList(t *testing.T) {
   renderStringAndCompare(t, template, nil, `Alice,Bob,Charlie,`)
 }
 
+func TestXslate_ForeachArrayInStruct(t *testing.T) {
+  template := `[% FOREACH i IN foo.list %][% i %],[% END %]`
+  vars := Vars {
+    "foo": struct { List []int } { []int{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 } },
+  }
+  renderStringAndCompare(t, template, vars, `0,1,2,3,4,5,6,7,8,9,`)
+}
+
 func TestXslate_If(t *testing.T) {
   template := `[% IF (foo) %]Hello, World![% END %]`
   renderStringAndCompare(t, template, Vars { "foo": true }, `Hello, World!`)
