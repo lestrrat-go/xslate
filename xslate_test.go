@@ -173,6 +173,11 @@ func TestXslate_MapVariable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": map[string]string { "name": "Bob" } }, `Hello World, Bob!`)
 }
 
+func TestXslate_ListVariableFunctions(t *testing.T) {
+  renderStringAndCompare(t, `[% list.size() %]`, Vars { "list": []int { 0, 1, 2 } }, `3`)
+  renderStringAndCompare(t, `[% list.size() %]`, Vars { "list": []time.Time { } }, `0`)
+}
+
 func TestXslate_StructVariable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": struct { Name string } { "Bob" } }, `Hello World, Bob!`)
 }
