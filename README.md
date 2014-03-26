@@ -73,6 +73,11 @@ func main() {
 
 See [Supported Syntax (TTerse)](https://github.com/lestrrat/go-xslate/wiki/Supported-Syntax-(TTerse)) for what's currently available
 
+Debugging
+=========
+
+Currently the [error reporting is a bit weak](https://github.com/lestrrat/go-xslate/issues/4). What you can do when you debug or send me bug reports is to give me a stack trace, and also while you're at it, run your templates with XSLATE_DEBUG=1 environment variable. This will print out the AST and ByteCode structure that is being executed.
+
 Caveats
 =======
 
