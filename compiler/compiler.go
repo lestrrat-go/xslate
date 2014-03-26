@@ -119,7 +119,7 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     }
     gotoOp.SetArg(ctx.ByteCode.Len() - pos + 1)
   case parser.NodeMakeArray:
-    x := n.(*parser.MakeArrayNode)
+    x := n.(*parser.UnaryNode)
     c.compile(ctx, x.Child)
     ctx.AppendOp(vm.TXOPMakeArray)
   case parser.NodeRange:
@@ -217,7 +217,7 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     ctx.AppendOp(vm.TXOPInclude)
     ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeGroup:
-    c.compile(ctx, n.(*parser.GroupNode).Child)
+    c.compile(ctx, n.(*parser.UnaryNode).Child)
   case parser.NodeEquals, parser.NodeNotEquals, parser.NodeLT, parser.NodeGT:
     x := n.(*parser.BinaryNode)
 

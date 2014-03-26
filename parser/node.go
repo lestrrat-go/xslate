@@ -579,28 +579,29 @@ func (n *RangeNode) Visit(c chan Node) {
   c <- n
 }
 
-type MakeArrayNode struct {
+type UnaryNode struct {
   NodeType
   Pos
   Child Node
 }
 
-func NewMakeArrayNode(pos Pos, child Node) *MakeArrayNode {
-  return &MakeArrayNode {
+func (n *UnaryNode) Visit(c chan Node) {
+  c <- n
+  n.Child.Visit(c)
+}
+
+func (n *UnaryNode) Copy() Node {
+  return &UnaryNode { n.NodeType, n.Pos, n.Child.Copy() }
+}
+
+func NewMakeArrayNode(pos Pos, child Node) *UnaryNode {
+  return &UnaryNode {
     NodeMakeArray,
     pos,
     child,
   }
 }
 
-func (n *MakeArrayNode) Copy() Node {
-  return NewMakeArrayNode(n.Pos, n.Child.Copy())
-}
-
-func (n *MakeArrayNode) Visit(c chan Node) {
-  c <- n
-  c <- n.Child
-}
 
 type IncludeNode struct {
   NodeType
@@ -720,42 +721,25 @@ func (n *BinaryNode) Visit(c chan Node) {
   n.Right.Visit(c)
 }
 
-type GroupNode struct {
-  NodeType
-  Pos
-  Child Node
-}
-
-func NewGroupNode(pos Pos) *GroupNode {
-  return &GroupNode { NodeGroup, pos, nil }
-}
-
-func (n *GroupNode) Copy() Node {
-  return &GroupNode { NodeGroup, n.Pos, n.Child.Copy() }
-}
-
-func (n *GroupNode) Visit(c chan Node) {
-  c <-n
-  n.Child.Visit(c)
+func NewGroupNode(pos Pos) *UnaryNode {
+  return &UnaryNode { NodeGroup, pos, nil }
 }
 
 type FilterNode struct {
-  NodeType
-  Pos
+  *UnaryNode
   Name string
-  Child Node
 }
 
 func NewFilterNode(pos Pos, name string, child Node) *FilterNode {
-  return &FilterNode { NodeFilter, pos, name, child }
+  return &FilterNode { &UnaryNode { NodeFilter, pos, child }, name }
 }
 
 func (n *FilterNode) Copy() Node {
-  return &FilterNode { NodeFilter, n.Pos, n.Name, n.Child.Copy() }
+  return &FilterNode { &UnaryNode { NodeFilter, n.Pos, n.Child.Copy() }, n.Name }
 }
 
 func (n *FilterNode) Visit(c chan Node) {
   c <-n
-  n.Child.Visit(c)
+  n.UnaryNode.Visit(c)
 }
 
