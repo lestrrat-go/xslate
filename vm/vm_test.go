@@ -339,7 +339,7 @@ func TestVM_Ne(t *testing.T) {
   pc.AppendOp(TXOPLiteral, 1)
   pc.AppendOp(TXOPMoveToSb)
   pc.AppendOp(TXOPLiteral, 1)
-  pc.AppendOp(TXOPNe)
+  pc.AppendOp(TXOPNotEquals)
   pc.AppendOp(TXOPPrintRaw)
   pc.AppendOp(TXOPEnd)
   vm.Run(nil, nil)

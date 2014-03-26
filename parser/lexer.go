@@ -122,7 +122,7 @@ const (
   ItemOperator    // Delimiter
   ItemRange       // ..
   ItemEquals      // ==
-  ItemNotEqual    // !=
+  ItemNotEquals   // !=
   ItemGT          // >
   ItemLT          // <
   ItemCmp         // <=>
@@ -302,7 +302,7 @@ func (i LexItemType) String() string {
     name = "Range"
   case ItemEquals:
     name = "Equals"
-  case ItemNotEqual:
+  case ItemNotEquals:
     name = "NotEquals"
   case ItemCmp:
     name = "Cmp"
@@ -381,6 +381,7 @@ func NewLexer() *Lexer {
 
   // These happen so often, they should be in the front
   l.AddSymbol("==", ItemEquals, 0.0)
+  l.AddSymbol("!=", ItemNotEquals, 0.0)
   l.AddSymbol("(", ItemOpenParen, 0.0)
   l.AddSymbol(")", ItemCloseParen, 0.0)
   l.AddSymbol("[", ItemOpenSquareBracket, 0.0)

@@ -40,7 +40,7 @@ const (
   TXOPHTMLEscape
   TXOPUriEscape
   TXOPEquals
-  TXOPNe
+  TXOPNotEquals
   TXOPLessThan
   TXOPGreaterThan
   TXOPPopmark
@@ -145,15 +145,15 @@ func init () {
     case TXOPEquals:
       h = txEquals
       n = "equals"
-    case TXOPNe:
-      h = txNe
-      n = "ne"
+    case TXOPNotEquals:
+      h = txNotEquals
+      n = "not_equals"
     case TXOPLessThan:
       h = txLessThan
-      n = "<"
+      n = "less_than"
     case TXOPGreaterThan:
       h = txGreaterThan
-      n = ">"
+      n = "greater_than"
     case TXOPPush:
       h = txPush
       n = "push"
@@ -514,13 +514,21 @@ func txEquals(st *State) {
   var leftV, rightV interface {}
   if isInterfaceNumeric(st.sb) {
     leftV, rightV = alignTypesForArithmetic(st.sb, st.sa)
+  } else {
+    leftV, rightV = st.sb, st.sa
   }
   st.sa = leftV == rightV
   st.Advance()
 }
 
-func txNe(st *State) {
-  st.sa = st.sb != st.sa
+func txNotEquals(st *State) {
+  var leftV, rightV interface {}
+  if isInterfaceNumeric(st.sb) {
+    leftV, rightV = alignTypesForArithmetic(st.sb, st.sa)
+  } else {
+    leftV, rightV = st.sb, st.sa
+  }
+  st.sa = leftV != rightV
   st.Advance()
 }
 
