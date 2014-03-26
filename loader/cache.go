@@ -211,8 +211,12 @@ func (c *FileCache) Delete(key string) error {
   return os.Remove(c.GetCachePath(key))
 }
 
+// MemoryCache is what's used store cached ByteCode in memory for maximum
+// speed. As of this writing this cache never freed. We may need to
+// introduce LRU in the future
 type MemoryCache map[string]*vm.ByteCode
 
+// Get returns the cached ByteCode
 func (c MemoryCache) Get(key string) (*vm.ByteCode, error) {
   bc, ok := c[key]
   if !ok {
@@ -221,11 +225,13 @@ func (c MemoryCache) Get(key string) (*vm.ByteCode, error) {
   return bc, nil
 }
 
+// Set stores the ByteCode
 func (c MemoryCache) Set(key string, bc *vm.ByteCode) error {
   c[key] = bc
   return nil
 }
 
+// Delete deletes the ByteCode
 func (c MemoryCache) Delete(key string) error {
   delete(c, key)
   return nil
