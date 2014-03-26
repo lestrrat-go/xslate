@@ -158,6 +158,10 @@ func TestXslate_Variable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
   renderStringAndCompare(t, `[% x %]`, Vars { "x": uint32(1) }, `1`)
   renderStringAndCompare(t, `[% x %]`, Vars { "x": float64(0.32) }, `0.32`)
+
+  now := time.Now()
+  time.Sleep(time.Second)
+  renderStringAndCompare(t, `[% x.Since(y).Seconds() %]`, Vars { "x": now, "y": time.Now() }, ``)
 }
 
 func TestXslate_MapVariable(t *testing.T) {

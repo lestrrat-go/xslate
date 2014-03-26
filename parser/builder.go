@@ -366,21 +366,21 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *BuilderCtx, invocant Node) Nod
     b.Unexpected("Expected identifier for method call or map lookup, got %s", symbol.Type())
   }
 
+  var n Node
   next := b.NextNonSpace(ctx)
-  if next.Type() == ItemOpenParen {
+  if next.Type() != ItemOpenParen {
+    // it's a map lookup. Put back that extra token we read
+    b.Backup(ctx)
+    n = NewFetchFieldNode(invocant.Position(), invocant, symbol.Value())
+  } else {
     // It's a method call! Parse the list
     args := b.ParseList(ctx)
     closeParen := b.NextNonSpace(ctx)
     if closeParen.Type() != ItemCloseParen {
       b.Unexpected("Expected ')', got %s", closeParen.Type())
     }
-    return NewMethodCallNode(invocant.Position(), invocant, symbol.Value(), args.(*ListNode))
+    n = NewMethodCallNode(invocant.Position(), invocant, symbol.Value(), args.(*ListNode))
   }
-
-  // Otherwise it's a map lookup. Put back that extra token we read
-  b.Backup(ctx)
-
-  n := NewFetchFieldNode(invocant.Position(), invocant, symbol.Value())
 
   // If we are followed by another period, we are going to have to
   // check for another level of methodcall / lookup
