@@ -391,6 +391,27 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *BuilderCtx, invocant Node) Nod
   return n
 }
 
+func (b *Builder) ParseArrayElementFetch(ctx *BuilderCtx, invocant Node) Node {
+  openBracket := b.NextNonSpace(ctx)
+  if openBracket.Type() != ItemOpenSquareBracket {
+    b.Unexpected("Expected '[', got %s", openBracket)
+  }
+
+  index := b.ParseExpression(ctx, false)
+
+  n := NewFetchArrayElementNode(openBracket.Pos())
+  n.Left = invocant
+  n.Right = index
+
+  closeBracket := b.NextNonSpace(ctx)
+  if closeBracket.Type() != ItemCloseSquareBracket {
+    b.Unexpected("Expected ']', got %s", closeBracket)
+  }
+
+  return n
+}
+
+
 func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
   defer func() {
     if n != nil && canPrint {
@@ -398,32 +419,36 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
     }
   }()
 
-  if b.PeekNonSpace(ctx).Type() == ItemOpenParen {
+  switch b.PeekNonSpace(ctx).Type() {
+  case ItemOpenParen:
+    // Looks like a group of something
     n = b.ParseGroup(ctx)
-  } else {
+  case ItemOpenSquareBracket:
+    // Looks like an inline list def
+    n = b.ParseMakeArray(ctx)
+  default:
+    // Otherwise it's a straight forward ... something
     n = b.ParseTerm(ctx)
     if n == nil {
       panic("TODO")
     }
   }
 
-  next := b.NextNonSpace(ctx);
+  next := b.PeekNonSpace(ctx);
 
   switch n.Type() {
   case NodeLocalVar, NodeFetchSymbol:
     switch next.Type() {
     case ItemPeriod:
       // It's either a method call, or a map lookup
+      b.NextNonSpace(ctx)
       n = b.ParseMethodCallOrMapLookup(ctx, n)
+    case ItemOpenSquareBracket:
+      n = b.ParseArrayElementFetch(ctx, n)
     case ItemOpenParen:
-      b.Backup(ctx) // put back the open paren
       // A variable followed by an open paren is a function call
       n = b.ParseFunCall(ctx, n)
-    default:
-      b.Backup(ctx)
     }
-  default:
-    b.Backup(ctx)
   }
 
   next = b.NextNonSpace(ctx)

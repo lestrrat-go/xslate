@@ -39,6 +39,7 @@ const (
   NodeAssignment
   NodeLocalVar
   NodeFetchField
+  NodeFetchArrayElement
   NodeMethodCall
   NodeFunCall
   NodePrint
@@ -87,6 +88,8 @@ func (n NodeType) String() string {
     return "LocalVar"
   case NodeFetchField:
     return "FetchField"
+  case NodeFetchArrayElement:
+    return "FetchArrayElement"
   case NodeMethodCall:
     return "MethodCall"
   case NodeFunCall:
@@ -743,3 +746,6 @@ func (n *FilterNode) Visit(c chan Node) {
   n.UnaryNode.Visit(c)
 }
 
+func NewFetchArrayElementNode(pos Pos) *BinaryNode {
+  return &BinaryNode { NodeFetchArrayElement, pos, nil, nil }
+}

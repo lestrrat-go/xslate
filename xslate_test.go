@@ -189,6 +189,10 @@ func TestXslate_ListVariableFunctions(t *testing.T) {
   renderStringAndCompare(t, `[% list.size() %]`, Vars { "list": []time.Time { } }, `0`)
 }
 
+func TestXslate_ArrayVariableSlotAccess(t *testing.T) {
+  renderStringAndCompare(t, `[% SET l = [ 0..9 ] %][% l[0] %]..[% l[9] %]`, nil, `0..9`)
+}
+
 func TestXslate_StructVariable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": struct { Name string } { "Bob" } }, `Hello World, Bob!`)
 }

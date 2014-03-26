@@ -57,6 +57,15 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     ffnode := n.(*parser.FetchFieldNode)
     c.compile(ctx, ffnode.Container)
     ctx.AppendOp(vm.TXOPFetchFieldSymbol, ffnode.FieldName)
+  case parser.NodeFetchArrayElement:
+    faenode := n.(*parser.BinaryNode)
+    ctx.AppendOp(vm.TXOPPushmark)
+    c.compile(ctx, faenode.Right)
+    ctx.AppendOp(vm.TXOPPush)
+    c.compile(ctx, faenode.Left)
+    ctx.AppendOp(vm.TXOPPush)
+    ctx.AppendOp(vm.TXOPFetchArrayElement)
+    ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeLocalVar:
     l := n.(*parser.LocalVarNode)
     ctx.AppendOp(vm.TXOPLoadLvar, l.Offset)

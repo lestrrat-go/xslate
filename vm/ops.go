@@ -23,6 +23,7 @@ const (
   TXOPLiteral
   TXOPFetchSymbol
   TXOPFetchFieldSymbol
+  TXOPFetchArrayElement
   TXOPMarkRaw
   TXOPUnmarkRaw
   TXOPPrint
@@ -103,6 +104,9 @@ func init () {
     case TXOPFetchFieldSymbol:
       h = txFetchField
       n = "fetch_field_s"
+    case TXOPFetchArrayElement:
+      h = txFetchArrayElement
+      n = "fetch_array_elem"
     case TXOPSaveToLvar:
       h = txSaveToLvar
       n = "save_to_lvar"
@@ -306,6 +310,16 @@ func txFetchField(st *State) {
 
     st.sa = f.Interface()
   }
+  st.Advance()
+}
+
+func txFetchArrayElement(st *State) {
+  // There should only be items pushed
+  array := reflect.ValueOf(st.StackPop())
+  idx := st.StackPop()
+
+  v := array.Index(int(idx.(int64)))
+  st.sa = v.Interface()
   st.Advance()
 }
 
