@@ -174,19 +174,7 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     // Arguments to include (WITH foo = "bar") need to be evaulated
     // in the OUTER context, but the variables need to be set in the
     // include context
-    if assignnodes := x.AssignmentNodes; len(assignnodes) > 0 {
-      ctx.AppendOp(vm.TXOPPushmark)
-      for _, nv := range x.AssignmentNodes {
-        v := nv.(*parser.AssignmentNode)
-        ctx.AppendOp(vm.TXOPLiteral, v.Assignee.Name)
-        ctx.AppendOp(vm.TXOPPush)
-        c.compile(ctx, v.Expression)
-        ctx.AppendOp(vm.TXOPPush)
-      }
-      ctx.AppendOp(vm.TXOPMakeHash)
-      ctx.AppendOp(vm.TXOPMoveToSb)
-      ctx.AppendOp(vm.TXOPPopmark)
-    }
+    c.compileAssignmentNodes(ctx, x.AssignmentNodes)
     ctx.AppendOp(vm.TXOPPop)
     ctx.AppendOp(vm.TXOPPushmark)
     ctx.AppendOp(vm.TXOPWrapper, x.WrapperName)
@@ -199,19 +187,7 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     // Arguments to include (WITH foo = "bar") need to be evaulated
     // in the OUTER context, but the variables need to be set in the
     // include context
-    if assignnodes := x.AssignmentNodes; len(assignnodes) > 0 {
-      ctx.AppendOp(vm.TXOPPushmark)
-      for _, nv := range x.AssignmentNodes {
-        v := nv.(*parser.AssignmentNode)
-        ctx.AppendOp(vm.TXOPLiteral, v.Assignee.Name)
-        ctx.AppendOp(vm.TXOPPush)
-        c.compile(ctx, v.Expression)
-        ctx.AppendOp(vm.TXOPPush)
-      }
-      ctx.AppendOp(vm.TXOPMakeHash)
-      ctx.AppendOp(vm.TXOPMoveToSb)
-      ctx.AppendOp(vm.TXOPPopmark)
-    }
+    c.compileAssignmentNodes(ctx, x.AssignmentNodes)
     ctx.AppendOp(vm.TXOPPop)
     ctx.AppendOp(vm.TXOPPushmark)
     ctx.AppendOp(vm.TXOPInclude)
@@ -272,5 +248,21 @@ func (c *BasicCompiler) compileBinaryOperands(ctx *context, x *parser.BinaryNode
     c.compile(ctx, x.Left)
     ctx.AppendOp(vm.TXOPMoveToSb)
     c.compile(ctx, x.Right)
+  }
+}
+
+func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []parser.Node) {
+  if len(assignnodes) > 0 {
+    ctx.AppendOp(vm.TXOPPushmark)
+    for _, nv := range assignnodes {
+      v := nv.(*parser.AssignmentNode)
+      ctx.AppendOp(vm.TXOPLiteral, v.Assignee.Name)
+      ctx.AppendOp(vm.TXOPPush)
+      c.compile(ctx, v.Expression)
+      ctx.AppendOp(vm.TXOPPush)
+    }
+    ctx.AppendOp(vm.TXOPMakeHash)
+    ctx.AppendOp(vm.TXOPMoveToSb)
+    ctx.AppendOp(vm.TXOPPopmark)
   }
 }
