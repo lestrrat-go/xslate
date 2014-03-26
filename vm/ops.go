@@ -477,18 +477,20 @@ func txGoto(st *State) {
   st.AdvanceBy(st.CurrentOp().ArgInt())
 }
 
+// LoopVar is the variable available within FOREACH loops
 type LoopVar struct {
-  Index int     // 0 origin
-  Count int     // loop.Index + 1
-  Body  reflect.Value   // Alias to array
-  Size  int     // len(loop.Body)
-  MaxIndex int  // loop.Size - 1
-  PeekNext interface {}
-  PeekPrev interface {}
-  IsFirst bool
-  IsLast bool
+  Index     int           // 0 origin, current index
+  Count     int           // loop.Index + 1
+  Body      reflect.Value // alias to array
+  Size      int           // len(loop.Body)
+  MaxIndex  int           // loop.Size - 1
+  PeekNext  interface {}  // previous item. nil if not available
+  PeekPrev  interface {}  // next item. nil if not available
+  IsFirst   bool          // true only if Index == 0
+  IsLast    bool          // true only if Index == MaxIndex
 }
 
+// NewLoopVar creates the loop variable
 func NewLoopVar(idx int, array reflect.Value) *LoopVar {
   lv := &LoopVar {
     Index: idx,
