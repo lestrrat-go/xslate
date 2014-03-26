@@ -377,6 +377,12 @@ func TestXslate_BooleanComparators(t *testing.T) {
   template = `[% IF foo == 10 %]Hello, World![% END %]`
   renderStringAndCompare(t, template, Vars { "foo": 10 }, `Hello, World!`)
   renderStringAndCompare(t, template, Vars { "foo": 0 }, ``)
+  template = `[% IF foo == "bar" %]Hello, World![% END %]`
+  renderStringAndCompare(t, template, Vars { "foo": "bar" }, `Hello, World!`)
+  renderStringAndCompare(t, template, Vars { "foo": "baz" }, ``)
+  template = `[% IF foo != "bar" %]Hello, World![% END %]`
+  renderStringAndCompare(t, template, Vars { "foo": "bar" }, ``)
+  renderStringAndCompare(t, template, Vars { "foo": "baz" }, `Hello, World!`)
 
   template = `[% IF foo != 10 %]Hello, World![% END %]`
   renderStringAndCompare(t, template, Vars { "foo": 0 }, `Hello, World!`)

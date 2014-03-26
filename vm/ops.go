@@ -514,6 +514,8 @@ func txEquals(st *State) {
   var leftV, rightV interface {}
   if isInterfaceNumeric(st.sb) {
     leftV, rightV = alignTypesForArithmetic(st.sb, st.sa)
+  } else if isInterfaceStringType(st.sb) {
+    leftV, rightV = interfaceToString(st.sb), interfaceToString(st.sa)
   } else {
     leftV, rightV = st.sb, st.sa
   }
@@ -525,6 +527,8 @@ func txNotEquals(st *State) {
   var leftV, rightV interface {}
   if isInterfaceNumeric(st.sb) {
     leftV, rightV = alignTypesForArithmetic(st.sb, st.sa)
+  } else if isInterfaceStringType(st.sb) {
+    leftV, rightV = interfaceToString(st.sb), interfaceToString(st.sa)
   } else {
     leftV, rightV = st.sb, st.sa
   }

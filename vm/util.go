@@ -35,6 +35,17 @@ func shouldEscapeUri(v byte) bool {
   }
 }
 
+func isInterfaceStringType(v interface {}) bool {
+  t := reflect.TypeOf(v)
+  switch t.Kind() {
+  case reflect.String:
+    return true
+  case reflect.Array, reflect.Slice:
+    return t.Elem().Kind() == reflect.Uint8
+  }
+  return false
+}
+
 func isInterfaceNumeric(v interface{}) bool {
   switch reflect.TypeOf(v).Kind() {
   case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
