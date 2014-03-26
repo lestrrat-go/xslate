@@ -226,6 +226,9 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
         keepPopping = false
       }
     }
+  case ItemComment:
+    b.NextNonSpace(ctx)
+    // no op
   case ItemSet:
     b.NextNonSpace(ctx)
     tmpl = b.ParseAssignment(ctx)
@@ -247,6 +250,11 @@ func (b *Builder) ParseTemplate(ctx *BuilderCtx) Node {
   default:
     b.Unexpected("%s", b.PeekNonSpace(ctx))
   }
+
+  for b.PeekNonSpace(ctx).Type() == ItemComment {
+    b.NextNonSpace(ctx)
+  }
+
   // Consume tag end
   end := b.NextNonSpace(ctx)
   if end.Type() != ItemTagEnd {
@@ -372,7 +380,15 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *BuilderCtx, invocant Node) Nod
   // Otherwise it's a map lookup. Put back that extra token we read
   b.Backup(ctx)
 
-  return NewFetchFieldNode(invocant.Position(), invocant, symbol.Value())
+  n := NewFetchFieldNode(invocant.Position(), invocant, symbol.Value())
+
+  // If we are followed by another period, we are going to have to
+  // check for another level of methodcall / lookup
+  if b.PeekNonSpace(ctx).Type() == ItemPeriod {
+    b.NextNonSpace(ctx) // consume period
+    return b.ParseMethodCallOrMapLookup(ctx, n)
+  }
+  return n
 }
 
 func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
@@ -565,6 +581,10 @@ func (b *Builder) ParseListVariableOrMakeArray(ctx *BuilderCtx) Node {
       n = NewLocalVarNode(list.Pos(), list.Value(), idx)
     } else {
       n = NewFetchSymbolNode(list.Pos(), list.Value())
+    }
+    if b.PeekNonSpace(ctx).Type() == ItemPeriod {
+      b.NextNonSpace(ctx)
+      n = b.ParseMethodCallOrMapLookup(ctx, n)
     }
   case ItemOpenSquareBracket:
     n = b.ParseMakeArray(ctx)

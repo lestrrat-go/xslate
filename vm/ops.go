@@ -293,6 +293,9 @@ func txFetchField(st *State) {
       name = string(unicode.ToUpper(r)) + name[size:]
 
       v = reflect.ValueOf(container)
+      if t.Kind() == reflect.Ptr {
+        v = v.Elem()
+      }
       f = v.FieldByName(name)
     case reflect.Map:
       v = reflect.ValueOf(container)
@@ -685,6 +688,9 @@ func txFunCallSymbol(st *State) {
 
 func txMethodCall(st *State) {
   name := interfaceToString(st.CurrentOp().Arg())
+  // Uppercase first character of field name
+  r, size := utf8.DecodeRuneInString(name)
+  name = string(unicode.ToUpper(r)) + name[size:]
 
   // Everything in our lvars up to the current tip is our argument list
   mark := st.CurrentMark()
@@ -707,6 +713,14 @@ func txMethodCall(st *State) {
       invokeFuncSingleReturn(st, fun, args)
     }
   case reflect.Array, reflect.Slice:
+    // Array/Slices cannot be passed as []interface {} or any other
+    // generic way, so we need to re-allocate the argument to a more
+    // generic []interface {} container before dispatching it
+    list := make([]interface {}, invocant.Len())
+    for i := 0; i < invocant.Len(); i++ {
+      list[i] = invocant.Index(i).Interface()
+    }
+    args[0] = reflect.ValueOf(list)
     fun, ok := array.Depot().Get(name)
     if ok {
       invokeFuncSingleReturn(st, fun, args)

@@ -22,7 +22,11 @@ func init() {
   }
 }
 
-func createTx(path, cacheDir string) (*Xslate, error) {
+func createTx(path, cacheDir string, cacheLevel ...int) (*Xslate, error) {
+  if len(cacheLevel) == 0 {
+    cacheLevel = []int { 1 }
+  }
+
   x, err := New(Args {
     // Optional. Currently only supports TTerse
     "Parser": Args {
@@ -31,6 +35,7 @@ func createTx(path, cacheDir string) (*Xslate, error) {
     // Compiler: DefaultCompiler, // don't need to specify
     "Loader": Args {
       "CacheDir": cacheDir,
+      "CacheLevel": cacheLevel[0],
       "LoadPaths": []string { path },
     },
   })
@@ -157,8 +162,17 @@ func TestXslate_SimpleString(t *testing.T) {
   renderStringAndCompare(t, `Hello, World!`, nil, `Hello, World!`)
 }
 
+
 func TestXslate_SimpleHTMLString(t *testing.T) {
   renderStringAndCompare(t, `<h1>Hello, World!</h1>`, nil, `<h1>Hello, World!</h1>`)
+}
+
+func TestXslate_Comment(t *testing.T) {
+  renderStringAndCompare(t, `[% # This is a comment %]Hello, World!`, nil, `Hello, World!`)
+}
+
+func TestXslate_CommentAfterTag(t *testing.T) {
+  renderStringAndCompare(t, `[% IF foo %]Hello, World![% END # DONE IF %]`, Vars { "foo": true }, `Hello, World!`)
 }
 
 func TestXslate_Variable(t *testing.T) {
@@ -169,8 +183,19 @@ func TestXslate_MapVariable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": map[string]string { "name": "Bob" } }, `Hello World, Bob!`)
 }
 
+func TestXslate_ListVariableFunctions(t *testing.T) {
+  renderStringAndCompare(t, `[% list.size() %]`, Vars { "list": []int { 0, 1, 2 } }, `3`)
+  renderStringAndCompare(t, `[% list.size() %]`, Vars { "list": []time.Time { } }, `0`)
+}
+
 func TestXslate_StructVariable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% data.name %]!`, Vars { "data": struct { Name string } { "Bob" } }, `Hello World, Bob!`)
+}
+
+func TestXslate_NestedStructVariable(t *testing.T) {
+  inner := struct { Name string } { "Bob" }
+  outer := struct { Inner struct { Name string } } { inner }
+  renderStringAndCompare(t, `Hello World, [% data.inner.name %]!`, Vars { "data": outer }, `Hello World, Bob!`)
 }
 
 func TestXslate_LocalVar(t *testing.T) {
@@ -197,6 +222,14 @@ func TestXslate_ForeachMakeArrayList(t *testing.T) {
 
   template = `[% FOREACH i IN ["Alice", "Bob", "Charlie"] %][% i %],[% END %]`
   renderStringAndCompare(t, template, nil, `Alice,Bob,Charlie,`)
+}
+
+func TestXslate_ForeachArrayInStruct(t *testing.T) {
+  template := `[% FOREACH i IN foo.list %][% i %],[% END %]`
+  vars := Vars {
+    "foo": struct { List []int } { []int{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 } },
+  }
+  renderStringAndCompare(t, template, vars, `0,1,2,3,4,5,6,7,8,9,`)
 }
 
 func TestXslate_If(t *testing.T) {
@@ -353,8 +386,8 @@ func TestXslate_FilterUri(t *testing.T) {
 
 func TestXslate_Wrapper(t *testing.T) {
   files := map[string]string {
-    "wrapper/index.tx": `[% WRAPPER "wrapper/wrapper.tx" %]World[% END %]`,
-    "wrapper/wrapper.tx": `Hello [% content %] Bob!`,
+    "wrapper/index.tx": `[% WRAPPER "wrapper/wrapper.tx" %]<b>World</b>[% END %]`,
+    "wrapper/wrapper.tx": `<html><body><h1>Hello [% content %] Bob!</h1></body></html>`,
   }
 
   root, err := generateTemplates(files)
@@ -367,7 +400,7 @@ func TestXslate_Wrapper(t *testing.T) {
   if err != nil {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }
-  renderAndCompare(t, tx, "wrapper/index.tx", nil, "Hello World Bob!")
+  renderAndCompare(t, tx, "wrapper/index.tx", nil, "<html><body><h1>Hello <b>World</b> Bob!</h1></body></html>")
 }
 
 func TestXslate_WrapperWithArgs(t *testing.T) {
