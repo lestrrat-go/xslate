@@ -216,21 +216,22 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeGroup:
     c.compile(ctx, n.(*parser.GroupNode).Child)
-  case parser.NodePlus, parser.NodeMinus, parser.NodeMul, parser.NodeDiv:
-    x := n.(*parser.ArithmeticNode)
+  case parser.NodeLT, parser.NodeGT:
+    x := n.(*parser.BinaryNode)
 
-    if x.Right.Type() == parser.NodeGroup {
-      // Grouped node
-      c.compile(ctx, x.Right)
-      ctx.AppendOp(vm.TXOPPush)
-      c.compile(ctx, x.Left)
-      ctx.AppendOp(vm.TXOPMoveToSb)
-      ctx.AppendOp(vm.TXOPPop)
-    } else {
-      c.compile(ctx, x.Left)
-      ctx.AppendOp(vm.TXOPMoveToSb)
-      c.compile(ctx, x.Right)
+    c.compileBinaryOperands(ctx, x)
+    switch n.Type() {
+    case parser.NodeLT:
+      ctx.AppendOp(vm.TXOPLessThan)
+    case parser.NodeGT:
+      ctx.AppendOp(vm.TXOPGreaterThan)
+    default:
+      panic("Unknown operator")
     }
+  case parser.NodePlus, parser.NodeMinus, parser.NodeMul, parser.NodeDiv:
+    x := n.(*parser.BinaryNode)
+
+    c.compileBinaryOperands(ctx, x)
     switch n.Type() {
     case parser.NodePlus:
       ctx.AppendOp(vm.TXOPAdd)
@@ -250,5 +251,20 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     ctx.AppendOp(vm.TXOPFilter, x.Name)
   default:
     fmt.Printf("Unknown node: %s\n", n.Type())
+  }
+}
+
+func (c *BasicCompiler) compileBinaryOperands(ctx *context, x *parser.BinaryNode) {
+  if x.Right.Type() == parser.NodeGroup {
+    // Grouped node
+    c.compile(ctx, x.Right)
+    ctx.AppendOp(vm.TXOPPush)
+    c.compile(ctx, x.Left)
+    ctx.AppendOp(vm.TXOPMoveToSb)
+    ctx.AppendOp(vm.TXOPPop)
+  } else {
+    c.compile(ctx, x.Left)
+    ctx.AppendOp(vm.TXOPMoveToSb)
+    c.compile(ctx, x.Right)
   }
 }

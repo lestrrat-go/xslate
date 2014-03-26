@@ -157,6 +157,10 @@ func TestXslate_SimpleString(t *testing.T) {
   renderStringAndCompare(t, `Hello, World!`, nil, `Hello, World!`)
 }
 
+func TestXslate_SimpleHTMLString(t *testing.T) {
+  renderStringAndCompare(t, `<h1>Hello, World!</h1>`, nil, `<h1>Hello, World!</h1>`)
+}
+
 func TestXslate_Variable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
 }
@@ -323,6 +327,18 @@ func TestXslate_GroupedArithmetic(t *testing.T) {
   renderStringAndCompare(t, template, nil, `2`)
   template = `[% 6 / ( ( 4 - 1 ) - 1 ) %]`
   renderStringAndCompare(t, template, nil, `3`)
+}
+
+func TestXslate_BooleanComparators(t *testing.T) {
+  var template string
+
+  template = `[% IF foo > 10 %]Hello, World![% END %]`
+  renderStringAndCompare(t, template, Vars { "foo": 20 }, `Hello, World!`)
+  renderStringAndCompare(t, template, Vars { "foo": 0 }, ``)
+
+  template = `[% IF foo < 10 %]Hello, World![% END %]`
+  renderStringAndCompare(t, template, Vars { "foo": 20 }, ``)
+  renderStringAndCompare(t, template, Vars { "foo": 0 }, `Hello, World!`)
 }
 
 func TestXslate_FilterHTML(t *testing.T) {

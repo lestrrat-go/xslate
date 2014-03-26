@@ -123,6 +123,8 @@ const (
   ItemRange       // ..
   ItemEquals      // ==
   ItemNotEqual    // !=
+  ItemGT          // >
+  ItemLT          // <
   ItemCmp         // <=>
   ItemLE          // <=
   ItemGE          // >=
@@ -304,6 +306,10 @@ func (i LexItemType) String() string {
     name = "NotEquals"
   case ItemCmp:
     name = "Cmp"
+  case ItemGT:
+    name = "GreaterThan"
+  case ItemLT:
+    name = "LessThan"
   case ItemLE:
     name = "LessThanEquals"
   case ItemGE:
@@ -381,6 +387,8 @@ func NewLexer() *Lexer {
   l.AddSymbol(".", ItemPeriod, 0.0)
   l.AddSymbol(",", ItemComma, 0.0)
   l.AddSymbol("|", ItemVerticalSlash, 0.0)
+  l.AddSymbol(">", ItemGT, 0.0)
+  l.AddSymbol("<", ItemLT, 0.0)
 
   // XXX TTerse specific
   l.AddSymbol("WITH", ItemWith)

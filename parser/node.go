@@ -49,6 +49,8 @@ const (
   NodeMinus
   NodeMul
   NodeDiv
+  NodeLT
+  NodeGT
   NodeMakeArray
   NodeGroup
   NodeFilter
@@ -109,6 +111,10 @@ func (n NodeType) String() string {
     return "Multiply"
   case NodeDiv:
     return "Divide"
+  case NodeLT:
+    return "LessThan"
+  case NodeGT:
+    return "GreaterThan"
   case NodeGroup:
     return "Group"
   case NodeFilter:
@@ -619,15 +625,15 @@ func (n *IncludeNode) Visit(c chan Node) {
   c <- n.IncludeTarget
 }
 
-type ArithmeticNode struct {
+type BinaryNode struct {
   NodeType
   Pos
   Left Node
   Right Node
 }
 
-func NewPlusNode(pos Pos) *ArithmeticNode {
-  return &ArithmeticNode {
+func NewPlusNode(pos Pos) *BinaryNode {
+  return &BinaryNode {
     NodePlus,
     pos,
     nil,
@@ -635,8 +641,8 @@ func NewPlusNode(pos Pos) *ArithmeticNode {
   }
 }
 
-func NewMinusNode(pos Pos) *ArithmeticNode {
-  return &ArithmeticNode {
+func NewMinusNode(pos Pos) *BinaryNode {
+  return &BinaryNode {
     NodeMinus,
     pos,
     nil,
@@ -644,8 +650,8 @@ func NewMinusNode(pos Pos) *ArithmeticNode {
   }
 }
 
-func NewMulNode(pos Pos) *ArithmeticNode {
-  return &ArithmeticNode {
+func NewMulNode(pos Pos) *BinaryNode {
+  return &BinaryNode {
     NodeMul,
     pos,
     nil,
@@ -653,8 +659,8 @@ func NewMulNode(pos Pos) *ArithmeticNode {
   }
 }
 
-func NewDivNode(pos Pos) *ArithmeticNode {
-  return &ArithmeticNode {
+func NewDivNode(pos Pos) *BinaryNode {
+  return &BinaryNode {
     NodeDiv,
     pos,
     nil,
@@ -662,11 +668,29 @@ func NewDivNode(pos Pos) *ArithmeticNode {
   }
 }
 
-func (n *ArithmeticNode) Copy() Node {
-  return &ArithmeticNode { n.NodeType, n.Pos, n.Left.Copy(), n.Right.Copy() }
+func NewLTNode(pos Pos) *BinaryNode {
+  return &BinaryNode {
+    NodeLT,
+    pos,
+    nil,
+    nil,
+  }
 }
 
-func (n *ArithmeticNode) Visit(c chan Node) {
+func NewGTNode(pos Pos) *BinaryNode {
+  return &BinaryNode {
+    NodeGT,
+    pos,
+    nil,
+    nil,
+  }
+}
+
+func (n *BinaryNode) Copy() Node {
+  return &BinaryNode { n.NodeType, n.Pos, n.Left.Copy(), n.Right.Copy() }
+}
+
+func (n *BinaryNode) Visit(c chan Node) {
   c <- n
   n.Left.Visit(c)
   n.Right.Visit(c)

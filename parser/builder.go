@@ -419,6 +419,18 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
     tmp.Right = b.ParseExpression(ctx, false)
     n = tmp
     return
+  case ItemLT:
+    tmp := NewLTNode(next.Pos())
+    tmp.Left = n
+    tmp.Right = b.ParseExpression(ctx, false)
+    n = tmp
+    return
+  case ItemGT:
+    tmp := NewGTNode(next.Pos())
+    tmp.Left = n
+    tmp.Right = b.ParseExpression(ctx, false)
+    n = tmp
+    return
   }
 
   // Okay, now we need to change what to do next depending on contex

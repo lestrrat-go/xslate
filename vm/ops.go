@@ -41,6 +41,8 @@ const (
   TXOPUriEscape
   TXOPEq
   TXOPNe
+  TXOPLessThan
+  TXOPGreaterThan
   TXOPPopmark
   TXOPPushmark
   TXOPPush
@@ -146,6 +148,12 @@ func init () {
     case TXOPNe:
       h = txNe
       n = "ne"
+    case TXOPLessThan:
+      h = txLessThan
+      n = "<"
+    case TXOPGreaterThan:
+      h = txGreaterThan
+      n = ">"
     case TXOPPush:
       h = txPush
       n = "push"
@@ -509,6 +517,32 @@ func txNe(st *State) {
   st.Advance()
 }
 
+func txLessThan(st *State) {
+  leftV, rightV := alignTypesForArithmetic(st.sb, st.sa)
+  switch leftV.Kind() {
+  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+    st.sa = leftV.Int() < rightV.Int()
+  case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+    st.sa = leftV.Uint() < rightV.Uint()
+  case reflect.Float32, reflect.Float64:
+    st.sa = leftV.Float() < rightV.Float()
+  }
+  st.Advance()
+}
+
+func txGreaterThan(st *State) {
+  leftV, rightV := alignTypesForArithmetic(st.sb, st.sa)
+  switch leftV.Kind() {
+  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+    st.sa = leftV.Int() > rightV.Int()
+  case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+    st.sa = leftV.Uint() > rightV.Uint()
+  case reflect.Float32, reflect.Float64:
+    st.sa = leftV.Float() > rightV.Float()
+  }
+  st.Advance()
+}
+
 // func/method call related stuff
 // Note: You MUST MUST MUST call pushmark before setting up the argument
 // list on the stack
@@ -774,7 +808,7 @@ func txWrapper(st *State) {
       vars.Set(interfaceToString(k), v)
     }
   }
-  vars.Set("content", st.sa)
+  vars.Set("content", rawString(interfaceToString(st.sa)))
 
   target := interfaceToString(st.CurrentOp().Arg())
   bc, err := st.LoadByteCode(target)
