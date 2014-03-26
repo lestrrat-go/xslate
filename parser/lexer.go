@@ -13,41 +13,10 @@ Once tagStart is found, real lexing starts.
 
 import (
   "fmt"
-  "sort"
   "strings"
   "unicode"
   "unicode/utf8"
 )
-
-type LexSymbol struct {
-  Name string
-  Type LexItemType
-  Priority float32
-}
-type LexSymbolList []LexSymbol
-
-type LexSymbolSorter struct {
-  list LexSymbolList
-}
-func (list LexSymbolList) Sort() LexSymbolList {
-  sorter := LexSymbolSorter {
-    list: list,
-  }
-  sort.Sort(sorter)
-  return sorter.list
-}
-
-func (s LexSymbolSorter) Len() int {
-  return len(s.list)
-}
-
-func (s LexSymbolSorter) Less(i, j int) bool {
-  return s.list[i].Priority < s.list[j].Priority
-}
-
-func (s LexSymbolSorter) Swap(i, j int) {
-  s.list[i], s.list[j] = s.list[j], s.list[i]
-}
 
 type LexItemType int
 type LexItem struct {
@@ -160,7 +129,7 @@ type Lexer struct {
   width int
   tagStart string
   tagEnd   string
-  symbols map[string]LexSymbol
+  symbols       *LexSymbolSet
   sortedSymbols LexSymbolList
   operators map[string]LexItemType
   items chan LexItem
@@ -187,14 +156,7 @@ func (l *Lexer) SetTagEnd(s string) {
 }
 
 func (l *Lexer) AddSymbol(s string, i LexItemType, prio ...float32) {
-  l.sortedSymbols = nil
-  var x float32
-  if len(prio) < 1 {
-    x = 1.0
-  } else {
-    x = prio[0]
-  }
-  l.symbols[s] = LexSymbol { s, i, x }
+  l.symbols.Set(s, i, prio...)
 }
 
 func (l *Lexer) AddOperator(s string, i LexItemType) {
@@ -375,28 +337,9 @@ func isNumeric(r rune) bool {
 func NewLexer() *Lexer {
   l := &Lexer {
     items: make(chan LexItem, 1),
-    symbols: make(map[string]LexSymbol),
+    symbols: DefaultSymbolSet,
     operators: make(map[string]LexItemType),
   }
-
-  // These happen so often, they should be in the front
-  l.AddSymbol("==", ItemEquals, 0.0)
-  l.AddSymbol("!=", ItemNotEquals, 0.0)
-  l.AddSymbol("(", ItemOpenParen, 0.0)
-  l.AddSymbol(")", ItemCloseParen, 0.0)
-  l.AddSymbol("[", ItemOpenSquareBracket, 0.0)
-  l.AddSymbol("]", ItemCloseSquareBracket, 0.0)
-  l.AddSymbol(".", ItemPeriod, 0.0)
-  l.AddSymbol(",", ItemComma, 0.0)
-  l.AddSymbol("|", ItemVerticalSlash, 0.0)
-  l.AddSymbol(">", ItemGT, 0.0)
-  l.AddSymbol("<", ItemLT, 0.0)
-
-  // XXX TTerse specific
-  l.AddSymbol("WITH", ItemWith)
-  l.AddSymbol("INCLUDE", ItemInclude, 1.5)
-  l.AddSymbol("IN", ItemIn, 2.0)
-  l.AddSymbol("END", ItemEnd)
   return l
 }
 
@@ -453,15 +396,18 @@ Loop:
       if !l.atTerminator() {
         return l.errorf("bad character %#U", r)
       }
-      switch {
-      case l.symbols[word].Type > ItemKeyword:
-        l.Emit(l.symbols[word].Type)
-      case word[0] == '.':
-        l.Emit(ItemField)
-      case word == "true", word == "false":
-        l.Emit(ItemBool)
-      default:
-        l.Emit(ItemIdentifier)
+
+      if sym := l.symbols.Get(word); sym.Type > ItemKeyword {
+        l.Emit(sym.Type)
+      } else {
+        switch {
+          case word[0] == '.':
+            l.Emit(ItemField)
+          case word == "true", word == "false":
+            l.Emit(ItemBool)
+          default:
+            l.Emit(ItemIdentifier)
+        }
       }
       break Loop
     }
@@ -602,27 +548,7 @@ func lexSingleQuotedString(l *Lexer) stateFn {
 }
 
 func (l *Lexer) getSortedSymbols() LexSymbolList {
-  // Because symbols are parsed automatically in a loop, we need to make
-  // sure that we search starting with the longest term (e.g., "INCLUDE"
-  // must come before "IN")
-  // However, simply sorting the symbols using alphabetical sort then
-  // max-length forces us to make more comparisons than necessary.
-  // To get the best of both world, we allow passing a floating point
-  // "priority" parameter to sort the symbols
-  if l.sortedSymbols != nil {
-    return l.sortedSymbols
-  }
-
-  num := len(l.symbols)
-  list := make(LexSymbolList, num)
-  i := 0
-  for _, v := range l.symbols {
-    list[i] = v
-    i++
-  }
-  l.sortedSymbols = list.Sort() 
-
-  return l.sortedSymbols
+  return l.symbols.GetSortedList()
 }
 
 func lexInsideTag(l *Lexer) stateFn {

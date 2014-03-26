@@ -44,6 +44,13 @@ func NewLexer() *Lexer {
   }
   l.SetTagStart("[%")
   l.SetTagEnd("%]")
+
+  // XXX TTerse specific
+  l.AddSymbol("WITH", parser.ItemWith)
+  l.AddSymbol("INCLUDE", parser.ItemInclude, 1.5)
+  l.AddSymbol("IN", parser.ItemIn, 2.0)
+  l.AddSymbol("END", parser.ItemEnd)
+
   for k, v := range symbols {
     l.AddSymbol(k, v)
   }
