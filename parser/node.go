@@ -5,11 +5,23 @@ import (
   "reflect"
 )
 
+// Pos describes the position in the original template where the node was found
+type Pos int
+
+// Position() returns the position byte
+func (p Pos) Position() Pos {
+  return p
+}
+
+// NodeType is used to distinguish each AST node
 type NodeType int
+
+// Type returns the current node type
 func (n NodeType) Type() NodeType {
   return n
 }
 
+// Node defines the interface for an AST node
 type Node interface {
   Type() NodeType
   String() string
@@ -131,12 +143,6 @@ func (n NodeType) String() string {
   default:
     return "Unknown Node"
   }
-}
-
-type Pos int
-
-func (p Pos) Position() Pos {
-  return p
 }
 
 type NoopNode struct {
