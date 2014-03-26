@@ -177,6 +177,7 @@ func TestXslate_CommentAfterTag(t *testing.T) {
 
 func TestXslate_Variable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
+  renderStringAndCompare(t, `[% x %]`, Vars { "x": uint32(1) }, `1`)
 }
 
 func TestXslate_MapVariable(t *testing.T) {

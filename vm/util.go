@@ -75,6 +75,8 @@ func interfaceToString(arg interface {}) string {
     v = string(reflect.ValueOf(arg).String())
   case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
     v = strconv.FormatInt(reflect.ValueOf(arg).Int(), 10)
+  case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+    v = strconv.FormatUint(reflect.ValueOf(arg).Uint(), 10)
   case reflect.Float32, reflect.Float64:
     v = strconv.FormatFloat(reflect.ValueOf(arg).Float(), 'f', -1, 64)
   case reflect.Bool:
