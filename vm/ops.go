@@ -301,7 +301,7 @@ func txFetchField(st *State) {
       v = reflect.ValueOf(container)
       f = v.MapIndex(reflect.ValueOf(name))
     default:
-      panic(fmt.Printf("XXX Put proper error handling here: %s", container))
+      panic(fmt.Sprintf("XXX Put proper error handling here: %s", container))
     }
 
     st.sa = f.Interface()
