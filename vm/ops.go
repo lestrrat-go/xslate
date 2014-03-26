@@ -39,7 +39,7 @@ const (
   TXOPForIter
   TXOPHTMLEscape
   TXOPUriEscape
-  TXOPEq
+  TXOPEquals
   TXOPNe
   TXOPLessThan
   TXOPGreaterThan
@@ -142,9 +142,9 @@ func init () {
     case TXOPUriEscape:
       h = txUriEscape
       n = "uri_escape"
-    case TXOPEq:
-      h = txEq
-      n = "eq"
+    case TXOPEquals:
+      h = txEquals
+      n = "equals"
     case TXOPNe:
       h = txNe
       n = "ne"
@@ -510,8 +510,12 @@ func txHTMLEscape(st *State) {
   st.Advance()
 }
 
-func txEq(st *State) {
-  st.sa = st.sb == st.sa
+func txEquals(st *State) {
+  var leftV, rightV interface {}
+  if isInterfaceNumeric(st.sb) {
+    leftV, rightV = alignTypesForArithmetic(st.sb, st.sa)
+  }
+  st.sa = leftV == rightV
   st.Advance()
 }
 

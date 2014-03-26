@@ -218,11 +218,13 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeGroup:
     c.compile(ctx, n.(*parser.GroupNode).Child)
-  case parser.NodeLT, parser.NodeGT:
+  case parser.NodeEquals, parser.NodeLT, parser.NodeGT:
     x := n.(*parser.BinaryNode)
 
     c.compileBinaryOperands(ctx, x)
     switch n.Type() {
+    case parser.NodeEquals:
+      ctx.AppendOp(vm.TXOPEquals)
     case parser.NodeLT:
       ctx.AppendOp(vm.TXOPLessThan)
     case parser.NodeGT:

@@ -35,14 +35,19 @@ func shouldEscapeUri(v byte) bool {
   }
 }
 
-func interfaceToNumeric(v interface{}) reflect.Value {
-  t := reflect.TypeOf(v)
-  switch t.Kind() {
+func isInterfaceNumeric(v interface{}) bool {
+  switch reflect.TypeOf(v).Kind() {
   case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
-    return reflect.ValueOf(v)
-  default:
-    return reflect.ValueOf(0)
+    return true
   }
+  return false
+}
+
+func interfaceToNumeric(v interface{}) reflect.Value {
+  if isInterfaceNumeric(v) {
+    return reflect.ValueOf(v)
+  }
+  return reflect.ValueOf(0)
 }
 
 // Given possibly non-matched pair of things to perform arithmetic

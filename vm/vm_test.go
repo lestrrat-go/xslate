@@ -322,7 +322,7 @@ func TestVM_Eq(t *testing.T) {
   pc.AppendOp(TXOPLiteral, 1)
   pc.AppendOp(TXOPMoveToSb)
   pc.AppendOp(TXOPLiteral, 1)
-  pc.AppendOp(TXOPEq)
+  pc.AppendOp(TXOPEquals)
   pc.AppendOp(TXOPPrintRaw)
   pc.AppendOp(TXOPEnd)
   vm.Run(nil, nil)

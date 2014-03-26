@@ -380,6 +380,7 @@ func NewLexer() *Lexer {
   }
 
   // These happen so often, they should be in the front
+  l.AddSymbol("==", ItemEquals, 0.0)
   l.AddSymbol("(", ItemOpenParen, 0.0)
   l.AddSymbol(")", ItemCloseParen, 0.0)
   l.AddSymbol("[", ItemOpenSquareBracket, 0.0)

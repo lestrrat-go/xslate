@@ -452,6 +452,11 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
     tmp.Right = b.ParseExpression(ctx, false)
     n = tmp
     return
+  case ItemEquals:
+    tmp := NewEqualsNode(next.Pos())
+    tmp.Left = n
+    tmp.Right = b.ParseExpression(ctx, false)
+    n = tmp
   case ItemLT:
     tmp := NewLTNode(next.Pos())
     tmp.Left = n

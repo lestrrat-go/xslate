@@ -49,6 +49,7 @@ const (
   NodeMinus
   NodeMul
   NodeDiv
+  NodeEquals
   NodeLT
   NodeGT
   NodeMakeArray
@@ -111,6 +112,8 @@ func (n NodeType) String() string {
     return "Multiply"
   case NodeDiv:
     return "Divide"
+  case NodeEquals:
+    return "Equals"
   case NodeLT:
     return "LessThan"
   case NodeGT:
@@ -662,6 +665,15 @@ func NewMulNode(pos Pos) *BinaryNode {
 func NewDivNode(pos Pos) *BinaryNode {
   return &BinaryNode {
     NodeDiv,
+    pos,
+    nil,
+    nil,
+  }
+}
+
+func NewEqualsNode(pos Pos) *BinaryNode {
+  return &BinaryNode {
+    NodeEquals,
     pos,
     nil,
     nil,
