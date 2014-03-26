@@ -407,9 +407,26 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
     }
   }
 
-  // ANY term can be followed by arithmetic operators
   next := b.NextNonSpace(ctx);
 
+  switch n.Type() {
+  case NodeLocalVar, NodeFetchSymbol:
+    switch next.Type() {
+    case ItemPeriod:
+      // It's either a method call, or a map lookup
+      n = b.ParseMethodCallOrMapLookup(ctx, n)
+    case ItemOpenParen:
+      b.Backup(ctx) // put back the open paren
+      // A variable followed by an open paren is a function call
+      n = b.ParseFunCall(ctx, n)
+    default:
+      b.Backup(ctx)
+    }
+  default:
+    b.Backup(ctx)
+  }
+
+  next = b.NextNonSpace(ctx)
   switch next.Type() {
   case ItemPlus:
     tmp := NewPlusNode(next.Pos())
@@ -446,30 +463,11 @@ func (b *Builder) ParseExpression(ctx *BuilderCtx, canPrint bool) (n Node) {
     tmp.Left = n
     tmp.Right = b.ParseExpression(ctx, false)
     n = tmp
-    return
-  }
-
-  // Okay, now we need to change what to do next depending on contex
-  switch n.Type() {
-  case NodeLocalVar, NodeFetchSymbol:
-    switch next.Type() {
-    case ItemPeriod:
-      // It's either a method call, or a map lookup
-      n = b.ParseMethodCallOrMapLookup(ctx, n)
-    case ItemOpenParen:
-      b.Backup(ctx) // put back the open paren
-      // A variable followed by an open paren is a function call
-      n = b.ParseFunCall(ctx, n)
-    default:
-      b.Backup(ctx)
-    }
+  case ItemVerticalSlash:
+    b.Backup(ctx)
+    n = b.ParseFilter(ctx, n)
   default:
     b.Backup(ctx)
-  }
-
-  // The whole expression can be passed to a filter
-  if b.PeekNonSpace(ctx).Type() == ItemVerticalSlash {
-    n = b.ParseFilter(ctx, n)
   }
 
   return

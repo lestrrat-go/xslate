@@ -372,6 +372,9 @@ func TestXslate_BooleanComparators(t *testing.T) {
   template = `[% IF foo < 10 %]Hello, World![% END %]`
   renderStringAndCompare(t, template, Vars { "foo": 20 }, ``)
   renderStringAndCompare(t, template, Vars { "foo": 0 }, `Hello, World!`)
+
+  template = `[% IF foo.Size() < 10 %]Hello, World![% END %]`
+  renderStringAndCompare(t, template, Vars { "foo": []int {} }, `Hello, World!`)
 }
 
 func TestXslate_FilterHTML(t *testing.T) {
