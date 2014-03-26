@@ -33,6 +33,7 @@ import (
   "io"
   "io/ioutil"
   "os"
+  "strconv"
   "reflect"
 
   "github.com/lestrrat/go-xslate/compiler"
@@ -41,6 +42,17 @@ import (
   "github.com/lestrrat/go-xslate/parser/tterse"
   "github.com/lestrrat/go-xslate/vm"
 )
+
+// Debug enables debug output. This can be toggled by setting XSLATE_DEBUG
+// environment variable.
+var Debug = false
+func init() {
+  tmp := os.Getenv("XSLATE_DEBUG")
+  boolVar, err := strconv.ParseBool(tmp)
+  if err == nil {
+    Debug = boolVar
+  }
+}
 
 // Vars is an alias to vm.Vars, declared so that you (the end user) does
 // not have to import two packages just to use Xslate
@@ -186,6 +198,11 @@ func (tx *Xslate) Configure(args ConfigureArgs) error {
     if err != nil {
       return err
     }
+  }
+
+  if Debug {
+    tx.DumpAST(true)
+    tx.DumpByteCode(true)
   }
 
   return nil

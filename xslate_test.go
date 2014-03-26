@@ -8,19 +8,9 @@ import (
   "log"
   "os"
   "path/filepath"
-  "strconv"
   "testing"
   "time"
 )
-
-var TestDebug = false
-func init() {
-  tmp := os.Getenv("XSLATE_DEBUG")
-  boolVar, err := strconv.ParseBool(tmp)
-  if err == nil {
-    TestDebug = boolVar
-  }
-}
 
 func createTx(path, cacheDir string, cacheLevel ...int) (*Xslate, error) {
   if len(cacheLevel) == 0 {
@@ -112,12 +102,6 @@ func ExampleXslate () {
 
 func renderStringAndCompare(t *testing.T, template string, vars Vars, expected string) {
   x, _ := New()
-
-  if TestDebug {
-    x.DumpAST(true)
-    x.DumpByteCode(true)
-  }
-
   output, err := x.RenderString(template, vars)
 
   if err != nil {
@@ -127,11 +111,6 @@ func renderStringAndCompare(t *testing.T, template string, vars Vars, expected s
 }
 
 func renderAndCompare(t *testing.T, tx *Xslate, key string, vars Vars, expected string) {
-  if TestDebug {
-    tx.DumpAST(true)
-    tx.DumpByteCode(true)
-  }
-
   output, err := tx.Render(key, vars)
   if err != nil {
     t.Fatalf("Failed to render template: %s", err)
@@ -178,6 +157,7 @@ func TestXslate_CommentAfterTag(t *testing.T) {
 func TestXslate_Variable(t *testing.T) {
   renderStringAndCompare(t, `Hello World, [% name %]!`, Vars { "name": "Bob" }, `Hello World, Bob!`)
   renderStringAndCompare(t, `[% x %]`, Vars { "x": uint32(1) }, `1`)
+  renderStringAndCompare(t, `[% x %]`, Vars { "x": float64(0.32) }, `0.32`)
 }
 
 func TestXslate_MapVariable(t *testing.T) {
