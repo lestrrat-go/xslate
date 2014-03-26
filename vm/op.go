@@ -69,6 +69,9 @@ func (o Op) MarshalBinary() ([]byte, error) {
     case reflect.Int:
       binary.Write(buf, binary.LittleEndian, int64(2))
       binary.Write(buf, binary.LittleEndian, int64(o.uArg.(int)))
+    case reflect.Int64:
+      binary.Write(buf, binary.LittleEndian, int64(2))
+      binary.Write(buf, binary.LittleEndian, int64(o.uArg.(int64)))
     case reflect.Slice:
       if tArg.Elem().Kind() != reflect.Uint8 {
         panic("Slice of what?")
