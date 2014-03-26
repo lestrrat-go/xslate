@@ -154,11 +154,13 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
 
     c.compile(ctx, x.Invocant)
     ctx.AppendOp(vm.TXOPPush)
+    ctx.AppendOp(vm.TXOPPushmark)
     for _, child := range x.Args.Nodes {
       c.compile(ctx, child)
       ctx.AppendOp(vm.TXOPPush)
     }
     ctx.AppendOp(vm.TXOPMethodCall, x.MethodName)
+    ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeWrapper:
     x := n.(*parser.WrapperNode)
     ctx.AppendOp(vm.TXOPPushOutput)

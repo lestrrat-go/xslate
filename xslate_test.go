@@ -8,6 +8,8 @@ import (
   "log"
   "os"
   "path/filepath"
+  "reflect"
+  "regexp"
   "testing"
   "time"
 )
@@ -100,7 +102,7 @@ func ExampleXslate () {
   fmt.Fprintf(os.Stdout, output)
 }
 
-func renderStringAndCompare(t *testing.T, template string, vars Vars, expected string) {
+func renderStringAndCompare(t *testing.T, template string, vars Vars, expected interface {}) {
   x, _ := New()
   output, err := x.RenderString(template, vars)
 
@@ -118,10 +120,23 @@ func renderAndCompare(t *testing.T, tx *Xslate, key string, vars Vars, expected 
   compareTemplateOutput(t, output, expected)
 }
 
-func compareTemplateOutput(t *testing.T, output, expected string) {
-  if output != expected {
-    t.Errorf("Expected '%s', got '%s'", expected, output)
+func compareTemplateOutput(t *testing.T, output string, expected interface {}) {
+  typ := reflect.TypeOf(expected)
+  switch typ.Kind() {
+  case reflect.String:
+    if output != expected.(string) {
+      t.Errorf("Expected '%s', got '%s'", expected, output)
+    }
+    return
+  case reflect.Ptr:
+    if typ.Elem().Name() == "Regexp" {
+      if ! expected.(*regexp.Regexp).MatchString(output) {
+        t.Errorf("Expected '%s', got '%s'", expected, output)
+      }
+      return
+    }
   }
+  t.Errorf("Unknown 'expected' type: %s", typ.Name())
 }
 
 func TestXslate_New_ParserSyntax(t *testing.T) {
@@ -161,7 +176,8 @@ func TestXslate_Variable(t *testing.T) {
 
   now := time.Now()
   time.Sleep(time.Second)
-  renderStringAndCompare(t, `[% x.Since(y).Seconds() %]`, Vars { "x": now, "y": time.Now() }, ``)
+  pattern := regexp.MustCompile(`\d+\.\d+`)
+  renderStringAndCompare(t, `[% y.Sub(x).Seconds() %]`, Vars { "x": now, "y": time.Now() }, pattern)
 }
 
 func TestXslate_MapVariable(t *testing.T) {

@@ -698,9 +698,8 @@ func txMethodCall(st *State) {
 
   v, _ := st.stack.Get(mark)
   invocant := reflect.ValueOf(v)
-
   var args = make([]reflect.Value, tip - mark + 1)
-  for i := 0; tip >= i; i++ {
+  for i := mark; tip >= i; i++ {
     v, _ := st.stack.Get(i)
     args[i - mark] = reflect.ValueOf(v)
   }
