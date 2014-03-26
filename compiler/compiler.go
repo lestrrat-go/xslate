@@ -79,21 +79,7 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     c.compile(ctx, n.(*parser.ListNode).Nodes[0])
     ctx.AppendOp(vm.TXOPPrintRaw)
   case parser.NodeForeach:
-    ctx.AppendOp(vm.TXOPPushmark)
-    c.compile(ctx, n.(*parser.ForeachNode).List)
-    ctx.AppendOp(vm.TXOPForStart, 0)
-    ctx.AppendOp(vm.TXOPLiteral, 0)
-    iter := ctx.AppendOp(vm.TXOPForIter, 0)
-    pos  := ctx.ByteCode.Len()
-
-    children := n.(*parser.ForeachNode).Nodes
-    for _, v := range children {
-      c.compile(ctx, v)
-    }
-
-    ctx.AppendOp(vm.TXOPGoto, -1 * (ctx.ByteCode.Len() - pos + 2))
-    iter.SetArg(ctx.ByteCode.Len() - pos + 1)
-    ctx.AppendOp(vm.TXOPPopmark)
+    c.compileForeach(ctx, n.(*parser.ForeachNode))
   case parser.NodeIf:
     c.compileIf(ctx, n)
   case parser.NodeElse:
@@ -278,5 +264,25 @@ func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []parse
   }
   ctx.AppendOp(vm.TXOPMakeHash)
   ctx.AppendOp(vm.TXOPMoveToSb)
+  ctx.AppendOp(vm.TXOPPopmark)
+}
+
+func (c *BasicCompiler) compileForeach(ctx *context, x *parser.ForeachNode) {
+  ctx.AppendOp(vm.TXOPPushmark)
+
+  c.compile(ctx, x.List)
+  ctx.AppendOp(vm.TXOPForStart, 0)
+  ctx.AppendOp(vm.TXOPLiteral, 0)
+
+  iter := ctx.AppendOp(vm.TXOPForIter, 0)
+  pos  := ctx.ByteCode.Len()
+
+  children := x.Nodes
+  for _, v := range children {
+    c.compile(ctx, v)
+  }
+
+  ctx.AppendOp(vm.TXOPGoto, -1 * (ctx.ByteCode.Len() - pos + 2))
+  iter.SetArg(ctx.ByteCode.Len() - pos + 1)
   ctx.AppendOp(vm.TXOPPopmark)
 }

@@ -578,6 +578,7 @@ func (b *Builder) ParseForeach(ctx *BuilderCtx) Node {
   ctx.CurrentParentNode().Append(forNode)
   ctx.PushParentNode(forNode)
   ctx.DeclareLocalVar(localsym.Value())
+  ctx.DeclareLocalVar("loop")
 
   return nil
 }

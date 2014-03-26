@@ -298,8 +298,26 @@ func txFetchField(st *State) {
 
       v = reflect.ValueOf(container)
       if t.Kind() == reflect.Ptr {
+        // dereference
         v = v.Elem()
       }
+
+      if v.Type().Name() == "LoopVar" {
+        // some special treatment here
+        switch name {
+        case "Max":
+          name = "MaxIndex"
+        case "Next":
+          name = "PeekNext"
+        case "Prev":
+          name = "PeeekPrev"
+        case "First":
+          name = "IsFirst"
+        case "Last":
+          name = "IsLast"
+        }
+      }
+
       f = v.FieldByName(name)
     case reflect.Map:
       v = reflect.ValueOf(container)
@@ -459,23 +477,49 @@ func txGoto(st *State) {
   st.AdvanceBy(st.CurrentOp().ArgInt())
 }
 
+type LoopVar struct {
+  Index int     // 0 origin
+  Count int     // loop.Index + 1
+  Body  reflect.Value   // Alias to array
+  Size  int     // len(loop.Body)
+  MaxIndex int  // loop.Size - 1
+  PeekNext interface {}
+  PeekPrev interface {}
+  IsFirst bool
+  IsLast bool
+}
+
+func NewLoopVar(idx int, array reflect.Value) *LoopVar {
+  lv := &LoopVar {
+    Index: idx,
+    Count: idx + 1,
+    Body: array,
+    Size: array.Len(),
+    MaxIndex: array.Len() - 1,
+    PeekNext: nil,
+    PeekPrev: nil,
+    IsFirst: false,
+    IsLast: false,
+  }
+  return lv
+}
+
 func txForStart(st *State) {
   id    := st.CurrentOp().ArgInt()
-  slice := reflect.ValueOf(st.sa)
+  array := reflect.ValueOf(st.sa)
 
-  switch slice.Kind() {
+  switch array.Kind() {
   case reflect.Array, reflect.Slice:
     // Normal case. nothing to do
   default:
-    // Oh you silly goose. You didn't give me a slice.
+    // Oh you silly goose. You didn't give me a array.
     // Use a dummy array
-    slice = reflect.ValueOf([]struct{}{})
+    array = reflect.ValueOf([]struct{}{})
   }
 
   cf := st.CurrentFrame()
   cf.SetLvar(id    , nil)   // item
-  cf.SetLvar(id + 1, -1)    // index
-  cf.SetLvar(id + 2, slice) // slice (Value)
+  cf.SetLvar(id + 1, NewLoopVar(-1, array))
 
   st.Advance()
 }
@@ -483,13 +527,28 @@ func txForStart(st *State) {
 func txForIter(st *State) {
   id    := st.sa.(int)
   cf    := st.CurrentFrame()
-  index := cf.GetLvar(id + 1).(int)
-  slice := cf.GetLvar(id + 2).(reflect.Value)
+  loop  := cf.GetLvar(id + 1).(*LoopVar)
+  slice := loop.Body
+  loop.Index++
+  loop.Count++
 
-  index++
-  cf.SetLvar(id + 1, index)
-  if slice.Len() > index {
-    cf.SetLvar(id, slice.Index(index).Interface())
+  loop.IsFirst = loop.Index == 0
+  loop.IsLast  = loop.Index == loop.MaxIndex
+
+  if loop.Size > loop.Index {
+    cf.SetLvar(id, slice.Index(loop.Index).Interface())
+
+    if loop.Size > loop.Index + 1 {
+      loop.PeekNext = slice.Index(loop.Index + 1).Interface()
+    } else {
+      loop.PeekNext = nil
+    }
+
+    if loop.Index > 0 {
+      loop.PeekPrev = slice.Index(loop.Index - 1).Interface()
+    } else {
+      loop.PeekPrev = nil
+    }
     st.Advance()
     return
   }

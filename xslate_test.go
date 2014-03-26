@@ -216,6 +216,32 @@ func TestXslate_Foreach(t *testing.T) {
   renderStringAndCompare(t, template, Vars { "list": list }, `0,1,2,3,4,5,6,7,8,9,`)
 }
 
+func TestXslate_ForeachLoopVar(t *testing.T) {
+  var template string
+  template = `[% FOREACH i IN [0..9] %][% loop.index %],[% END %]`
+  renderStringAndCompare(t, template, nil, `0,1,2,3,4,5,6,7,8,9,`)
+
+  template = `[% FOREACH i IN [0..9] %][% loop.count %],[% END %]`
+  renderStringAndCompare(t, template, nil, `1,2,3,4,5,6,7,8,9,10,`)
+
+  template = `[% FOREACH i IN [0..9] %][% loop.size %],[% END %]`
+  renderStringAndCompare(t, template, nil, `10,10,10,10,10,10,10,10,10,10,`)
+
+  // need a way to elias is_first to IsFirst for compatibility
+  // same for is_last and IsLast, peek_prev, peek_next, max_index
+  template = `[% FOREACH i IN [0..9] %][% loop.IsFirst %],[% END %]`
+  renderStringAndCompare(t, template, nil, `true,false,false,false,false,false,false,false,false,false,`)
+
+  template = `[% FOREACH i IN [0..9] %][% loop.First %],[% END %]`
+  renderStringAndCompare(t, template, nil, `true,false,false,false,false,false,false,false,false,false,`)
+
+  template = `[% FOREACH i IN [0..9] %][% loop.IsLast %],[% END %]`
+  renderStringAndCompare(t, template, nil, `false,false,false,false,false,false,false,false,false,true,`)
+
+  template = `[% FOREACH i IN [0..9] %][% loop.MaxIndex %],[% END %]`
+  renderStringAndCompare(t, template, nil, `9,9,9,9,9,9,9,9,9,9,`)
+}
+
 func TestXslate_ForeachMakeArrayRange(t *testing.T) {
   template := `[% FOREACH i IN [0..9] %][% i %],[% END %]`
   renderStringAndCompare(t, template, nil, `0,1,2,3,4,5,6,7,8,9,`)
