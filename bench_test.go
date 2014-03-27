@@ -24,8 +24,10 @@ func BenchmarkXslateHelloWorld(b *testing.B) {
   }
 
   vars := Vars { "name": "Bob" }
+  b.ResetTimer()
   for i := 0; i < b.N; i++ {
-    tx.Render("xslate/hello.tx", vars)
+    buf := &bytes.Buffer {}
+    tx.RenderInto(buf, "xslate/hello.tx", vars)
   }
 }
 
@@ -35,6 +37,7 @@ func BenchmarkHTMLTemplateHelloWorld(b *testing.B) {
     b.Fatalf("Failed to parse template: %s", err)
   }
 
+  b.ResetTimer()
   for i := 0; i < b.N; i++ {
     buf := &bytes.Buffer {}
     t.ExecuteTemplate(buf, "T", "Bob")

@@ -44,6 +44,7 @@ It is strongly recommended that you use the caching layer to boost performance.
 package xslate
 
 import (
+  "bytes"
   "errors"
   "fmt"
   "io"
@@ -284,12 +285,13 @@ func (tx *Xslate) DumpByteCode(b bool) {
 // `Render()` returns the resulting text from processing the template.
 // `err` is nil on success, otherwise it contains an `error` value.
 func (tx *Xslate) Render(name string, vars Vars) (string, error) {
-  bc, err := tx.Loader.Load(name)
+  buf := &bytes.Buffer {}
+  err := tx.RenderInto(buf, name, vars)
   if err != nil {
     return "", err
   }
-  tx.VM.Run(bc, vm.Vars(vars))
-  return tx.VM.OutputString()
+
+  return buf.String(), nil
 }
 
 // RenderString takes a string argument and treats it as the template
@@ -306,21 +308,19 @@ func (tx *Xslate) RenderString(template string, vars Vars) (string, error) {
     return "", err
   }
 
-  tx.VM.Run(bc, vm.Vars(vars))
-  return tx.VM.OutputString()
+  buf := &bytes.Buffer {}
+  tx.VM.Run(bc, vm.Vars(vars), buf)
+  return buf.String(), nil
 }
 
 // RenderInto combines Render() and writing its results into an io.Writer.
 // This is a convenience method for frameworks providing a Writer interface,
 // such as net/http's ServeHTTP()
 func (tx *Xslate) RenderInto(w io.Writer, template string, vars Vars) error {
-  output, err := tx.Render(template, vars)
+  bc, err := tx.Loader.Load(template)
   if err != nil {
     return err
   }
-  _, err = w.Write([]byte(output))
-  if err != nil {
-    return err
-  }
+  tx.VM.Run(bc, vm.Vars(vars), w)
   return nil
 }

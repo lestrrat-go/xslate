@@ -893,12 +893,10 @@ func txInclude(st *State) {
     panic(fmt.Sprintf("Include: Failed to compile %s: %s", target, err))
   }
 
+  buf := &bytes.Buffer {}
   vm := NewVM()
-  vm.Run(bc, vars)
-  output, err := vm.OutputString()
-  if err == nil {
-    st.AppendOutputString(output)
-  }
+  vm.Run(bc, vars, buf)
+  st.AppendOutputString(buf.String())
   st.Advance()
 }
 
@@ -920,12 +918,10 @@ func txWrapper(st *State) {
     panic(fmt.Sprintf("Wrapper: Failed to compile %s: %s", target, err))
   }
 
+  buf := &bytes.Buffer {}
   vm := NewVM()
-  vm.Run(bc, vars)
-  output, err := vm.OutputString()
-  if err == nil {
-    st.AppendOutputString(output)
-  }
+  vm.Run(bc, vars, buf)
+  st.AppendOutputString(buf.String())
   st.Advance()
 }
 

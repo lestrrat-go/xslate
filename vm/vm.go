@@ -16,6 +16,7 @@ package vm
 
 import (
   "bytes"
+  "io"
 )
 
 // This interface exists solely to avoid importing loader.ByteCodeLoader
@@ -40,16 +41,6 @@ func (vm *VM) CurrentOp() *Op {
   return vm.st.CurrentOp()
 }
 
-// Output returns the output accumulated so far
-func (vm *VM) Output() ([]byte, error) {
-  return vm.st.Output()
-}
-
-// OutputString returns the output accumulated so far in string format
-func (vm *VM) OutputString() (string, error) {
-  return vm.st.OutputString()
-}
-
 // Reset reinitializes certain state variables
 func (vm *VM) Reset() {
   vm.st.opidx = 0
@@ -59,9 +50,11 @@ func (vm *VM) Reset() {
 // Run executes the given vm.ByteCode using the given variables. For historical
 // reasons, it also allows re-executing the previous bytecode instructions
 // given to a virtual machine, but this will probably be removed in the future
-func (vm *VM) Run(bc *ByteCode, v Vars) {
+func (vm *VM) Run(bc *ByteCode, v Vars, output io.Writer) {
   vm.Reset()
   st := vm.st
+
+  st.output = output
   if bc != nil {
     st.pc = bc
   }
