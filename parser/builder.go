@@ -302,9 +302,6 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
   return tmpl
 }
 
-func (b *Builder) ParseTagEnd(ctx *builderCtx) {
-}
-
 func (b *Builder) ParseExpressionOrAssignment(ctx *builderCtx) Node {
   // There's a special case for assignment where SET is omitted
   // [% foo = ... %] instead of [% SET foo = ... %]
