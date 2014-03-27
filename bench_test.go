@@ -2,7 +2,8 @@ package xslate
 
 import (
   "bytes"
-  "html/template"
+  tt "text/template"
+  ht "html/template"
   "os"
   "path/filepath"
   "testing"
@@ -32,7 +33,20 @@ func BenchmarkXslateHelloWorld(b *testing.B) {
 }
 
 func BenchmarkHTMLTemplateHelloWorld(b *testing.B) {
-  t, err := template.New("hello").Parse(`{{define "T"}}Hello World, {{.}}!{{end}}`)
+  t, err := ht.New("hello").Parse(`{{define "T"}}Hello World, {{.}}!{{end}}`)
+  if err != nil {
+    b.Fatalf("Failed to parse template: %s", err)
+  }
+
+  b.ResetTimer()
+  for i := 0; i < b.N; i++ {
+    buf := &bytes.Buffer {}
+    t.ExecuteTemplate(buf, "T", "Bob")
+  }
+}
+
+func BenchmarkTextTemplateHelloWorld(b *testing.B) {
+  t, err := tt.New("hello").Parse(`{{define "T"}}Hello World, {{.}}!{{end}}`)
   if err != nil {
     b.Fatalf("Failed to parse template: %s", err)
   }
