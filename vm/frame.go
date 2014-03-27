@@ -1,15 +1,19 @@
 package vm
 
+import (
+  "github.com/lestrrat/go-xslate/util"
+)
+
 // Frame represents a stack frame
 type Frame struct {
   name string
-  stack *Stack
+  stack *util.Stack
 }
 
 // NewFrame creates a new Frame instance.
 func NewFrame() *Frame {
   return &Frame {
-    stack: NewStack(5),
+    stack: util.NewStack(5),
   }
 }
 
@@ -25,8 +29,8 @@ func (f *Frame) GetLvar(i int) interface {} {
 // SetLvar sets the frame local variable at position i
 func (f *Frame) SetLvar(i int, v interface {}) {
   f.stack.Set(i, v)
-  if i > f.stack.cur {
-    f.stack.cur = i
+  if i > f.stack.Cur() {
+    f.stack.SetCur(i)
   }
 }
 

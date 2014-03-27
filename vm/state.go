@@ -6,6 +6,8 @@ import (
   "io"
   "io/ioutil"
   "os"
+
+  "github.com/lestrrat/go-xslate/util"
 )
 
 // State keeps track of Xslate Virtual Machine state
@@ -13,8 +15,8 @@ type State struct {
   opidx int
   pc *ByteCode
 
-  stack *Stack
-  markstack *Stack
+  stack *util.Stack
+  markstack *util.Stack
 
   // output
   output  io.ReadWriter
@@ -29,7 +31,7 @@ type State struct {
   targ  interface {}
 
   // stack frame
-  frames *Stack
+  frames *util.Stack
   currentFrame int
 
   Loader byteCodeLoader
@@ -40,12 +42,12 @@ func NewState() *State {
   st := &State {
     opidx: 0,
     pc: NewByteCode(),
-    stack: NewStack(5),
-    markstack: NewStack(5),
+    stack: util.NewStack(5),
+    markstack: util.NewStack(5),
     vars: make(Vars),
     output: &bytes.Buffer {},
     warn: os.Stderr,
-    frames: NewStack(5),
+    frames: util.NewStack(5),
     currentFrame: -1,
   }
 

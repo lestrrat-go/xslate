@@ -1,4 +1,4 @@
-package vm
+package util
 
 import (
   "bytes"
@@ -27,6 +27,10 @@ func NewStack(size int) *Stack {
 // the stack, it returns -1
 func (s *Stack) Cur() int {
   return s.cur
+}
+
+func (s *Stack) SetCur(c int) {
+  s.cur = c
 }
 
 // Top returns the element at the top of the stack or an error if stack is empty
