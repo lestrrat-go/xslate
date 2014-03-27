@@ -437,7 +437,6 @@ func (b *Builder) ParseAssignment(ctx *builderCtx) Node {
 
 func (b *Builder) DeclareLocalVarIfNew(ctx *builderCtx, symbol LexItem) {
   if _, ok := ctx.HasLocalVar(symbol.Value()); ! ok {
-fmt.Printf("Declaring variable %s\n", symbol.Value())
     ctx.DeclareLocalVar(symbol.Value())
   }
 }
