@@ -154,6 +154,8 @@ func TestXslate_New_ParserSyntax(t *testing.T) {
 
 func TestXslate_SimpleString(t *testing.T) {
   renderStringAndCompare(t, `Hello, World!`, nil, `Hello, World!`)
+  renderStringAndCompare(t, `    [%- "Hello, World!" %]`, nil, `Hello, World!`)
+  renderStringAndCompare(t, `[% "Hello, World!" -%]    `, nil, `Hello, World!`)
 }
 
 
@@ -163,9 +165,6 @@ func TestXslate_SimpleHTMLString(t *testing.T) {
 
 func TestXslate_Comment(t *testing.T) {
   renderStringAndCompare(t, `[% # This is a comment %]Hello, World!`, nil, `Hello, World!`)
-}
-
-func TestXslate_CommentAfterTag(t *testing.T) {
   renderStringAndCompare(t, `[% IF foo %]Hello, World![% END # DONE IF %]`, Vars { "foo": true }, `Hello, World!`)
 }
 
@@ -205,9 +204,6 @@ func TestXslate_NestedStructVariable(t *testing.T) {
 
 func TestXslate_LocalVar(t *testing.T) {
   renderStringAndCompare(t, `[% SET name = "Bob" %]Hello World, [% name %]!`, nil, `Hello World, Bob!`)
-}
-
-func TestXslate_LocalVarOmitSet(t *testing.T) {
   renderStringAndCompare(t, `[% name = "Bob" %]Hello World, [% name %]!`, nil, `Hello World, Bob!`)
 }
 

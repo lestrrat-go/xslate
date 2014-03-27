@@ -25,6 +25,7 @@ type builderCtx struct{
   Tokens    [3]LexItem
   ParentStack []*StackFrame
   CurrentStackTop int
+  PostChomp bool
 }
 
 func NewBuilder() *Builder {
@@ -190,9 +191,33 @@ func (b *Builder) ParseTemplateOrText(ctx *builderCtx) Node {
 }
 
 func (b *Builder) ParseRawString(ctx *builderCtx) Node {
+  const whiteSpace = " \t\r\n"
   token := b.NextNonSpace(ctx)
+  if token.Type() != ItemRawString {
+    b.Unexpected("Expected raw string, got %s", token)
+  }
+
+  value := token.Value()
+
+  if ctx.PostChomp {
+    value = strings.TrimLeft(value, whiteSpace)
+    ctx.PostChomp = false
+  }
+
+  // Look for signs of pre-chomp
+  if b.PeekNonSpace(ctx).Type() == ItemTagStart {
+    start := b.NextNonSpace(ctx)
+    next  := b.PeekNonSpace(ctx)
+    b.Backup2(ctx, start)
+    if next.Type() == ItemMinus {
+      // prechomp!
+      value = strings.TrimRight(value, whiteSpace)
+    }
+  }
+
   n := NewPrintRawNode(token.Pos())
-  n.Append(NewTextNode(token.Pos(), token.Value()))
+  n.Append(NewTextNode(token.Pos(), value))
+
   return n
 }
 
@@ -210,6 +235,11 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
   start := b.NextNonSpace(ctx)
   if start.Type() != ItemTagStart {
     b.Unexpected("Expected TagStart, got %s", start)
+  }
+  ctx.PostChomp = false
+
+  if b.PeekNonSpace(ctx).Type() == ItemMinus {
+    b.NextNonSpace(ctx)
   }
 
   var tmpl Node
@@ -259,12 +289,20 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
     b.NextNonSpace(ctx)
   }
 
+  if b.PeekNonSpace(ctx).Type() == ItemMinus {
+    b.NextNonSpace(ctx)
+    ctx.PostChomp = true
+  }
+
   // Consume tag end
   end := b.NextNonSpace(ctx)
   if end.Type() != ItemTagEnd {
     b.Unexpected("Expected TagEnd, got %s", end)
   }
   return tmpl
+}
+
+func (b *Builder) ParseTagEnd(ctx *builderCtx) {
 }
 
 func (b *Builder) ParseExpressionOrAssignment(ctx *builderCtx) Node {
@@ -318,14 +356,21 @@ func (b *Builder) ParseWrapper(ctx *builderCtx) Node {
     return nil
   }
   b.NextNonSpace(ctx) // WITH
+LOOP:
   for {
     a := b.ParseAssignment(ctx)
     n.AppendAssignment(a)
     next := b.PeekNonSpace(ctx)
-    if next.Type() != ItemComma {
-      break
-    } else if  next.Type() == ItemTagEnd {
-      break
+    switch next.Type() {
+    case ItemComma, ItemTagEnd:
+      break LOOP
+    case ItemMinus:
+      cur := b.NextNonSpace(ctx)
+      next := b.PeekNonSpace(ctx)
+      b.Backup2(ctx, cur)
+      if next.Type() == ItemTagEnd {
+        break LOOP
+      }
     }
     b.NextNonSpace(ctx)
   }
@@ -484,7 +529,7 @@ func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n Node) {
     // Otherwise it's a straight forward ... something
     n = b.ParseTerm(ctx)
     if n == nil {
-      panic("TODO")
+      panic(fmt.Sprintf("Expected term but could not parse. Next is %s\n", b.PeekNonSpace(ctx)))
     }
   }
 
@@ -514,6 +559,13 @@ func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n Node) {
     n = tmp
     return
   case ItemMinus:
+    // This is special... 
+    following := b.PeekNonSpace(ctx)
+    if following.Type() == ItemTagEnd {
+      b.Backup2(ctx, next)
+      // Postchomp! not arithmetic!
+      return
+    }
     tmp := NewMinusNode(next.Pos())
     tmp.Left = n
     tmp.Right = b.ParseExpression(ctx, false)
