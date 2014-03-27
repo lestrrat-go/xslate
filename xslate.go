@@ -1,9 +1,25 @@
 /*
 Package xslate is the main interface to the Go version of Xslate.
+
 Xslate is an extremely powerful template engine, based on Perl5's Text::Xslate
 module (http://xslate.org/). Xslate uses a virtual machine to execute 
 pre-compiled template bytecode, which gives its flexibility while maitaining 
 a very fast execution speed.
+
+You may be thinking "What? Go already has text/template and html/template!".
+You are right in that this is another added complexity, but the major
+difference is that Xslate assumes that your template data resides outside
+of your go application (e.g. on the file system), and properly handles
+updates to those templates -- you don't have to recompile your application
+or write freshness checks yourselve to get the updates reflected automatically.
+
+Xslate does all that, and also tries its best to keep things fast by 
+creating memory caches and file-based caches.
+
+It also supports a template syntax known as TTerse, which is a simplified
+version of the famous Template-Toolkit (http://www.template-toolkit.org)
+syntax, which is a full-blown language on its own that allows you to create
+flexible, rich templates.
 
 The simplest way to use Xslate is to prepare a directory with Xslate templates
 (say, "/path/to/tempalte"), and do something like the following:
