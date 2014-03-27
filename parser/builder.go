@@ -119,10 +119,15 @@ func (b *Builder) Backup2(ctx *builderCtx, t1 LexItem) {
   ctx.PeekCount = 2
 }
 
-func (ctx *builderCtx) HasLocalVar(symbol string) (int, bool) {
-  frame := ctx.CurrentFrame()
-  pos, ok := frame.LvarNames[symbol]
-  return pos, ok
+func (ctx *builderCtx) HasLocalVar(symbol string) (pos int, ok bool) {
+  for i := ctx.Frames.Cur(); i >= 0; i-- {
+    frame, _ := ctx.Frames.Get(i)
+    pos, ok = frame.(*Frame).LvarNames[symbol]
+    if ok {
+      return
+    }
+  }
+  return 0, false
 }
 
 func (ctx *builderCtx) DeclareLocalVar(symbol string) int {
@@ -283,6 +288,8 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
     tmpl = b.ParseWrapper(ctx)
   case ItemForeach:
     tmpl = b.ParseForeach(ctx)
+  case ItemWhile:
+    tmpl = b.ParseWhile(ctx)
   case ItemInclude:
     tmpl = b.ParseInclude(ctx)
   case ItemTagEnd: // Silly, but possible
@@ -395,35 +402,29 @@ func (b *Builder) ParseAssignment(ctx *builderCtx) Node {
     b.Unexpected("Expected identifier, got %s", symbol)
   }
 
-  var node *AssignmentNode
+  b.DeclareLocalVarIfNew(ctx, symbol)
+  node := NewAssignmentNode(symbol.Pos(), symbol.Value())
+
   eq := b.NextNonSpace(ctx)
   switch eq.Type() {
   case ItemAssign:
-    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
     node.Expression = b.ParseExpression(ctx, false)
-    if _, ok := ctx.HasLocalVar(symbol.Value()); ! ok {
-      ctx.DeclareLocalVar(symbol.Value())
-    }
   case ItemAssignAdd:
-    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
     add  := NewPlusNode(symbol.Pos())
     add.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
     add.Right = b.ParseExpression(ctx, false)
     node.Expression = add
   case ItemAssignSub:
-    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
     sub  := NewMinusNode(symbol.Pos())
     sub.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
     sub.Right = b.ParseExpression(ctx, false)
     node.Expression = sub
   case ItemAssignMul:
-    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
     mul  := NewMulNode(symbol.Pos())
     mul.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
     mul.Right = b.ParseExpression(ctx, false)
     node.Expression = mul
   case ItemAssignDiv:
-    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
     div  := NewDivNode(symbol.Pos())
     div.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
     div.Right = b.ParseExpression(ctx, false)
@@ -432,6 +433,13 @@ func (b *Builder) ParseAssignment(ctx *builderCtx) Node {
     b.Unexpected("Expected assign, got %s", eq)
   }
   return node
+}
+
+func (b *Builder) DeclareLocalVarIfNew(ctx *builderCtx, symbol LexItem) {
+  if _, ok := ctx.HasLocalVar(symbol.Value()); ! ok {
+fmt.Printf("Declaring variable %s\n", symbol.Value())
+    ctx.DeclareLocalVar(symbol.Value())
+  }
 }
 
 func (b *Builder) LocalVarOrFetchSymbol(ctx *builderCtx, token LexItem) Node {
@@ -694,6 +702,23 @@ func (b *Builder) ParseForeach(ctx *builderCtx) Node {
   ctx.CurrentParentNode().Append(forNode)
   ctx.PushParentNode(forNode)
   ctx.DeclareLocalVar(localsym.Value())
+  ctx.DeclareLocalVar("loop")
+
+  return nil
+}
+
+func (b *Builder) ParseWhile(ctx *builderCtx) Node {
+  while := b.NextNonSpace(ctx)
+  if while.Type() != ItemWhile {
+    b.Unexpected("Expected WHILE, got %s", while)
+  }
+
+  condition := b.ParseExpression(ctx, false)
+
+  whileNode := NewWhileNode(while.Pos(), condition)
+
+  ctx.CurrentParentNode().Append(whileNode)
+  ctx.PushParentNode(whileNode)
   ctx.DeclareLocalVar("loop")
 
   return nil

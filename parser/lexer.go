@@ -76,6 +76,7 @@ const (
   ItemMacro       // MACRO
   ItemBlock       // BLOCK
   ItemForeach     // FOREACH
+  ItemWhile       // WHILE
   ItemIn          // IN
   ItemInclude     // INCLUDE
   ItemWith        // WITH
@@ -228,6 +229,8 @@ func (i LexItemType) String() string {
     name = "With"
   case ItemForeach:
     name = "Foreach"
+  case ItemWhile:
+    name = "While"
   case ItemIn:
     name = "In"
   case ItemInclude:

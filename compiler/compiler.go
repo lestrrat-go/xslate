@@ -80,6 +80,8 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     ctx.AppendOp(vm.TXOPPrintRaw)
   case parser.NodeForeach:
     c.compileForeach(ctx, n.(*parser.ForeachNode))
+  case parser.NodeWhile:
+    c.compileWhile(ctx, n.(*parser.WhileNode))
   case parser.NodeIf:
     c.compileIf(ctx, n)
   case parser.NodeElse:
@@ -284,5 +286,27 @@ func (c *BasicCompiler) compileForeach(ctx *context, x *parser.ForeachNode) {
 
   ctx.AppendOp(vm.TXOPGoto, -1 * (ctx.ByteCode.Len() - pos + 2))
   iter.SetArg(ctx.ByteCode.Len() - pos + 1)
+  ctx.AppendOp(vm.TXOPPopmark)
+}
+
+func (c *BasicCompiler) compileWhile(ctx *context, x *parser.WhileNode) {
+  ctx.AppendOp(vm.TXOPPushmark)
+  condPos := ctx.ByteCode.Len() + 1 // w/o 1, it's the pushmark, but we want the next one
+
+  // compile the boolean expression
+  c.compile(ctx, x.Condition)
+
+  // we might as well use the equivalent of If here!
+  ifop := ctx.AppendOp(vm.TXOPAnd, 0)
+  ifPos := ctx.ByteCode.Len()
+
+  children := x.Nodes
+  for _, v := range children {
+    c.compile(ctx, v)
+  }
+
+  // Go back to condPos
+  ctx.AppendOp(vm.TXOPGoto, -1 * (ctx.ByteCode.Len() - condPos + 1))
+  ifop.SetArg(ctx.ByteCode.Len() - ifPos + 1)
   ctx.AppendOp(vm.TXOPPopmark)
 }

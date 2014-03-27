@@ -66,6 +66,14 @@ func interfaceToNumeric(v interface{}) reflect.Value {
 // can be performed correctly.
 // e.g. given int, float, we align them to float, float
 func alignTypesForArithmetic(left, right interface {}) (reflect.Value, reflect.Value) {
+  // These avoid crashes for accessing nil interfaces
+  if left == nil {
+    left = 0
+  }
+  if right == nil {
+    right = 0
+  }
+
   leftV  := interfaceToNumeric(left)
   rightV := interfaceToNumeric(right)
 

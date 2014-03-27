@@ -21,6 +21,7 @@ func init() {
   SymbolSet.Set("ELSE",     parser.ItemElse)
   SymbolSet.Set("UNLESS",   parser.ItemUnless)
   SymbolSet.Set("FOREACH",  parser.ItemForeach)
+  SymbolSet.Set("WHILE",    parser.ItemWhile)
   SymbolSet.Set("MACRO",    parser.ItemMacro)
   SymbolSet.Set("BLOCK",    parser.ItemBlock)
   SymbolSet.Set("END",      parser.ItemEnd)

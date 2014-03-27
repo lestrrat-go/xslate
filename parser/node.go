@@ -46,6 +46,7 @@ const (
   NodeElse
   NodeList
   NodeForeach
+  NodeWhile
   NodeWrapper
   NodeInclude
   NodeAssignment
@@ -90,6 +91,8 @@ func (n NodeType) String() string {
     return "List"
   case NodeForeach:
     return "Foreach"
+  case NodeWhile:
+    return "While"
   case NodeWrapper:
     return "Wrapper"
   case NodeInclude:
@@ -372,6 +375,33 @@ func (n *ForeachNode) String() string {
   b := &bytes.Buffer {}
   fmt.Fprintf(b, "%s %s (%d)", n.NodeType, n.IndexVarName, n.IndexVarIdx)
   return b.String()
+}
+
+type WhileNode struct {
+  *ListNode
+  Condition Node
+}
+
+func NewWhileNode(pos Pos, n Node) *WhileNode {
+  x := &WhileNode {
+    NewListNode(pos),
+    n,
+  }
+  x.NodeType = NodeWhile
+  return x
+}
+
+func (n *WhileNode) Copy() Node {
+  return &WhileNode {
+    n.ListNode.Copy().(*ListNode),
+    n.Condition.Copy(),
+  }
+}
+
+func (n *WhileNode) Visit(c chan Node) {
+  c <- n
+  n.Condition.Visit(c)
+  n.ListNode.Visit(c)
 }
 
 type MethodCallNode struct {
