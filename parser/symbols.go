@@ -10,7 +10,9 @@ var DefaultSymbolSet = NewLexSymbolSet()
 
 func init() {
   DefaultSymbolSet.Set("==",  ItemEquals,             1.0)
+  DefaultSymbolSet.Set("eq",  ItemEquals,             0.0)
   DefaultSymbolSet.Set("!=",  ItemNotEquals,          1.0)
+  DefaultSymbolSet.Set("ne",  ItemNotEquals,          0.0)
   DefaultSymbolSet.Set("+=",  ItemAssignAdd,          1.0)
   DefaultSymbolSet.Set("-=",  ItemAssignSub,          1.0)
   DefaultSymbolSet.Set("*=",  ItemAssignMul,          1.0)

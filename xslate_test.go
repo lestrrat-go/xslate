@@ -421,6 +421,17 @@ func TestXslate_BooleanComparators(t *testing.T) {
 
   template = `[% IF foo.Size() < 10 %]Hello, World![% END %]`
   renderStringAndCompare(t, template, Vars { "foo": []int {} }, `Hello, World!`)
+
+  // These exist solely for compatibility with perl5's Text::Xslate.
+  // People using the go version are strongly discouraged from using
+  // these operators
+  template = `[% IF foo eq "bar" %]Hello, World![% END %]`
+  renderStringAndCompare(t, template, Vars { "foo": "bar" }, `Hello, World!`)
+  renderStringAndCompare(t, template, Vars { "foo": "baz" }, ``)
+
+  template = `[% IF foo ne "bar" %]Hello, World![% END %]`
+  renderStringAndCompare(t, template, Vars { "foo": "baz" }, `Hello, World!`)
+  renderStringAndCompare(t, template, Vars { "foo": "bar" }, ``)
 }
 
 func TestXslate_FilterHTML(t *testing.T) {
