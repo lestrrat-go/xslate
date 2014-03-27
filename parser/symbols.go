@@ -4,6 +4,8 @@ import (
   "sort"
 )
 
+// DefaultSymbolSet is the LexSymbolSet for symbols that are common to
+// all syntax
 var DefaultSymbolSet = NewLexSymbolSet()
 
 func init() {
@@ -69,12 +71,13 @@ func (s LexSymbolSorter) Swap(i, j int) {
   s.list[i], s.list[j] = s.list[j], s.list[i]
 }
 
-// LexSymbolSet 
+// LexSymbolSet is the container for symbols.
 type LexSymbolSet struct {
   Map         map[string]LexSymbol
   SortedList  LexSymbolList
 }
 
+// NewLexSymbolSet creates a new LexSymbolSet
 func NewLexSymbolSet() *LexSymbolSet {
   return &LexSymbolSet {
     make(map[string]LexSymbol),
@@ -82,6 +85,7 @@ func NewLexSymbolSet() *LexSymbolSet {
   }
 }
 
+// Copy creates a new copy of the given LexSymbolSet
 func (l *LexSymbolSet) Copy() *LexSymbolSet {
   c := NewLexSymbolSet()
   for k, v := range l.Map {
@@ -90,14 +94,17 @@ func (l *LexSymbolSet) Copy() *LexSymbolSet {
   return c
 }
 
+// Count returns the number of symbols registered
 func (l *LexSymbolSet) Count() int {
   return len(l.Map)
 }
 
+// Get returns the LexSymbol associated with `name`
 func (l *LexSymbolSet) Get(name string) LexSymbol {
   return l.Map[name]
 }
 
+// Set creates and sets a new LexItem to `name`
 func (l *LexSymbolSet) Set(name string, typ LexItemType, prio ...float32) {
   var x float32
   if len(prio) < 1 {
@@ -109,6 +116,8 @@ func (l *LexSymbolSet) Set(name string, typ LexItemType, prio ...float32) {
   l.SortedList = nil // reset
 }
 
+// GetSortedList returns the lsit of LexSymbols in order that they should
+// be searched for in the tempalte
 func (l *LexSymbolSet) GetSortedList() LexSymbolList {
   // Because symbols are parsed automatically in a loop, we need to make
   // sure that we search starting with the longest term (e.g., "INCLUDE"
