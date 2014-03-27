@@ -207,6 +207,10 @@ func TestXslate_LocalVar(t *testing.T) {
   renderStringAndCompare(t, `[% SET name = "Bob" %]Hello World, [% name %]!`, nil, `Hello World, Bob!`)
 }
 
+func TestXslate_LocalVarOmitSet(t *testing.T) {
+  renderStringAndCompare(t, `[% name = "Bob" %]Hello World, [% name %]!`, nil, `Hello World, Bob!`)
+}
+
 func TestXslate_Foreach(t *testing.T) {
   var list [10]int
   for i := 0; i < 10; i++ {

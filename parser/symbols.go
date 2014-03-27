@@ -7,6 +7,7 @@ import (
 var DefaultSymbolSet = NewLexSymbolSet()
 
 func init() {
+  DefaultSymbolSet.Set("=",   ItemAssign,             1.0)
   DefaultSymbolSet.Set("==",  ItemEquals,             0.0)
   DefaultSymbolSet.Set("!=",  ItemNotEquals,          0.0)
   DefaultSymbolSet.Set("(",   ItemOpenParen,          0.0)
@@ -22,7 +23,6 @@ func init() {
   DefaultSymbolSet.Set("-",   ItemMinus)
   DefaultSymbolSet.Set("*",   ItemAsterisk)
   DefaultSymbolSet.Set("/",   ItemSlash)
-  DefaultSymbolSet.Set("=",   ItemAssign)
 }
 
 // LexSymbol holds the pre-defined symbols to be lexed

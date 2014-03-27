@@ -231,7 +231,7 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
     b.NextNonSpace(ctx)
     // no op
   case ItemSet:
-    b.NextNonSpace(ctx)
+    b.NextNonSpace(ctx) // Consume SET
     tmpl = b.ParseAssignment(ctx)
   case ItemWrapper:
     tmpl = b.ParseWrapper(ctx)
@@ -243,7 +243,18 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
     b.NextNonSpace(ctx)
     tmpl = NewNoopNode()
   case ItemIdentifier, ItemNumber, ItemDoubleQuotedString, ItemSingleQuotedString, ItemOpenParen:
-    tmpl = b.ParseExpression(ctx, true)
+    // There's a special case for assignment where SET is omitted
+    // [% foo = ... %] instead of [% SET foo = ... %]
+    next := b.NextNonSpace(ctx)
+    following := b.PeekNonSpace(ctx)
+    if next.Type() == ItemIdentifier && following.Type() == ItemAssign {
+      // This is a simple assignment!
+      b.Backup2(ctx, next)
+      tmpl = b.ParseAssignment(ctx)
+    } else {
+      b.Backup2(ctx, next)
+      tmpl = b.ParseExpression(ctx, true)
+    }
   case ItemIf:
     tmpl = b.ParseIf(ctx)
   case ItemElse:
