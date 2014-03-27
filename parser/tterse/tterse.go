@@ -8,9 +8,10 @@ import (
 var SymbolSet = parser.DefaultSymbolSet.Copy()
 func init() {
  // "In" must come before Include
-  SymbolSet.Set("IN",       parser.ItemIn,      2.0)
-  SymbolSet.Set("INCLUDE",  parser.ItemInclude, 1.5)
+  SymbolSet.Set("INCLUDE",  parser.ItemInclude, 2.0)
+  SymbolSet.Set("IN",       parser.ItemIn,      1.5)
   SymbolSet.Set("WITH",     parser.ItemWith)
+  SymbolSet.Set("CALL",     parser.ItemCall)
   SymbolSet.Set("END",      parser.ItemEnd)
   SymbolSet.Set("WRAPPER",  parser.ItemWrapper)
   SymbolSet.Set("SET",      parser.ItemSet)

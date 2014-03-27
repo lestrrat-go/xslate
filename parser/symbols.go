@@ -7,9 +7,12 @@ import (
 var DefaultSymbolSet = NewLexSymbolSet()
 
 func init() {
-  DefaultSymbolSet.Set("=",   ItemAssign,             1.0)
-  DefaultSymbolSet.Set("==",  ItemEquals,             0.0)
-  DefaultSymbolSet.Set("!=",  ItemNotEquals,          0.0)
+  DefaultSymbolSet.Set("==",  ItemEquals,             1.0)
+  DefaultSymbolSet.Set("!=",  ItemNotEquals,          1.0)
+  DefaultSymbolSet.Set("+=",  ItemAssignAdd,          1.0)
+  DefaultSymbolSet.Set("-=",  ItemAssignSub,          1.0)
+  DefaultSymbolSet.Set("*=",  ItemAssignMul,          1.0)
+  DefaultSymbolSet.Set("/=",  ItemAssignDiv,          1.0)
   DefaultSymbolSet.Set("(",   ItemOpenParen,          0.0)
   DefaultSymbolSet.Set(")",   ItemCloseParen,         0.0)
   DefaultSymbolSet.Set("[",   ItemOpenSquareBracket,  0.0)
@@ -17,12 +20,13 @@ func init() {
   DefaultSymbolSet.Set(".",   ItemPeriod,             0.0)
   DefaultSymbolSet.Set(",",   ItemComma,              0.0)
   DefaultSymbolSet.Set("|",   ItemVerticalSlash,      0.0)
+  DefaultSymbolSet.Set("=",   ItemAssign,             0.0)
   DefaultSymbolSet.Set(">",   ItemGT,                 0.0)
   DefaultSymbolSet.Set("<",   ItemLT,                 0.0)
-  DefaultSymbolSet.Set("+",   ItemPlus)
-  DefaultSymbolSet.Set("-",   ItemMinus)
-  DefaultSymbolSet.Set("*",   ItemAsterisk)
-  DefaultSymbolSet.Set("/",   ItemSlash)
+  DefaultSymbolSet.Set("+",   ItemPlus,               0.0)
+  DefaultSymbolSet.Set("-",   ItemMinus,              0.0)
+  DefaultSymbolSet.Set("*",   ItemAsterisk,           0.0)
+  DefaultSymbolSet.Set("/",   ItemSlash,              0.0)
 }
 
 // LexSymbol holds the pre-defined symbols to be lexed
@@ -57,7 +61,7 @@ func (s LexSymbolSorter) Len() int {
 
 // Less returns true if the i-th element's Priority is less than the j-th element
 func (s LexSymbolSorter) Less(i, j int) bool {
-  return s.list[i].Priority < s.list[j].Priority
+  return s.list[i].Priority > s.list[j].Priority
 }
 
 // Swap swaps the elements at i and j

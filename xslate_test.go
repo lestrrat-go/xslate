@@ -365,28 +365,18 @@ func TestXslate_MethodCallVariable(t *testing.T) {
   renderStringAndCompare(t, template, Vars { "t1": time.Unix(0, 0), "t2": time.Unix(100, 0) }, `true`)
 }
 
-func TestXslate_ArithmeticPlus(t *testing.T) {
-  template := `[% 1 + 2 %]`
-  renderStringAndCompare(t, template, nil, `3`)
-}
-
-func TestXslate_ArithmeticMinus(t *testing.T) {
-  template := `[% 2 - 1 %]`
-  renderStringAndCompare(t, template, nil, `1`)
-}
-
-func TestXslate_ArithmeticMul(t *testing.T) {
-  template := `[% 2 * 5 %]`
-  renderStringAndCompare(t, template, nil, `10`)
-}
-
-func TestXslate_ArithmeticDiv(t *testing.T) {
-  template := `[% 10 / 2 %]`
-  renderStringAndCompare(t, template, nil, `5`)
-}
-
-func TestXslate_GroupedArithmetic(t *testing.T) {
+func TestXslate_Arithmetic(t *testing.T) {
   var template string
+
+  template = `[% 1 + 2 %]`
+  renderStringAndCompare(t, template, nil, `3`)
+  template = `[% 2 - 1 %]`
+  renderStringAndCompare(t, template, nil, `1`)
+  template = `[% 2 * 5 %]`
+  renderStringAndCompare(t, template, nil, `10`)
+  template = `[% 10 / 2 %]`
+  renderStringAndCompare(t, template, nil, `5`)
+
   template = `[% (1 + 2) * 3 %]`
   renderStringAndCompare(t, template, nil, `9`)
   template = `[% 6 / ( 3 - 1) %]`
@@ -395,6 +385,13 @@ func TestXslate_GroupedArithmetic(t *testing.T) {
   renderStringAndCompare(t, template, nil, `2`)
   template = `[% 6 / ( ( 4 - 1 ) - 1 ) %]`
   renderStringAndCompare(t, template, nil, `3`)
+
+  template = `[% x = 0 %][% CALL x += 1 %][% CALL x += 1 %][% x %]`
+  renderStringAndCompare(t, template, nil, `2`)
+  template = `[% x = 2 %][% CALL x -= 1 %][% CALL x -= 1 %][% x %]`
+  renderStringAndCompare(t, template, nil, `0`)
+  template = `[% x = 2 %][% CALL x *= 2 %][% CALL x *= 2 %][% x %]`
+  renderStringAndCompare(t, template, nil, `8`)
 }
 
 func TestXslate_BooleanComparators(t *testing.T) {

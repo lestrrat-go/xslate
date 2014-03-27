@@ -70,6 +70,7 @@ const (
   ItemCloseSquareBracket  // ']'
   ItemPeriod      // '.'
   ItemKeyword     // Delimiter
+  ItemCall        // CALL
   ItemGet         // GET
   ItemSet         // SET
   ItemMacro       // MACRO
@@ -86,7 +87,6 @@ const (
   ItemCase        // CASE
   ItemWrapper     // WRAPPER
   ItemDefault     // DEFAULT
-  ItemCall        // CALL
   ItemEnd         // END
   ItemOperator    // Delimiter
   ItemRange       // ..

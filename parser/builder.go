@@ -230,6 +230,9 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
   case ItemComment:
     b.NextNonSpace(ctx)
     // no op
+  case ItemCall:
+    b.NextNonSpace(ctx)
+    tmpl = b.ParseExpressionOrAssignment(ctx)
   case ItemSet:
     b.NextNonSpace(ctx) // Consume SET
     tmpl = b.ParseAssignment(ctx)
@@ -243,18 +246,7 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
     b.NextNonSpace(ctx)
     tmpl = NewNoopNode()
   case ItemIdentifier, ItemNumber, ItemDoubleQuotedString, ItemSingleQuotedString, ItemOpenParen:
-    // There's a special case for assignment where SET is omitted
-    // [% foo = ... %] instead of [% SET foo = ... %]
-    next := b.NextNonSpace(ctx)
-    following := b.PeekNonSpace(ctx)
-    if next.Type() == ItemIdentifier && following.Type() == ItemAssign {
-      // This is a simple assignment!
-      b.Backup2(ctx, next)
-      tmpl = b.ParseAssignment(ctx)
-    } else {
-      b.Backup2(ctx, next)
-      tmpl = b.ParseExpression(ctx, true)
-    }
+    tmpl = b.ParseExpressionOrAssignment(ctx)
   case ItemIf:
     tmpl = b.ParseIf(ctx)
   case ItemElse:
@@ -273,6 +265,29 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
     b.Unexpected("Expected TagEnd, got %s", end)
   }
   return tmpl
+}
+
+func (b *Builder) ParseExpressionOrAssignment(ctx *builderCtx) Node {
+  // There's a special case for assignment where SET is omitted
+  // [% foo = ... %] instead of [% SET foo = ... %]
+  next := b.NextNonSpace(ctx)
+  following := b.PeekNonSpace(ctx)
+  b.Backup2(ctx, next)
+
+  var n Node
+  if next.Type() == ItemIdentifier {
+    switch following.Type() {
+    case ItemAssign, ItemAssignAdd, ItemAssignSub, ItemAssignMul, ItemAssignDiv:
+      // This is a simple assignment!
+      n = b.ParseAssignment(ctx)
+    default:
+      n = b.ParseExpression(ctx, true)
+    }
+  } else {
+    n = b.ParseExpression(ctx, true)
+  }
+
+  return n
 }
 
 func (b *Builder) ParseWrapper(ctx *builderCtx) Node {
@@ -325,15 +340,42 @@ func (b *Builder) ParseAssignment(ctx *builderCtx) Node {
     b.Unexpected("Expected identifier, got %s", symbol)
   }
 
+  var node *AssignmentNode
   eq := b.NextNonSpace(ctx)
-  if eq.Type() != ItemAssign {
+  switch eq.Type() {
+  case ItemAssign:
+    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
+    node.Expression = b.ParseExpression(ctx, false)
+    if _, ok := ctx.HasLocalVar(symbol.Value()); ! ok {
+      ctx.DeclareLocalVar(symbol.Value())
+    }
+  case ItemAssignAdd:
+    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
+    add  := NewPlusNode(symbol.Pos())
+    add.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
+    add.Right = b.ParseExpression(ctx, false)
+    node.Expression = add
+  case ItemAssignSub:
+    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
+    sub  := NewMinusNode(symbol.Pos())
+    sub.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
+    sub.Right = b.ParseExpression(ctx, false)
+    node.Expression = sub
+  case ItemAssignMul:
+    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
+    mul  := NewMulNode(symbol.Pos())
+    mul.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
+    mul.Right = b.ParseExpression(ctx, false)
+    node.Expression = mul
+  case ItemAssignDiv:
+    node = NewAssignmentNode(symbol.Pos(), symbol.Value())
+    div  := NewDivNode(symbol.Pos())
+    div.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
+    div.Right = b.ParseExpression(ctx, false)
+    node.Expression = div
+  default:
     b.Unexpected("Expected assign, got %s", eq)
   }
-
-  node := NewAssignmentNode(symbol.Pos(), symbol.Value())
-  node.Expression = b.ParseExpression(ctx, false)
-
-  ctx.DeclareLocalVar(symbol.Value())
   return node
 }
 
