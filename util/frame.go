@@ -1,20 +1,31 @@
-package vm
+package util
 
-import (
-  "github.com/lestrrat/go-xslate/util"
-)
-
-// Frame represents a stack frame
+// Frame represents a single stack frame. It has a reference to the main
+// stack where the actual data resides. Frame is just a convenient
+// wrapper to remember when the Frame started
 type Frame struct {
   name string
-  stack *util.Stack
+  stack *Stack
+  mark int
 }
 
 // NewFrame creates a new Frame instance.
-func NewFrame() *Frame {
+func NewFrame(s *Stack) *Frame {
   return &Frame {
-    stack: util.NewStack(5),
+    mark: s.Cur(),
+    stack: s,
   }
+}
+
+func (f *Frame) Mark() int {
+  return f.mark
+}
+
+// DeclareVar puts a new variable in the stack, and returns the
+// index where it now resides
+func (f *Frame) DeclareVar(v interface {}) int {
+  f.stack.Push(v)
+  return f.stack.Cur()
 }
 
 // GetLvar gets the frame local variable at position i

@@ -30,9 +30,9 @@ type State struct {
   sb    interface {}
   targ  interface {}
 
-  // stack frame
-  frames *util.Stack
-  currentFrame int
+  // Stack used by frames
+  framestack *util.Stack
+  frames     *util.Stack
 
   Loader byteCodeLoader
 }
@@ -42,17 +42,17 @@ func NewState() *State {
   st := &State {
     opidx: 0,
     pc: NewByteCode(),
-    stack: util.NewStack(5),
-    markstack: util.NewStack(5),
+    stack:      util.NewStack(5),
+    markstack:  util.NewStack(5),
+    framestack: util.NewStack(5),
+    frames:     util.NewStack(5),
     vars: make(Vars),
     output: &bytes.Buffer {},
     warn: os.Stderr,
-    frames: util.NewStack(5),
-    currentFrame: -1,
   }
 
   st.Pushmark()
-  st.PushFrame(NewFrame())
+  st.PushFrame()
   return st
 }
 
@@ -77,26 +77,32 @@ func (st *State) CurrentOp() *Op {
 }
 
 // PushFrame pushes a new frame to the frame stack
-func (st *State) PushFrame(f *Frame) {
+func (st *State) PushFrame() *util.Frame {
+  f := util.NewFrame(st.framestack)
   st.frames.Push(f)
+  return f
 }
 
 // PopFrame pops the frame from the top of the frame stack
-func (st *State) PopFrame() *Frame {
+func (st *State) PopFrame() *util.Frame {
   x := st.frames.Pop()
   if x == nil {
     return nil
   }
-  return x.(*Frame)
+  f := x.(*util.Frame)
+  for i := st.framestack.Cur(); i > f.Mark(); i-- {
+    st.framestack.Pop()
+  }
+  return f
 }
 
 // CurrentFrame returns the frame currently at the top of the frame stack
-func (st *State) CurrentFrame() *Frame {
+func (st *State) CurrentFrame() *util.Frame {
   x, err := st.frames.Top()
   if err != nil {
     return nil
   }
-  return x.(*Frame)
+  return x.(*util.Frame)
 }
 
 // Warnf is used to generate warnings during virtual machine execution
