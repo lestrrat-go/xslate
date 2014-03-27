@@ -568,6 +568,8 @@ func txFilter(st *State) {
     txHTMLEscape(st)
   case "uri":
     txUriEscape(st)
+  case "mark_raw":
+    txMarkRaw(st)
   default:
     panic("User-specified filters not implemented yet")
   }

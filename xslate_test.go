@@ -161,6 +161,8 @@ func TestXslate_SimpleString(t *testing.T) {
 
 func TestXslate_SimpleHTMLString(t *testing.T) {
   renderStringAndCompare(t, `<h1>Hello, World!</h1>`, nil, `<h1>Hello, World!</h1>`)
+  renderStringAndCompare(t, `[% "<h1>Hello, World!</h1>" %]`, nil, `&lt;h1&gt;Hello, World!&lt;/h1&gt;`)
+  renderStringAndCompare(t, `[% "<h1>Hello, World!</h1>" | mark_raw %]`, nil, `<h1>Hello, World!</h1>`)
 }
 
 func TestXslate_Comment(t *testing.T) {
