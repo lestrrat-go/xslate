@@ -4,26 +4,25 @@ import (
   "github.com/lestrrat/go-xslate/parser"
 )
 
-var operators = map[string]parser.LexItemType{
-  "+":  parser.ItemPlus,
-  "-":  parser.ItemMinus,
-  "*":  parser.ItemAsterisk,
-  "/":  parser.ItemSlash,
-  "=":  parser.ItemAssign,
-}
-
-var symbols = map[string]parser.LexItemType{
-  "WRAPPER":  parser.ItemWrapper,
-  "SET":      parser.ItemSet,
-  "GET":      parser.ItemGet,
-  "IF":       parser.ItemIf,
-  "ELSIF":    parser.ItemElseIf,
-  "ELSE":     parser.ItemElse,
-  "UNLESS":   parser.ItemUnless,
-  "FOREACH":  parser.ItemForeach,
-  "MACRO":    parser.ItemMacro,
-  "BLOCK":    parser.ItemBlock,
-  "END":      parser.ItemEnd,
+// SymbolSet contains TTerse specific symbols
+var SymbolSet = parser.DefaultSymbolSet.Copy()
+func init() {
+ // "In" must come before Include
+  SymbolSet.Set("IN",       parser.ItemIn,      2.0)
+  SymbolSet.Set("INCLUDE",  parser.ItemInclude, 1.5)
+  SymbolSet.Set("WITH",     parser.ItemWith)
+  SymbolSet.Set("END",      parser.ItemEnd)
+  SymbolSet.Set("WRAPPER",  parser.ItemWrapper)
+  SymbolSet.Set("SET",      parser.ItemSet)
+  SymbolSet.Set("GET",      parser.ItemGet)
+  SymbolSet.Set("IF",       parser.ItemIf)
+  SymbolSet.Set("ELSIF",    parser.ItemElseIf)
+  SymbolSet.Set("ELSE",     parser.ItemElse)
+  SymbolSet.Set("UNLESS",   parser.ItemUnless)
+  SymbolSet.Set("FOREACH",  parser.ItemForeach)
+  SymbolSet.Set("MACRO",    parser.ItemMacro)
+  SymbolSet.Set("BLOCK",    parser.ItemBlock)
+  SymbolSet.Set("END",      parser.ItemEnd)
 }
 
 // Lexer lexes tempaltes in TTerse syntax
@@ -40,23 +39,11 @@ type TTerse struct {
 // NewLexer creates a new lexer
 func NewLexer() *Lexer {
   l := &Lexer {
-    parser.NewLexer(),
+    parser.NewLexer(SymbolSet),
   }
   l.SetTagStart("[%")
   l.SetTagEnd("%]")
 
-  // XXX TTerse specific
-  l.AddSymbol("WITH", parser.ItemWith)
-  l.AddSymbol("INCLUDE", parser.ItemInclude, 1.5)
-  l.AddSymbol("IN", parser.ItemIn, 2.0)
-  l.AddSymbol("END", parser.ItemEnd)
-
-  for k, v := range symbols {
-    l.AddSymbol(k, v)
-  }
-  for k, v := range operators {
-    l.AddSymbol(k, v)
-  }
   return l
 }
 

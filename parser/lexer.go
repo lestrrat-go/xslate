@@ -130,8 +130,6 @@ type Lexer struct {
   tagStart string
   tagEnd   string
   symbols       *LexSymbolSet
-  sortedSymbols LexSymbolList
-  operators map[string]LexItemType
   items chan LexItem
 }
 
@@ -153,14 +151,6 @@ func (l *Lexer) SetTagStart(s string) {
 
 func (l *Lexer) SetTagEnd(s string) {
   l.tagEnd = s
-}
-
-func (l *Lexer) AddSymbol(s string, i LexItemType, prio ...float32) {
-  l.symbols.Set(s, i, prio...)
-}
-
-func (l *Lexer) AddOperator(s string, i LexItemType) {
-  l.operators[s] = i
 }
 
 func (i LexItemType) String() string {
@@ -334,11 +324,10 @@ func isNumeric(r rune) bool {
   return '0' <= r && r <= '9'
 }
 
-func NewLexer() *Lexer {
+func NewLexer(ss *LexSymbolSet) *Lexer {
   l := &Lexer {
     items: make(chan LexItem, 1),
-    symbols: DefaultSymbolSet,
-    operators: make(map[string]LexItemType),
+    symbols: ss,
   }
   return l
 }
@@ -389,7 +378,6 @@ Loop:
   for {
     switch r := l.next(); {
     case isAlphaNumeric(r):
-      // absorb.
     default:
       l.backup()
       word := l.input[l.start:l.pos]
@@ -561,15 +549,6 @@ func lexInsideTag(l *Lexer) stateFn {
     if strings.HasPrefix(l.input[l.pos:], sym.Name) {
       l.pos += len(sym.Name)
       l.Emit(sym.Type)
-      return lexInsideTag
-    }
-  }
-
-  // Find registered operators
-  for v, k := range l.operators {
-    if strings.HasPrefix(l.input[l.pos:], v) {
-      l.pos += len(v)
-      l.Emit(k)
       return lexInsideTag
     }
   }

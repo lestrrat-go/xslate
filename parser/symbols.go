@@ -18,6 +18,11 @@ func init() {
   DefaultSymbolSet.Set("|",   ItemVerticalSlash,      0.0)
   DefaultSymbolSet.Set(">",   ItemGT,                 0.0)
   DefaultSymbolSet.Set("<",   ItemLT,                 0.0)
+  DefaultSymbolSet.Set("+",   ItemPlus)
+  DefaultSymbolSet.Set("-",   ItemMinus)
+  DefaultSymbolSet.Set("*",   ItemAsterisk)
+  DefaultSymbolSet.Set("/",   ItemSlash)
+  DefaultSymbolSet.Set("=",   ItemAssign)
 }
 
 // LexSymbol holds the pre-defined symbols to be lexed
@@ -71,6 +76,14 @@ func NewLexSymbolSet() *LexSymbolSet {
     make(map[string]LexSymbol),
     nil,
   }
+}
+
+func (l *LexSymbolSet) Copy() *LexSymbolSet {
+  c := NewLexSymbolSet()
+  for k, v := range l.Map {
+    c.Map[k] = LexSymbol { v.Name, v.Type, v.Priority }
+  }
+  return c
 }
 
 func (l *LexSymbolSet) Count() int {

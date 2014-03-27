@@ -8,13 +8,9 @@ const (
   ItemDollar parser.LexItemType = parser.DefaultItemTypeMax + 1
 )
 
-var operators = map[string]parser.LexItemType{
-  "+":  parser.ItemPlus,
-  "=":  parser.ItemAssign,
-}
-
-var symbols = map[string]parser.LexItemType{
-  "$":  ItemDollar,
+var SymbolSet = parser.DefaultSymbolSet.Copy()
+func init() {
+  SymbolSet.Set("$", ItemDollar)
 }
 
 type Lexer struct {
@@ -23,16 +19,10 @@ type Lexer struct {
 
 func NewLexer() *Lexer {
   l := &Lexer {
-    parser.NewLexer(),
+    parser.NewLexer(SymbolSet),
   }
   l.SetTagStart("<:")
   l.SetTagEnd(":>")
-  for k, v := range symbols {
-    l.AddSymbol(k, v)
-  }
-  for k, v := range operators {
-    l.AddSymbol(k, v)
-  }
 
   return l
 }
