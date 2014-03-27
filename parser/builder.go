@@ -4,16 +4,32 @@ import (
   "fmt"
   "strconv"
   "strings"
+
+  "github.com/lestrrat/go-xslate/util"
 )
 
 type Builder struct {
 
 }
 
-type StackFrame struct {
+// Frame is the frame struct used during parsing, which has a bit of
+// extension over the common Frame struct.
+type Frame struct {
+  *util.Frame
   Node        NodeAppender
-  LocalVars   map[string]int
-  LocalVarIdx int
+
+  // This contains names of local variables, mapped to their
+  // respective location in the framestack
+  LvarNames   map[string]int
+}
+
+func NewFrame(s *util.Stack) *Frame {
+  f := &Frame {
+    util.NewFrame(s),
+    nil,
+    make(map[string]int),
+  }
+  return f
 }
 
 type builderCtx struct{
@@ -23,9 +39,10 @@ type builderCtx struct{
   Root      *ListNode
   PeekCount int
   Tokens    [3]LexItem
-  ParentStack []*StackFrame
   CurrentStackTop int
   PostChomp bool
+  FrameStack  *util.Stack
+  Frames      *util.Stack
 }
 
 func NewBuilder() *Builder {
@@ -40,8 +57,8 @@ func (b *Builder) Parse(name, text string, lex LexRunner) (*AST, error) {
     Lexer:      lex,
     Root:       NewRootNode(),
     Tokens:     [3]LexItem {},
-    CurrentStackTop: -1,
-    ParentStack:[]*StackFrame {},
+    FrameStack: util.NewStack(5),
+    Frames:     util.NewStack(5),
   }
   b.Start(ctx)
   b.ParseStatements(ctx)
@@ -103,56 +120,52 @@ func (b *Builder) Backup2(ctx *builderCtx, t1 LexItem) {
 }
 
 func (ctx *builderCtx) HasLocalVar(symbol string) (int, bool) {
-  frame := ctx.CurrentStackFrame()
-  pos, ok := frame.LocalVars[symbol]
+  frame := ctx.CurrentFrame()
+  pos, ok := frame.LvarNames[symbol]
   return pos, ok
 }
 
 func (ctx *builderCtx) DeclareLocalVar(symbol string) int {
-  frame := ctx.CurrentStackFrame()
-
-  frame.LocalVars[symbol] = frame.LocalVarIdx
-  frame.LocalVarIdx++
-
-  return frame.LocalVarIdx - 1
+  frame := ctx.CurrentFrame()
+  i := frame.DeclareVar(symbol)
+  frame.LvarNames[symbol] = i
+  return i
 }
 
-func (ctx *builderCtx) PushStackFrame() *StackFrame {
-  frame := &StackFrame {
-    LocalVars: make(map[string]int),
-    LocalVarIdx: 0,
-  }
-
-  ctx.CurrentStackTop++
-  if ctx.CurrentStackTop >= len(ctx.ParentStack) {
-    ctx.ParentStack = append(ctx.ParentStack, frame)
-  } else {
-    ctx.ParentStack[ctx.CurrentStackTop] = frame
-  }
-
-  return frame
+func (ctx *builderCtx) PushFrame() *Frame {
+  f := NewFrame(ctx.FrameStack)
+  ctx.Frames.Push(f)
+  return f
 }
 
-func (ctx *builderCtx) PopStackFrame() *StackFrame {
-  n := ctx.ParentStack[ctx.CurrentStackTop]
-  ctx.CurrentStackTop--
-  return n
+func (ctx *builderCtx) PopFrame() *Frame {
+  x := ctx.Frames.Pop()
+  if x == nil {
+    return nil
+  }
+
+  f := x.(*Frame)
+  for i := ctx.FrameStack.Cur(); i > f.Mark(); i-- {
+    ctx.FrameStack.Pop()
+  }
+  return f
 }
 
-func (ctx *builderCtx) CurrentStackFrame() *StackFrame {
-  if ctx.CurrentStackTop > -1 {
-    return ctx.ParentStack[ctx.CurrentStackTop]
+func (ctx *builderCtx) CurrentFrame() *Frame {
+  x, err := ctx.Frames.Top()
+  if err != nil {
+    return nil
   }
-  return nil
+  return x.(*Frame)
 }
 
 func (ctx *builderCtx) PushParentNode(n NodeAppender) {
-  frame := ctx.PushStackFrame()
+  frame := ctx.PushFrame()
   frame.Node = n
 }
 
 func (ctx *builderCtx) PopParentNode() NodeAppender {
-  frame := ctx.PopStackFrame()
+  frame := ctx.PopFrame()
   if frame != nil {
     return frame.Node
   }
@@ -160,7 +173,7 @@ func (ctx *builderCtx) PopParentNode() NodeAppender {
 }
 
 func (ctx *builderCtx) CurrentParentNode() NodeAppender {
-  frame := ctx.CurrentStackFrame()
+  frame := ctx.CurrentFrame()
   if frame != nil {
     return frame.Node
   }
@@ -345,11 +358,11 @@ func (b *Builder) ParseWrapper(ctx *builderCtx) Node {
   ctx.CurrentParentNode().Append(n)
   ctx.PushParentNode(n)
 
-  ctx.PushStackFrame()
+  ctx.PushFrame()
 
   // If we have parameters, we have WITH. otherwise we want TagEnd
   if token := b.PeekNonSpace(ctx); token.Type() != ItemWith {
-    ctx.PopStackFrame()
+    ctx.PopFrame()
     return nil
   }
   b.NextNonSpace(ctx) // WITH
@@ -371,7 +384,7 @@ LOOP:
     }
     b.NextNonSpace(ctx)
   }
-  ctx.PopStackFrame()
+  ctx.PopFrame()
 
   return nil
 }
@@ -839,10 +852,10 @@ func (b *Builder) ParseInclude(ctx *builderCtx) Node {
   // Next thing must be the name of the included template
   n := b.ParseExpression(ctx, false)
   x := NewIncludeNode(incToken.Pos(), n)
-  ctx.PushStackFrame()
+  ctx.PushFrame()
 
   if b.PeekNonSpace(ctx).Type() != ItemWith {
-    ctx.PopStackFrame()
+    ctx.PopFrame()
     return x
   }
 
@@ -858,7 +871,7 @@ func (b *Builder) ParseInclude(ctx *builderCtx) Node {
     }
     b.NextNonSpace(ctx)
   }
-  ctx.PopStackFrame()
+  ctx.PopFrame()
 
   return x
 }
