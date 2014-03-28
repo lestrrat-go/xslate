@@ -253,8 +253,9 @@ func (b *Builder) ParseRawString(ctx *builderCtx) Node {
 
 func (b *Builder) Unexpected(ctx *builderCtx, format string, args ...interface{}) {
   msg := fmt.Sprintf(
-    "Unexpected token found: %s",
+    "Unexpected token found: %s in %s at line XXX",
     fmt.Sprintf(format, args...),
+    ctx.ParseName,
   )
   ctx.Error = errors.New(msg)
   panic(msg)

@@ -303,7 +303,7 @@ func (tx *Xslate) Render(name string, vars Vars) (string, error) {
 // bend Xslate's Loader mechanism to cache strings as well, but the main
 // Xslate library will probably not adopt this feature.
 func (tx *Xslate) RenderString(template string, vars Vars) (string, error) {
-  bc, err := tx.Loader.LoadString(template)
+  bc, err := tx.Loader.LoadString(template, template)
   if err != nil {
     return "", err
   }

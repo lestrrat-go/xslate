@@ -116,7 +116,7 @@ func (l *CachedByteCodeLoader) Load(key string) (*vm.ByteCode, error) {
     return nil, err
   }
 
-  bc, err = l.LoadString(string(content))
+  bc, err = l.LoadString(key, string(content))
   if err != nil {
     return nil, err
   }

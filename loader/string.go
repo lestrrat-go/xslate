@@ -25,8 +25,8 @@ func NewStringByteCodeLoader (p parser.Parser, c compiler.Compiler) *StringByteC
 }
 
 // LoadString takes a template string and compiles it into vm.ByteCode
-func (l *StringByteCodeLoader) LoadString(template string) (*vm.ByteCode, error) {
-  ast, err := l.Parser.ParseString(template)
+func (l *StringByteCodeLoader) LoadString(name string, template string) (*vm.ByteCode, error) {
+  ast, err := l.Parser.ParseString(name, template)
   if err != nil {
     return nil, err
   }

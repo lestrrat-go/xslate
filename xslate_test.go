@@ -10,6 +10,7 @@ import (
   "path/filepath"
   "reflect"
   "regexp"
+  "strings"
   "testing"
   "time"
 )
@@ -531,11 +532,11 @@ func TestXslate_Error(t *testing.T) {
   b := &bytes.Buffer {}
   err = tx.RenderInto(b, "errors/index.tx", Vars { "name": "Bob" })
 
-  if err != nil {
-    t.Fatalf("Failed to call RenderInto: %s", err)
+  if err == nil {
+    t.Fatalf("Expected error, got none")
   }
 
-  if b.String() != "Hello World, Bob!" {
-    t.Errorf("Expected 'Hello World, Bob!', got '%s'", b.String())
+  if ! strings.Contains(err.Error(), "Unexpected token found: Expected TagEnd, got Error (unclosed tag) in errors/index.tx") {
+    t.Errorf("Could not find expected error string in '%s'", err)
   }
 }

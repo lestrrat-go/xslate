@@ -68,7 +68,7 @@ type DebugDumper interface {
 // ByteCode specified by a key
 type ByteCodeLoader interface {
   DebugDumper
-  LoadString(string) (*vm.ByteCode, error)
+  LoadString(string, string) (*vm.ByteCode, error)
   Load(string) (*vm.ByteCode, error)
 }
 

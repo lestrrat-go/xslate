@@ -48,13 +48,13 @@ func New() *TTerse {
 }
 
 // Parse parses the given template and creates an AST
-func (p *TTerse) Parse(template []byte) (*parser.AST, error) {
-  return p.ParseString(string(template))
+func (p *TTerse) Parse(name string, template []byte) (*parser.AST, error) {
+  return p.ParseString(name, string(template))
 }
 
 // ParseString is the same as Parse, but receives a string instead of []byte
-func (p *TTerse) ParseString(template string) (*parser.AST, error) {
+func (p *TTerse) ParseString(name, template string) (*parser.AST, error) {
   b := parser.NewBuilder()
   lex := NewLexer(template)
-  return b.Parse("foo", template, lex)
+  return b.Parse(name, template, lex)
 }
