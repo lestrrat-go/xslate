@@ -1,6 +1,7 @@
 package parser
 
 import (
+  "errors"
   "fmt"
   "strconv"
   "strings"
@@ -44,14 +45,14 @@ type builderCtx struct{
   PostChomp bool
   FrameStack  *util.Stack
   Frames      *util.Stack
+  Error       error
 }
 
 func NewBuilder() *Builder {
   return &Builder {}
 }
 
-func (b *Builder) Parse(name, text string, l lex.Lexer) (*AST, error) {
-  // defer b.recover
+func (b *Builder) Parse(name, text string, l lex.Lexer) (ast *AST, err error) {
   ctx := &builderCtx {
     ParseName:  name,
     Text:       text,
@@ -61,6 +62,16 @@ func (b *Builder) Parse(name, text string, l lex.Lexer) (*AST, error) {
     FrameStack: util.NewStack(5),
     Frames:     util.NewStack(5),
   }
+
+  defer func() {
+    if ctx.Error != nil {
+      err = ctx.Error
+      ast = nil
+      // don't let the panic propagate
+      recover()
+    }
+  }()
+
   b.Start(ctx)
   b.ParseStatements(ctx)
   return &AST { Root: ctx.Root }, nil
@@ -213,7 +224,7 @@ func (b *Builder) ParseRawString(ctx *builderCtx) Node {
   const whiteSpace = " \t\r\n"
   token := b.NextNonSpace(ctx)
   if token.Type() != ItemRawString {
-    b.Unexpected("Expected raw string, got %s", token)
+    b.Unexpected(ctx, "Expected raw string, got %s", token)
   }
 
   value := token.Value()
@@ -240,20 +251,20 @@ func (b *Builder) ParseRawString(ctx *builderCtx) Node {
   return n
 }
 
-func (b *Builder) Unexpected(format string, args ...interface{}) {
-  panic(
-    fmt.Sprintf(
-      "Unexpected token found: %s",
-      fmt.Sprintf(format, args...),
-    ),
+func (b *Builder) Unexpected(ctx *builderCtx, format string, args ...interface{}) {
+  msg := fmt.Sprintf(
+    "Unexpected token found: %s",
+    fmt.Sprintf(format, args...),
   )
+  ctx.Error = errors.New(msg)
+  panic(msg)
 }
 
 func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
   // consume tagstart
   start := b.NextNonSpace(ctx)
   if start.Type() != ItemTagStart {
-    b.Unexpected("Expected TagStart, got %s", start)
+    b.Unexpected(ctx, "Expected TagStart, got %s", start)
   }
   ctx.PostChomp = false
 
@@ -269,7 +280,7 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
       parent := ctx.PopParentNode()
       switch parent.Type() {
       case NodeRoot:
-        b.Unexpected("Unexpected END")
+        b.Unexpected(ctx, "Unexpected END")
       case NodeElse:
         // no op
       default:
@@ -303,7 +314,7 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
   case ItemElse:
     tmpl = b.ParseElse(ctx)
   default:
-    b.Unexpected("%s", b.PeekNonSpace(ctx))
+    b.Unexpected(ctx, "%s", b.PeekNonSpace(ctx))
   }
 
   for b.PeekNonSpace(ctx).Type() == ItemComment {
@@ -318,7 +329,7 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
   // Consume tag end
   end := b.NextNonSpace(ctx)
   if end.Type() != ItemTagEnd {
-    b.Unexpected("Expected TagEnd, got %s", end)
+    b.Unexpected(ctx, "Expected TagEnd, got %s", end)
   }
   return tmpl
 }
@@ -359,7 +370,7 @@ func (b *Builder) ParseWrapper(ctx *builderCtx) Node {
     template = tmpl.Value()
     template = template[1:len(template)-1]
   default:
-    b.Unexpected("Expected identifier, got %s", tmpl)
+    b.Unexpected(ctx, "Expected identifier, got %s", tmpl)
   }
 
   n := NewWrapperNode(wrapper.Pos(), template)
@@ -400,7 +411,7 @@ LOOP:
 func (b *Builder) ParseAssignment(ctx *builderCtx) Node {
   symbol := b.NextNonSpace(ctx)
   if symbol.Type() != ItemIdentifier {
-    b.Unexpected("Expected identifier, got %s", symbol)
+    b.Unexpected(ctx, "Expected identifier, got %s", symbol)
   }
 
   b.DeclareLocalVarIfNew(ctx, symbol)
@@ -431,7 +442,7 @@ func (b *Builder) ParseAssignment(ctx *builderCtx) Node {
     div.Right = b.ParseExpression(ctx, false)
     node.Expression = div
   default:
-    b.Unexpected("Expected assign, got %s", eq)
+    b.Unexpected(ctx, "Expected assign, got %s", eq)
   }
   return node
 }
@@ -465,13 +476,13 @@ func (b *Builder) ParseTerm(ctx *builderCtx) Node {
 func (b *Builder) ParseFunCall(ctx *builderCtx, invocant Node) Node {
   next := b.NextNonSpace(ctx)
   if next.Type() != ItemOpenParen {
-    b.Unexpected("Expected '(', got %s", next.Type())
+    b.Unexpected(ctx, "Expected '(', got %s", next.Type())
   }
 
   args := b.ParseList(ctx)
   closeParen := b.NextNonSpace(ctx)
   if closeParen.Type() != ItemCloseParen {
-    b.Unexpected("Expected ')', got %s", closeParen.Type())
+    b.Unexpected(ctx, "Expected ')', got %s", closeParen.Type())
   }
   return NewFunCallNode(invocant.Pos(), invocant, args.(*ListNode))
 }
@@ -480,7 +491,7 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant Node) Nod
   // We have already seen identifier followed by a period
   symbol := b.NextNonSpace(ctx)
   if symbol.Type() != ItemIdentifier {
-    b.Unexpected("Expected identifier for method call or map lookup, got %s", symbol.Type())
+    b.Unexpected(ctx, "Expected identifier for method call or map lookup, got %s", symbol.Type())
   }
 
   var n Node
@@ -494,7 +505,7 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant Node) Nod
     args := b.ParseList(ctx)
     closeParen := b.NextNonSpace(ctx)
     if closeParen.Type() != ItemCloseParen {
-      b.Unexpected("Expected ')', got %s", closeParen.Type())
+      b.Unexpected(ctx, "Expected ')', got %s", closeParen.Type())
     }
     n = NewMethodCallNode(invocant.Pos(), invocant, symbol.Value(), args.(*ListNode))
   }
@@ -511,7 +522,7 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant Node) Nod
 func (b *Builder) ParseArrayElementFetch(ctx *builderCtx, invocant Node) Node {
   openBracket := b.NextNonSpace(ctx)
   if openBracket.Type() != ItemOpenSquareBracket {
-    b.Unexpected("Expected '[', got %s", openBracket)
+    b.Unexpected(ctx, "Expected '[', got %s", openBracket)
   }
 
   index := b.ParseExpression(ctx, false)
@@ -522,7 +533,7 @@ func (b *Builder) ParseArrayElementFetch(ctx *builderCtx, invocant Node) Node {
 
   closeBracket := b.NextNonSpace(ctx)
   if closeBracket.Type() != ItemCloseSquareBracket {
-    b.Unexpected("Expected ']', got %s", closeBracket)
+    b.Unexpected(ctx, "Expected ']', got %s", closeBracket)
   }
 
   return n
@@ -635,12 +646,12 @@ func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n Node) {
 func (b *Builder) ParseFilter(ctx *builderCtx, n Node) Node {
   vslash := b.NextNonSpace(ctx)
   if vslash.Type() != ItemVerticalSlash {
-    b.Unexpected("Expected '|', got %s", vslash.Type())
+    b.Unexpected(ctx, "Expected '|', got %s", vslash.Type())
   }
 
   id := b.NextNonSpace(ctx)
   if id.Type() != ItemIdentifier {
-    b.Unexpected("Expected idenfitier, got %s", id.Type())
+    b.Unexpected(ctx, "Expected idenfitier, got %s", id.Type())
   }
 
   filter := NewFilterNode(id.Pos(), id.Value(), n)
@@ -664,17 +675,17 @@ func (b *Builder) ParseLiteral(ctx *builderCtx) Node {
     if strings.Contains(v, ".") {
       f, err := strconv.ParseFloat(v, 64)
       if err != nil { // shouldn't happen, as we were able to lex it
-        b.Unexpected("Could not parse number: %s", err)
+        b.Unexpected(ctx, "Could not parse number: %s", err)
       }
       return NewFloatNode(t.Pos(), f)
     }
     i, err := strconv.ParseInt(v, 10, 64)
     if err != nil {
-      b.Unexpected("Could not parse number: %s", err)
+      b.Unexpected(ctx, "Could not parse number: %s", err)
     }
     return NewIntNode(t.Pos(), i)
   default:
-    b.Unexpected("Expected literal value, got %s", t)
+    b.Unexpected(ctx, "Expected literal value, got %s", t)
   }
   return nil
 }
@@ -682,19 +693,19 @@ func (b *Builder) ParseLiteral(ctx *builderCtx) Node {
 func (b *Builder) ParseForeach(ctx *builderCtx) Node {
   foreach := b.NextNonSpace(ctx)
   if foreach.Type() != ItemForeach {
-    b.Unexpected("Expected FOREACH, got %s", foreach)
+    b.Unexpected(ctx, "Expected FOREACH, got %s", foreach)
   }
 
   localsym := b.NextNonSpace(ctx)
   if localsym.Type() != ItemIdentifier {
-    b.Unexpected("Expected identifier, got %s", localsym)
+    b.Unexpected(ctx, "Expected identifier, got %s", localsym)
   }
 
   forNode := NewForeachNode(foreach.Pos(), localsym.Value())
 
   in := b.NextNonSpace(ctx)
   if in.Type() != ItemIn {
-    b.Unexpected("Expected IN, got %s", in)
+    b.Unexpected(ctx, "Expected IN, got %s", in)
   }
 
   forNode.List = b.ParseListVariableOrMakeArray(ctx)
@@ -710,7 +721,7 @@ func (b *Builder) ParseForeach(ctx *builderCtx) Node {
 func (b *Builder) ParseWhile(ctx *builderCtx) Node {
   while := b.NextNonSpace(ctx)
   if while.Type() != ItemWhile {
-    b.Unexpected("Expected WHILE, got %s", while)
+    b.Unexpected(ctx, "Expected WHILE, got %s", while)
   }
 
   condition := b.ParseExpression(ctx, false)
@@ -727,17 +738,17 @@ func (b *Builder) ParseWhile(ctx *builderCtx) Node {
 func (b *Builder) ParseRange(ctx *builderCtx) Node {
   start := b.NextNonSpace(ctx)
   if start.Type() != ItemNumber {
-    b.Unexpected("Expected number, got %s", start.Value())
+    b.Unexpected(ctx, "Expected number, got %s", start.Value())
   }
 
   rangeOp := b.NextNonSpace(ctx)
   if rangeOp.Type() != ItemRange {
-    b.Unexpected("Expected range, got %s", rangeOp.Value())
+    b.Unexpected(ctx, "Expected range, got %s", rangeOp.Value())
   }
 
   end := b.NextNonSpace(ctx)
   if end.Type() != ItemNumber {
-    b.Unexpected("Expected number, got %s", end.Value())
+    b.Unexpected(ctx, "Expected number, got %s", end.Value())
   }
 
   startN, _ := strconv.ParseInt(start.Value(), 10, 64)
@@ -772,14 +783,14 @@ func (b *Builder) ParseListVariableOrMakeArray(ctx *builderCtx) Node {
 func (b *Builder) ParseMakeArray(ctx *builderCtx) Node {
   openB := b.NextNonSpace(ctx)
   if openB.Type() != ItemOpenSquareBracket {
-    b.Unexpected("Expected '[', got %s", openB.Value())
+    b.Unexpected(ctx, "Expected '[', got %s", openB.Value())
   }
 
   child := b.ParseList(ctx)
 
   closeB := b.NextNonSpace(ctx)
   if closeB.Type() != ItemCloseSquareBracket {
-    b.Unexpected("Expected ']', got %s", closeB.Value())
+    b.Unexpected(ctx, "Expected ']', got %s", closeB.Value())
   }
 
   return NewMakeArrayNode(openB.Pos(), child)
@@ -823,7 +834,7 @@ func (b *Builder) ParseList(ctx *builderCtx) Node {
 func (b *Builder) ParseIf(ctx *builderCtx) Node {
   ifToken := b.NextNonSpace(ctx)
   if ifToken.Type() != ItemIf {
-    b.Unexpected("Expected if, got %s", ifToken)
+    b.Unexpected(ctx, "Expected if, got %s", ifToken)
   }
 
   // parenthesis are optional
@@ -839,7 +850,7 @@ func (b *Builder) ParseIf(ctx *builderCtx) Node {
   if expectCloseParen {
     closeParenToken := b.NextNonSpace(ctx)
     if closeParenToken.Type() != ItemCloseParen {
-      b.Unexpected("Expected close parenthesis, got %s", closeParenToken)
+      b.Unexpected(ctx, "Expected close parenthesis, got %s", closeParenToken)
     }
   }
 
@@ -852,12 +863,12 @@ func (b *Builder) ParseIf(ctx *builderCtx) Node {
 func (b *Builder) ParseElse(ctx *builderCtx) Node {
   elseToken := b.NextNonSpace(ctx)
   if elseToken.Type() != ItemElse {
-    b.Unexpected("Expected else, got %s", elseToken)
+    b.Unexpected(ctx, "Expected else, got %s", elseToken)
   }
 
   // CurrentParentNode must be "If" in order for "else" to work
   if ctx.CurrentParentNode().Type() != NodeIf {
-    b.Unexpected("Found else without if")
+    b.Unexpected(ctx, "Found else without if")
   }
 
   elseNode := NewElseNode(elseToken.Pos())
@@ -871,7 +882,7 @@ func (b *Builder) ParseElse(ctx *builderCtx) Node {
 func (b *Builder) ParseInclude(ctx *builderCtx) Node {
   incToken := b.NextNonSpace(ctx)
   if incToken.Type() != ItemInclude {
-    b.Unexpected("Expected include, got %s", incToken)
+    b.Unexpected(ctx, "Expected include, got %s", incToken)
   }
 
   // Next thing must be the name of the included template
@@ -904,7 +915,7 @@ func (b *Builder) ParseInclude(ctx *builderCtx) Node {
 func (b *Builder) ParseGroup(ctx *builderCtx) Node {
   openParenToken := b.NextNonSpace(ctx)
   if openParenToken.Type() != ItemOpenParen {
-    b.Unexpected("Expected '(', got %s", openParenToken)
+    b.Unexpected(ctx, "Expected '(', got %s", openParenToken)
   }
 
   n := NewGroupNode(openParenToken.Pos())
@@ -912,7 +923,7 @@ func (b *Builder) ParseGroup(ctx *builderCtx) Node {
 
   closeParenToken := b.NextNonSpace(ctx)
   if closeParenToken.Type() != ItemCloseParen {
-    b.Unexpected("Expected ')', got %s", closeParenToken)
+    b.Unexpected(ctx, "Expected ')', got %s", closeParenToken)
   }
 
   return n
