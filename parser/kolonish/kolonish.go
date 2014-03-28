@@ -2,10 +2,11 @@ package kolonish
 
 import (
   "github.com/lestrrat/go-xslate/parser"
+  "github.com/lestrrat/go-lex"
 )
 
 const (
-  ItemDollar parser.LexItemType = parser.DefaultItemTypeMax + 1
+  ItemDollar lex.LexItemType = parser.DefaultItemTypeMax + 1
 )
 
 var SymbolSet = parser.DefaultSymbolSet.Copy()
@@ -13,14 +14,8 @@ func init() {
   SymbolSet.Set("$", ItemDollar)
 }
 
-type Lexer struct {
-  *parser.Lexer
-}
-
-func NewLexer() *Lexer {
-  l := &Lexer {
-    parser.NewLexer(SymbolSet),
-  }
+func NewLexer(template string) *parser.Lexer {
+  l := parser.NewLexer(template, SymbolSet)
   l.SetTagStart("<:")
   l.SetTagEnd(":>")
 

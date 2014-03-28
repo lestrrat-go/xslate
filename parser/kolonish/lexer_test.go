@@ -2,30 +2,30 @@ package kolonish
 
 import (
   "testing"
+  "github.com/lestrrat/go-lex"
   "github.com/lestrrat/go-xslate/parser"
 )
 
-func makeItem(t parser.LexItemType, p int, v string) parser.LexItem {
-  return parser.NewLexItem(t, parser.Pos(p), v)
+func makeItem(t lex.LexItemType, p int, v string) lex.LexItem {
+  return lex.NewLexItem(t, p, v)
 }
 
 var space     = makeItem(parser.ItemSpace, 0, " ")
 var tagStart  = makeItem(parser.ItemTagStart, 0, "[%")
 var tagEnd    = makeItem(parser.ItemTagEnd, 0, "[%")
 var dollar    = makeItem(ItemDollar, 0, "")
-func makeLexer(input string) *Lexer {
-  l := NewLexer()
-  l.SetInput(input)
+func makeLexer(input string) *parser.Lexer {
+  l := NewLexer(input)
   return l
 }
 
-func lexit(input string) *Lexer {
+func lexit(input string) *parser.Lexer {
   l := makeLexer(input)
-  go l.Run()
+  go l.Run(l)
   return l
 }
 
-func compareLex(t *testing.T, expected []parser.LexItem, l *Lexer) {
+func compareLex(t *testing.T, expected []lex.LexItem, l *parser.Lexer) {
   for n := 0; n < len(expected); n++ {
     i := l.NextItem()
 
@@ -52,7 +52,7 @@ func compareLex(t *testing.T, expected []parser.LexItem, l *Lexer) {
 func TestGetImplicit(t *testing.T) {
   tmpl  := `<: $foo :>`
   l     := lexit(tmpl)
-  expected := []parser.LexItem {
+  expected := []lex.LexItem {
     tagStart,
     space,
     dollar,

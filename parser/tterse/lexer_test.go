@@ -2,29 +2,29 @@ package tterse
 
 import (
   "testing"
+  "github.com/lestrrat/go-lex"
   "github.com/lestrrat/go-xslate/parser"
 )
 
-func makeItem(t parser.LexItemType, p int, v string) parser.LexItem {
-  return parser.NewLexItem(t, parser.Pos(p), v)
+func makeItem(t lex.LexItemType, p int, v string) lex.LexItem {
+  return lex.NewLexItem(t, p, v)
 }
 
 var space     = makeItem(parser.ItemSpace, 0, " ")
 var tagStart  = makeItem(parser.ItemTagStart, 0, "[%")
 var tagEnd    = makeItem(parser.ItemTagEnd, 0, "[%")
-func makeLexer(input string) *Lexer {
-  l := NewLexer()
-  l.SetInput(input)
+func makeLexer(input string) *parser.Lexer {
+  l := NewLexer(input)
   return l
 }
 
-func lexit(input string) *Lexer {
+func lexit(input string) *parser.Lexer {
   l := makeLexer(input)
-  go l.Run()
+  go l.Run(l)
   return l
 }
 
-func compareLex(t *testing.T, expected []parser.LexItem, l *Lexer) {
+func compareLex(t *testing.T, expected []lex.LexItem, l *parser.Lexer) {
   for n := 0; n < len(expected); n++ {
     i := l.NextItem()
 
@@ -71,7 +71,7 @@ func TestLexRawString(t *testing.T) {
 func TestLexSet(t *testing.T) {
   tmpl  := `[% SET foo = bar + 1 %]`
   l     := lexit(tmpl)
-  expected := []parser.LexItem {
+  expected := []lex.LexItem {
     tagStart,
     space,
     makeItem(parser.ItemSet,        0, ""),
@@ -94,7 +94,7 @@ func TestLexSet(t *testing.T) {
 func TestLexGet(t *testing.T) {
   tmpl  := `[% GET foo %]`
   l     := lexit(tmpl)
-  expected := []parser.LexItem {
+  expected := []lex.LexItem {
     tagStart,
     space,
     makeItem(parser.ItemGet,        0, ""),
@@ -109,7 +109,7 @@ func TestLexGet(t *testing.T) {
 func TestLexForeach(t *testing.T) {
   tmpl  := `[% FOREACH i IN list %][% i %][% END %]`
   l     := lexit(tmpl)
-  expected := []parser.LexItem {
+  expected := []lex.LexItem {
     tagStart,
     space,
     makeItem(parser.ItemForeach,    0, ""),
@@ -139,7 +139,7 @@ func TestLexForeach(t *testing.T) {
 func TestLexMacro(t *testing.T) {
   tmpl  := `[% MACRO foo BLOCK %]foo bar[% baz %][% END %]`
   l     := lexit(tmpl)
-  expected := []parser.LexItem {
+  expected := []lex.LexItem {
     tagStart,
     space,
     makeItem(parser.ItemMacro,    0, ""),
@@ -168,7 +168,7 @@ func TestLexMacro(t *testing.T) {
 func TestLexConditional(t *testing.T) {
   tmpl  := `[% IF foo %][% IF (bar) %]baz[% END %][% ELSIF quux %]hoge[% ELSE %]fuga[% END %][% UNLESS moge %]bababa[% END %]`
   l     := lexit(tmpl)
-  expected := []parser.LexItem {
+  expected := []lex.LexItem {
     tagStart,
     space,
     makeItem(parser.ItemIf,         0, ""),
@@ -231,7 +231,7 @@ func TestVariableAccess(t *testing.T) {
   tmpl  := `[% foo.bar %][% foo.bar.baz() %]`
   l     := lexit(tmpl)
 
-  expected := []parser.LexItem {
+  expected := []lex.LexItem {
     tagStart,
     space,
     makeItem(parser.ItemIdentifier, 0, "foo"),
@@ -259,7 +259,7 @@ func TestBareQuotedString(t *testing.T) {
   tmpl  := `[% "hello, double quote" %][% 'hello, single quote' %]`
   l     := lexit(tmpl)
 
-  expected := []parser.LexItem {
+  expected := []lex.LexItem {
     tagStart,
     space,
     makeItem(parser.ItemDoubleQuotedString, 0, "hello, double quote"),

@@ -5,6 +5,7 @@ import (
   "strconv"
   "strings"
 
+  "github.com/lestrrat/go-lex"
   "github.com/lestrrat/go-xslate/util"
 )
 
@@ -35,10 +36,10 @@ func NewFrame(s *util.Stack) *Frame {
 type builderCtx struct{
   ParseName string
   Text      string
-  Lexer     LexRunner
+  Lexer     lex.Lexer
   Root      *ListNode
   PeekCount int
-  Tokens    [3]LexItem
+  Tokens    [3]lex.LexItem
   CurrentStackTop int
   PostChomp bool
   FrameStack  *util.Stack
@@ -49,14 +50,14 @@ func NewBuilder() *Builder {
   return &Builder {}
 }
 
-func (b *Builder) Parse(name, text string, lex LexRunner) (*AST, error) {
+func (b *Builder) Parse(name, text string, l lex.Lexer) (*AST, error) {
   // defer b.recover
   ctx := &builderCtx {
     ParseName:  name,
     Text:       text,
-    Lexer:      lex,
+    Lexer:      l,
     Root:       NewRootNode(),
-    Tokens:     [3]LexItem {},
+    Tokens:     [3]lex.LexItem {},
     FrameStack: util.NewStack(5),
     Frames:     util.NewStack(5),
   }
@@ -66,14 +67,14 @@ func (b *Builder) Parse(name, text string, lex LexRunner) (*AST, error) {
 }
 
 func (b *Builder) Start(ctx *builderCtx) {
-  go ctx.Lexer.Run()
+  go ctx.Lexer.Run(ctx.Lexer)
 }
 
 func (b *Builder) Backup(ctx *builderCtx) {
   ctx.PeekCount++
 }
 
-func (b *Builder) Peek(ctx *builderCtx) LexItem {
+func (b *Builder) Peek(ctx *builderCtx) lex.LexItem {
   if ctx.PeekCount > 0 {
     return ctx.Tokens[ctx.PeekCount - 1]
   }
@@ -82,8 +83,8 @@ func (b *Builder) Peek(ctx *builderCtx) LexItem {
   return ctx.Tokens[0]
 }
 
-func (b *Builder) PeekNonSpace(ctx *builderCtx) LexItem {
-  var token LexItem
+func (b *Builder) PeekNonSpace(ctx *builderCtx) lex.LexItem {
+  var token lex.LexItem
   for {
     token = b.Next(ctx)
     if token.Type() != ItemSpace {
@@ -94,7 +95,7 @@ func (b *Builder) PeekNonSpace(ctx *builderCtx) LexItem {
   return token
 }
 
-func (b *Builder) Next(ctx *builderCtx) LexItem {
+func (b *Builder) Next(ctx *builderCtx) lex.LexItem {
   if ctx.PeekCount > 0 {
     ctx.PeekCount--
   } else {
@@ -103,8 +104,8 @@ func (b *Builder) Next(ctx *builderCtx) LexItem {
   return ctx.Tokens[ctx.PeekCount]
 }
 
-func (b *Builder) NextNonSpace(ctx *builderCtx) LexItem {
-  var token LexItem
+func (b *Builder) NextNonSpace(ctx *builderCtx) lex.LexItem {
+  var token lex.LexItem
   for {
     token = b.Next(ctx)
     if token.Type() != ItemSpace {
@@ -114,7 +115,7 @@ func (b *Builder) NextNonSpace(ctx *builderCtx) LexItem {
   return token
 }
 
-func (b *Builder) Backup2(ctx *builderCtx, t1 LexItem) {
+func (b *Builder) Backup2(ctx *builderCtx, t1 lex.LexItem) {
   ctx.Tokens[1] = t1
   ctx.PeekCount = 2
 }
@@ -435,13 +436,13 @@ func (b *Builder) ParseAssignment(ctx *builderCtx) Node {
   return node
 }
 
-func (b *Builder) DeclareLocalVarIfNew(ctx *builderCtx, symbol LexItem) {
+func (b *Builder) DeclareLocalVarIfNew(ctx *builderCtx, symbol lex.LexItem) {
   if _, ok := ctx.HasLocalVar(symbol.Value()); ! ok {
     ctx.DeclareLocalVar(symbol.Value())
   }
 }
 
-func (b *Builder) LocalVarOrFetchSymbol(ctx *builderCtx, token LexItem) Node {
+func (b *Builder) LocalVarOrFetchSymbol(ctx *builderCtx, token lex.LexItem) Node {
   if idx, ok := ctx.HasLocalVar(token.Value()); ok {
     return NewLocalVarNode(token.Pos(), token.Value(), idx)
   }
@@ -472,7 +473,7 @@ func (b *Builder) ParseFunCall(ctx *builderCtx, invocant Node) Node {
   if closeParen.Type() != ItemCloseParen {
     b.Unexpected("Expected ')', got %s", closeParen.Type())
   }
-  return NewFunCallNode(invocant.Position(), invocant, args.(*ListNode))
+  return NewFunCallNode(invocant.Pos(), invocant, args.(*ListNode))
 }
 
 func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant Node) Node {
@@ -487,7 +488,7 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant Node) Nod
   if next.Type() != ItemOpenParen {
     // it's a map lookup. Put back that extra token we read
     b.Backup(ctx)
-    n = NewFetchFieldNode(invocant.Position(), invocant, symbol.Value())
+    n = NewFetchFieldNode(invocant.Pos(), invocant, symbol.Value())
   } else {
     // It's a method call! Parse the list
     args := b.ParseList(ctx)
@@ -495,7 +496,7 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant Node) Nod
     if closeParen.Type() != ItemCloseParen {
       b.Unexpected("Expected ')', got %s", closeParen.Type())
     }
-    n = NewMethodCallNode(invocant.Position(), invocant, symbol.Value(), args.(*ListNode))
+    n = NewMethodCallNode(invocant.Pos(), invocant, symbol.Value(), args.(*ListNode))
   }
 
   // If we are followed by another period, we are going to have to
@@ -531,7 +532,7 @@ func (b *Builder) ParseArrayElementFetch(ctx *builderCtx, invocant Node) Node {
 func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n Node) {
   defer func() {
     if n != nil && canPrint {
-      n = NewPrintNode(n.Position(), n)
+      n = NewPrintNode(n.Pos(), n)
     }
   }()
 

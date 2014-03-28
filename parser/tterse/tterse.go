@@ -1,6 +1,7 @@
 package tterse
 
 import (
+  "github.com/lestrrat/go-lex"
   "github.com/lestrrat/go-xslate/parser"
 )
 
@@ -27,22 +28,14 @@ func init() {
   SymbolSet.Set("END",      parser.ItemEnd)
 }
 
-// Lexer lexes tempaltes in TTerse syntax
-type Lexer struct {
-  *parser.Lexer
-}
-
 // TTerse is the main parser for TTerse
 type TTerse struct {
-  lexer *Lexer
-  items []parser.LexItem
+  items []lex.LexItem
 }
 
 // NewLexer creates a new lexer
-func NewLexer() *Lexer {
-  l := &Lexer {
-    parser.NewLexer(SymbolSet),
-  }
+func NewLexer(template string) *parser.Lexer {
+  l := parser.NewLexer(template, SymbolSet)
   l.SetTagStart("[%")
   l.SetTagEnd("%]")
 
@@ -51,9 +44,7 @@ func NewLexer() *Lexer {
 
 // New creates a new TTerse parser
 func New() *TTerse {
-  return &TTerse {
-    lexer: NewLexer(),
-  }
+  return &TTerse {}
 }
 
 // Parse parses the given template and creates an AST
@@ -64,7 +55,6 @@ func (p *TTerse) Parse(template []byte) (*parser.AST, error) {
 // ParseString is the same as Parse, but receives a string instead of []byte
 func (p *TTerse) ParseString(template string) (*parser.AST, error) {
   b := parser.NewBuilder()
-  lex := NewLexer()
-  lex.SetInput(template)
+  lex := NewLexer(template)
   return b.Parse("foo", template, lex)
 }

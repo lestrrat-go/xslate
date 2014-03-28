@@ -1,6 +1,7 @@
 package parser
 
 import (
+  "github.com/lestrrat/go-lex"
   "sort"
 )
 
@@ -36,7 +37,7 @@ func init() {
 // LexSymbol holds the pre-defined symbols to be lexed
 type LexSymbol struct {
   Name string
-  Type LexItemType
+  Type lex.LexItemType
   Priority float32
 }
 
@@ -107,7 +108,7 @@ func (l *LexSymbolSet) Get(name string) LexSymbol {
 }
 
 // Set creates and sets a new LexItem to `name`
-func (l *LexSymbolSet) Set(name string, typ LexItemType, prio ...float32) {
+func (l *LexSymbolSet) Set(name string, typ lex.LexItemType, prio ...float32) {
   var x float32
   if len(prio) < 1 {
     x = 1.0
@@ -139,7 +140,7 @@ func (l *LexSymbolSet) GetSortedList() LexSymbolList {
     list[i] = v
     i++
   }
-  l.SortedList = list.Sort() 
+  l.SortedList = list.Sort()
 
   return l.SortedList
 }
