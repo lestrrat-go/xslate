@@ -168,9 +168,9 @@ func init () {
 
 type Lexer struct {
   *lex.StringLexer
-  tagStart string
-  tagEnd   string
-  symbols       *LexSymbolSet
+  tagStart    string
+  tagEnd      string
+  symbols     *LexSymbolSet
 }
 
 func (l *Lexer) SetTagStart(s string) {
@@ -203,12 +203,11 @@ func isNumeric(r rune) bool {
 
 func NewLexer(template string, ss *LexSymbolSet) *Lexer {
   l := &Lexer {
-    lex.NewStringLexer(template),
+    lex.NewStringLexer(template, lexRawString),
     "",
     "",
     ss,
   }
-  l.SetLexFn("__START__", lexRawString)
   return l
 }
 
