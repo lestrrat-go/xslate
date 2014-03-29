@@ -37,7 +37,7 @@ func init() {
 // LexSymbol holds the pre-defined symbols to be lexed
 type LexSymbol struct {
   Name string
-  Type lex.LexItemType
+  Type lex.ItemType
   Priority float32
 }
 
@@ -108,7 +108,7 @@ func (l *LexSymbolSet) Get(name string) LexSymbol {
 }
 
 // Set creates and sets a new LexItem to `name`
-func (l *LexSymbolSet) Set(name string, typ lex.LexItemType, prio ...float32) {
+func (l *LexSymbolSet) Set(name string, typ lex.ItemType, prio ...float32) {
   var x float32
   if len(prio) < 1 {
     x = 1.0

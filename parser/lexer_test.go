@@ -8,7 +8,7 @@ import (
 
 func TestItem_String(t *testing.T) {
   for i := lex.ItemDefaultMax + 1; i < DefaultItemTypeMax; i++ {
-    it := lex.LexItemType(i)
+    it := lex.ItemType(i)
     if strings.HasPrefix(it.String(), "Unknown") {
       t.Errorf("%#v does not have String() implemented", it)
     }

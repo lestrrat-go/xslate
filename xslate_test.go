@@ -515,7 +515,7 @@ func TestXslate_RenderInto(t *testing.T) {
 
 func TestXslate_Error(t *testing.T) {
   files := map[string]string {
-    "errors/index.tx": `Hello World, [% name `,
+    "errors/index.tx": "Hello World,\n[% name ",
   }
 
   root, err := generateTemplates(files)
@@ -536,7 +536,7 @@ func TestXslate_Error(t *testing.T) {
     t.Fatalf("Expected error, got none")
   }
 
-  if ! strings.Contains(err.Error(), "Unexpected token found: Expected TagEnd, got Error (unclosed tag) in errors/index.tx") {
+  if ! strings.Contains(err.Error(), "Unexpected token found: Expected TagEnd, got Error (unclosed tag) in errors/index.tx at line 2") {
     t.Errorf("Could not find expected error string in '%s'", err)
   }
 }

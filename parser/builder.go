@@ -37,6 +37,7 @@ func NewFrame(s *util.Stack) *Frame {
 type builderCtx struct{
   ParseName string
   Text      string
+  Line      int
   Lexer     lex.Lexer
   Root      *ListNode
   PeekCount int
@@ -119,6 +120,7 @@ func (b *Builder) NextNonSpace(ctx *builderCtx) lex.LexItem {
   var token lex.LexItem
   for {
     token = b.Next(ctx)
+    ctx.Line = token.Line()
     if token.Type() != ItemSpace {
       break
     }
@@ -253,9 +255,10 @@ func (b *Builder) ParseRawString(ctx *builderCtx) Node {
 
 func (b *Builder) Unexpected(ctx *builderCtx, format string, args ...interface{}) {
   msg := fmt.Sprintf(
-    "Unexpected token found: %s in %s at line XXX",
+    "Unexpected token found: %s in %s at line %d",
     fmt.Sprintf(format, args...),
     ctx.ParseName,
+    ctx.Line,
   )
   ctx.Error = errors.New(msg)
   panic(msg)

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-  ItemDollar lex.LexItemType = parser.DefaultItemTypeMax + 1
+  ItemDollar lex.ItemType = parser.DefaultItemTypeMax + 1
 )
 
 var SymbolSet = parser.DefaultSymbolSet.Copy()

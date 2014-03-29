@@ -19,7 +19,7 @@ import (
 )
 
 const (
-  ItemError       lex.LexItemType = lex.ItemDefaultMax + 1 + iota
+  ItemError       lex.ItemType = lex.ItemDefaultMax + 1 + iota
   ItemEOF
   ItemRawString
   ItemComment
@@ -397,7 +397,7 @@ func lexComment(l lex.Lexer, ctx interface {}) lex.LexFn {
   }
 }
 
-func lexQuotedString(l lex.Lexer, ctx interface {}, quote rune, t lex.LexItemType) lex.LexFn {
+func lexQuotedString(l lex.Lexer, ctx interface {}, quote rune, t lex.ItemType) lex.LexFn {
   sl := ctx.(*Lexer)
   for {
     if strings.HasPrefix(sl.RemainingString(), sl.tagEnd) {

@@ -6,14 +6,10 @@ import (
   "github.com/lestrrat/go-xslate/parser"
 )
 
-func makeItem(t lex.LexItemType, p int, v string) lex.LexItem {
-  return lex.NewLexItem(t, p, v)
+func makeItem(t lex.ItemType, p, line int, v string) lex.LexItem {
+  return lex.NewItem(t, p, line, v)
 }
 
-var space     = makeItem(parser.ItemSpace, 0, " ")
-var tagStart  = makeItem(parser.ItemTagStart, 0, "[%")
-var tagEnd    = makeItem(parser.ItemTagEnd, 0, "[%")
-var dollar    = makeItem(ItemDollar, 0, "")
 func makeLexer(input string) *parser.Lexer {
   l := NewLexer(input)
   return l
@@ -53,12 +49,12 @@ func TestGetImplicit(t *testing.T) {
   tmpl  := `<: $foo :>`
   l     := lexit(tmpl)
   expected := []lex.LexItem {
-    tagStart,
-    space,
-    dollar,
-    makeItem(parser.ItemIdentifier, 0, "foo"),
-    space,
-    tagEnd,
+    makeItem(parser.ItemTagStart, 0, 1, "<:"),
+    makeItem(parser.ItemSpace, 2, 1, " "),
+    makeItem(ItemDollar, 3, 1, "$"),
+    makeItem(parser.ItemIdentifier, 4, 1, "foo"),
+    makeItem(parser.ItemSpace, 7, 1, " "),
+    makeItem(parser.ItemTagEnd, 8, 1, ":>"),
   }
   compareLex(t, expected, l)
 }
