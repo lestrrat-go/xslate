@@ -347,7 +347,7 @@ func lexNumber(l lex.Lexer, ctx interface {}) lex.LexFn {
 }
 
 func (l *Lexer) scanInteger() bool {
-  l.Accept("+-")
+  l.AcceptAny("+-")
   digits := "0123456789"
   ret := l.AcceptRun(digits)
 //  l.backup()
@@ -356,25 +356,25 @@ func (l *Lexer) scanInteger() bool {
 
 func (sl *Lexer) scanNumber() bool {
   // Optional leading sign.
-  sl.Accept("+-")
+  sl.AcceptAny("+-")
   // Is it hex?
   digits := "0123456789"
-  if sl.Accept("0") && sl.Accept("xX") {
+  if sl.AcceptAny("0") && sl.AcceptAny("xX") {
     digits = "0123456789abcdefABCDEF"
   }
   sl.AcceptRun(digits)
-  if sl.Accept(".") {
+  if sl.AcceptString(".") {
     if ! sl.AcceptRun(digits) {
       sl.Backup()
     }
     return true
   }
-  if sl.Accept("eE") {
-    sl.Accept("+-")
+  if sl.AcceptAny("eE") {
+    sl.AcceptAny("+-")
     sl.AcceptRun("0123456789")
   }
   // Is it imaginary?
-  sl.Accept("i")
+  sl.AcceptString("i")
   // Next thing mustn't be alphanumeric.
   if isAlphaNumeric(sl.Peek()) {
     sl.Next()
