@@ -61,7 +61,16 @@ import (
 )
 
 func main() {
-  xt := xslate.New()
+  xt, err := xslate.New()
+  if err != nil { // xslate.New may barf because it by default tries to
+                  // initialize stuff that may want to access the filesystem
+    log.Fatalf("Failed to create xslate: %s", err)
+  }
+
+  // This uses RenderString() -- which is fine in itself and as an example,
+  // but the real use case for Xslate is loading templates from other
+  // locations, such as the filesystem. For this case yo uprobably
+  // want to use RenderInto() or Render()
   template := `Hello World, [% name %]!`
   output, err := xt.RenderString(template, xslate.Vars { "name": "Bob" })
   if err != nil {
