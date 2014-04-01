@@ -536,7 +536,7 @@ func TestXslate_Error(t *testing.T) {
     t.Fatalf("Expected error, got none")
   }
 
-  if ! strings.Contains(err.Error(), "Unexpected token found: Expected TagEnd, got Error (unclosed tag) in errors/index.tx at line 2") {
+  if ! strings.Contains(err.Error(), `Unexpected token found: Expected TagEnd, got Error ("unclosed tag") in errors/index.tx at line 2`) {
     t.Errorf("Could not find expected error string in '%s'", err)
   }
 }
