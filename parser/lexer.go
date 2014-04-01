@@ -317,7 +317,7 @@ func (l *Lexer) atTerminator() bool {
     return true
   }
   switch r {
-  case lex.EOF, '.', ',', '|', ':', ')', '(', '[':
+  case lex.EOF, '.', ',', '|', ':', ')', '(', '[', ']':
     return true
   }
   // Does r start the delimiter? This can be ambiguous (with delim=="//", $x/2 will
@@ -339,8 +339,12 @@ func lexRange(l lex.Lexer, ctx interface {}) lex.LexFn {
   }
   sl.Emit(ItemRange)
 
-  return lexInteger
+  if isNumeric(sl.Peek()) {
+    return lexInteger
+  }
+  return lexIdentifier
 }
+
 func lexInteger(l lex.Lexer, ctx interface {}) lex.LexFn {
   sl := ctx.(*Lexer)
   if sl.scanInteger() {

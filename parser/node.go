@@ -62,6 +62,7 @@ const (
   NodeMakeArray
   NodeGroup
   NodeFilter
+  NodeMacro
   NodeMax
 )
 
@@ -135,6 +136,8 @@ func (n NodeType) String() string {
     return "Group"
   case NodeFilter:
     return "Filter"
+  case NodeMacro:
+    return "Macro"
   default:
     return "Unknown Node"
   }
@@ -228,7 +231,7 @@ func (n *TextNode) Copy() Node {
 }
 
 func (n *TextNode) String() string {
-  return fmt.Sprintf("%s %s", n.NodeType, n.Text)
+  return fmt.Sprintf("%s %q", n.NodeType, n.Text)
 }
 
 type WrapperNode struct {
@@ -586,30 +589,12 @@ func NewElseNode(pos int) *ElseNode {
   return n
 }
 
-type RangeNode struct {
-  BaseNode
-  Start int
-  End int
-}
-
-func NewRangeNode(pos int, start, end int) *RangeNode {
-  return &RangeNode {
+func NewRangeNode(pos int, start, end Node) *BinaryNode {
+  return &BinaryNode {
     BaseNode { NodeRange, pos },
     start,
     end,
   }
-}
-
-func (n *RangeNode) String() string {
-  return fmt.Sprintf("%s %d -> %d\n", n.NodeType, n.Start, n.End)
-}
-
-func (n *RangeNode) Copy() Node {
-  return NewRangeNode(n.pos, n.Start, n.End)
-}
-
-func (n *RangeNode) Visit(c chan Node) {
-  c <- n
 }
 
 type UnaryNode struct {
@@ -791,4 +776,26 @@ func NewFetchArrayElementNode(pos int) *BinaryNode {
     nil,
     nil,
   }
+}
+
+type MacroNode struct {
+  *ListNode
+  Name string
+  LocalVar *LocalVarNode
+  Arguments []*LocalVarNode
+}
+
+func NewMacroNode(pos int, name string) *MacroNode {
+  n := &MacroNode {
+    NewListNode(pos),
+    name,
+    nil,
+    []*LocalVarNode {},
+  }
+  n.NodeType = NodeMacro
+  return n
+}
+
+func (n *MacroNode) AppendArg(arg *LocalVarNode) {
+  n.Arguments = append(n.Arguments, arg)
 }

@@ -540,3 +540,27 @@ func TestXslate_Error(t *testing.T) {
     t.Errorf("Could not find expected error string in '%s'", err)
   }
 }
+
+func TestXslate_Macro(t *testing.T) {
+  template := `
+[%- MACRO repeat(text, count) BLOCK %]
+[%- FOREACH i IN [1..count] %]
+[% i %]: [% text %]
+[%- END # FOREACH %]
+[%- END -%]
+[%- CALL repeat("Hello!", 10) -%]
+  `
+
+  renderStringAndCompare(t, template, nil, `
+1: Hello
+2: Hello
+3: Hello
+4: Hello
+5: Hello
+6: Hello
+7: Hello
+8: Hello
+9: Hello
+10: Hello`)
+}
+

@@ -65,6 +65,16 @@ func (st *State) AdvanceBy(i int) {
   st.opidx += i
 }
 
+// AdvanceTo advances the op code to exactly position `i`
+func (st *State) AdvanceTo(i int) {
+  st.opidx = i
+}
+
+// CurrentPos returns the position of the current executing op
+func (st *State) CurrentPos() int {
+  return st.opidx
+}
+
 // Vars returns the current set of variables
 func (st *State) Vars() Vars {
   return st.vars
@@ -79,6 +89,7 @@ func (st *State) CurrentOp() *Op {
 func (st *State) PushFrame() *util.Frame {
   f := util.NewFrame(st.framestack)
   st.frames.Push(f)
+  f.SetMark(st.frames.Cur())
   return f
 }
 

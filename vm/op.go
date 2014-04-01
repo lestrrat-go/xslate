@@ -178,7 +178,7 @@ func (o *Op) ArgString() string {
 func (o *Op) String() string {
   // TODO: also print out register id's and stuff
   if o.uArg != nil {
-    return fmt.Sprintf("Op[%s] (%s)", o.Type(), o.ArgString())
+    return fmt.Sprintf("Op[%s] (%q)", o.Type(), o.ArgString())
   }
 
   return fmt.Sprintf("Op[%s]", o.Type())

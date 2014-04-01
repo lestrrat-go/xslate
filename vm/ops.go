@@ -46,10 +46,13 @@ const (
   TXOPGreaterThan
   TXOPPopmark
   TXOPPushmark
+  TXOPPopFrame
+  TXOPPushFrame
   TXOPPush
   TXOPPop
   TXOPFunCall
   TXOPFunCallSymbol
+  TXOPFunCallOmni
   TXOPMethodCall
   TXOPRange
   TXOPMakeArray
@@ -170,12 +173,21 @@ func init () {
     case TXOPPushmark:
       h = txPushmark
       n = "pushmark"
+    case TXOPPopFrame:
+      h = txPopFrame
+      n = "popframe"
+    case TXOPPushFrame:
+      h = txPushFrame
+      n = "pushframe"
     case TXOPFunCall:
       h = txFunCall
       n = "funcall"
     case TXOPFunCallSymbol:
       h = txFunCallSymbol
       n = "funcall_symbol"
+    case TXOPFunCallOmni:
+      h = txFunCallOmni
+      n = "funcall_omni"
     case TXOPMethodCall:
       h = txMethodCall
       n = "methodcall"
@@ -668,6 +680,16 @@ func txPushmark(st *State) {
   st.Advance()
 }
 
+func txPushFrame(st *State) {
+  st.PushFrame()
+  st.Advance()
+}
+
+func txPopFrame(st *State) {
+  st.PopFrame()
+  st.Advance()
+}
+
 func txPush(st *State) {
   st.StackPush(st.sa)
   st.Advance()
@@ -944,3 +966,30 @@ func txNewOutput(st *State) {
   st.Advance()
 }
 
+func txMacroCall(st *State) {
+  x := st.sa.(int)
+  bc := NewByteCode()
+  bc.OpList = st.pc.OpList[x:]
+  buf := &bytes.Buffer {}
+  vars := Vars { "count": 10, "text": "Hello" }
+
+  vm := NewVM()
+  vm.Run(bc, vars, buf)
+  st.AppendOutputString(buf.String())
+  st.Advance()
+}
+
+// Executes what's in st.sa
+func txFunCallOmni(st *State) {
+  t := reflect.ValueOf(st.sa)
+  switch t.Kind() {
+  case reflect.Int:
+    // If it's an int, assume that it's a MACRO, which points to
+    // the location in the bytecode that contains the macro code
+    txMacroCall(st)
+  case reflect.Func:
+    txFunCall(st)
+  default:
+    panic(fmt.Sprintf("Unknown variable as function call: %s", st.sa))
+  }
+}

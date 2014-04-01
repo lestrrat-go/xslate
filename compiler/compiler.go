@@ -96,10 +96,12 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     c.compile(ctx, x.Child)
     ctx.AppendOp(vm.TXOPMakeArray)
   case parser.NodeRange:
-    x := n.(*parser.RangeNode)
-    ctx.AppendOp(vm.TXOPLiteral, x.Start)
+    x := n.(*parser.BinaryNode)
+    c.compile(ctx, x.Right)
+    ctx.AppendOp(vm.TXOPPush)
+    c.compile(ctx, x.Left)
     ctx.AppendOp(vm.TXOPMoveToSb)
-    ctx.AppendOp(vm.TXOPLiteral, x.End)
+    ctx.AppendOp(vm.TXOPPop)
     ctx.AppendOp(vm.TXOPRange)
   case parser.NodeInt:
     x := n.(*parser.NumberNode)
@@ -121,7 +123,7 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     }
 
     c.compile(ctx, x.Invocant)
-    ctx.AppendOp(vm.TXOPFunCall)
+    ctx.AppendOp(vm.TXOPFunCallOmni)
   case parser.NodeMethodCall:
     x := n.(*parser.MethodCallNode)
 
@@ -204,6 +206,31 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
 
     c.compile(ctx, x.Child)
     ctx.AppendOp(vm.TXOPFilter, x.Name)
+  case parser.NodeMacro:
+    x := n.(*parser.MacroNode)
+    // The VM is responsible for passing arguments, which do not need
+    // to be declared as variables in the template. n.Arguments exists,
+    // but it's left untouched
+
+    // This goto effectively forces the VM to "ignore" this block of
+    // MACRO definition.
+    gotoOp := ctx.AppendOp(vm.TXOPGoto, 0)
+    start := ctx.ByteCode.Len()
+
+    // This is the actual "entry point"
+    ctx.AppendOp(vm.TXOPPushmark)
+    entryPoint := ctx.ByteCode.Len() - 1
+
+    for _, child := range x.Nodes {
+      c.compile(ctx, child)
+    }
+    ctx.AppendOp(vm.TXOPPopmark)
+    ctx.AppendOp(vm.TXOPEnd) // This END forces termination
+    gotoOp.SetArg(ctx.ByteCode.Len() - start + 1)
+
+    // Now remember about this definition
+    ctx.AppendOp(vm.TXOPLiteral, entryPoint)
+    ctx.AppendOp(vm.TXOPSaveToLvar, x.LocalVar.Offset)
   default:
     fmt.Printf("Unknown node: %s\n", n.Type())
   }
@@ -271,10 +298,10 @@ func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []parse
 
 func (c *BasicCompiler) compileForeach(ctx *context, x *parser.ForeachNode) {
   ctx.AppendOp(vm.TXOPPushmark)
-
+  ctx.AppendOp(vm.TXOPPushFrame)
   c.compile(ctx, x.List)
-  ctx.AppendOp(vm.TXOPForStart, 0)
-  ctx.AppendOp(vm.TXOPLiteral, 0)
+  ctx.AppendOp(vm.TXOPForStart, x.IndexVarIdx)
+  ctx.AppendOp(vm.TXOPLiteral, x.IndexVarIdx)
 
   iter := ctx.AppendOp(vm.TXOPForIter, 0)
   pos  := ctx.ByteCode.Len()
@@ -286,6 +313,7 @@ func (c *BasicCompiler) compileForeach(ctx *context, x *parser.ForeachNode) {
 
   ctx.AppendOp(vm.TXOPGoto, -1 * (ctx.ByteCode.Len() - pos + 2))
   iter.SetArg(ctx.ByteCode.Len() - pos + 1)
+  ctx.AppendOp(vm.TXOPPopFrame)
   ctx.AppendOp(vm.TXOPPopmark)
 }
 

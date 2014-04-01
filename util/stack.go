@@ -131,7 +131,7 @@ func (s *Stack) String() string {
     if k == s.cur {
       mark = "*"
     }
-    fmt.Fprintf(buf, "%s %03d: %s\n", mark, k, v)
+    fmt.Fprintf(buf, "%s %03d: %q\n", mark, k, v)
   }
   return buf.String()
 }
