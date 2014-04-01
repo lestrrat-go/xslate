@@ -6,6 +6,7 @@ package loader
 
 import (
   "errors"
+  "io"
   "time"
 
   "github.com/lestrrat/go-xslate/vm"
@@ -85,6 +86,7 @@ type TemplateFetcher interface {
 type TemplateSource interface {
   LastModified() (time.Time, error)
   Bytes() ([]byte, error)
+  Reader() (io.Reader, error)
 }
 
 // ErrTemplateNotFound is returned whenever one of the loaders failed to

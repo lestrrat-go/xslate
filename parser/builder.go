@@ -53,10 +53,9 @@ func NewBuilder() *Builder {
   return &Builder {}
 }
 
-func (b *Builder) Parse(name, text string, l lex.Lexer) (ast *AST, err error) {
+func (b *Builder) Parse(name string, l lex.Lexer) (ast *AST, err error) {
   ctx := &builderCtx {
     ParseName:  name,
-    Text:       text,
     Lexer:      l,
     Root:       NewRootNode(),
     Tokens:     [3]lex.LexItem {},
@@ -211,7 +210,8 @@ func (b *Builder) ParseStatements(ctx *builderCtx) Node {
 }
 
 func (b *Builder) ParseTemplateOrText(ctx *builderCtx) Node {
-  switch token := b.PeekNonSpace(ctx); token.Type() {
+  token := b.PeekNonSpace(ctx);
+  switch token.Type() {
   case ItemRawString:
     return b.ParseRawString(ctx)
   case ItemTagStart:

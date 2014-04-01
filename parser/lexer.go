@@ -12,8 +12,8 @@ Once tagStart is found, real lexing starts.
 */
 
 import (
+  "io"
   "github.com/lestrrat/go-lex"
-  "strings"
   "unicode"
   "unicode/utf8"
 )
@@ -167,7 +167,7 @@ func init () {
 }
 
 type Lexer struct {
-  *lex.StringLexer
+  lex.Lexer
   tagStart    string
   tagEnd      string
   symbols     *LexSymbolSet
@@ -201,9 +201,19 @@ func isNumeric(r rune) bool {
   return '0' <= r && r <= '9'
 }
 
-func NewLexer(template string, ss *LexSymbolSet) *Lexer {
+func NewStringLexer(template string, ss *LexSymbolSet) *Lexer {
   l := &Lexer {
     lex.NewStringLexer(template, lexRawString),
+    "",
+    "",
+    ss,
+  }
+  return l
+}
+
+func NewReaderLexer(rdr io.Reader, ss *LexSymbolSet) *Lexer {
+  l := &Lexer {
+    lex.NewReaderLexer(rdr, lexRawString),
     "",
     "",
     ss,
@@ -214,8 +224,8 @@ func NewLexer(template string, ss *LexSymbolSet) *Lexer {
 func lexRawString(l lex.Lexer, ctx interface {}) lex.LexFn {
   sl := ctx.(*Lexer)
   for {
-    if strings.HasPrefix(sl.RemainingString(), sl.tagStart) {
-      if sl.Cursor() > sl.LastCursor() {
+    if sl.PeekString(sl.tagStart) {
+      if len(l.BufferString()) > 0 {
         sl.Emit(ItemRawString)
       }
       return lexTagStart
@@ -225,32 +235,47 @@ func lexRawString(l lex.Lexer, ctx interface {}) lex.LexFn {
     }
   }
 
-  if sl.Cursor() > sl.LastCursor() {
+  if len(sl.BufferString()) > 0 {
     sl.Emit(ItemRawString)
   }
-
   sl.Emit(ItemEOF)
   return nil
 }
 
 func lexSpace(l lex.Lexer, ctx interface {}) lex.LexFn {
-  for isSpace(l.Peek()) {
+  guard := lex.Mark("lexSpace")
+  defer guard()
+
+  count := 0
+  for {
+    r := l.Peek()
+    if ! isSpace(r) {
+      break
+    }
+    count++
     l.Next()
   }
-  l.Emit(ItemSpace)
+
+  if count > 0 {
+    l.Emit(ItemSpace)
+  }
   return lexInsideTag
 }
 
 func lexTagStart(l lex.Lexer, ctx interface {}) lex.LexFn {
   sl := ctx.(*Lexer)
-  sl.AdvanceCursor(len(sl.tagStart))
+  if ! sl.AcceptString(sl.tagStart) {
+    sl.EmitErrorf("Expected tag start (%s)", sl.tagStart)
+  }
   sl.Emit(ItemTagStart)
   return lexInsideTag
 }
 
 func lexTagEnd(l lex.Lexer, ctx interface {}) lex.LexFn {
   sl := ctx.(*Lexer)
-  sl.AdvanceCursor(len(sl.tagEnd))
+  if ! sl.AcceptString(sl.tagEnd) {
+    sl.EmitErrorf("Expected tag end (%s)", sl.tagEnd)
+  }
   sl.Emit(ItemTagEnd)
   return lexRawString
 }
@@ -331,13 +356,17 @@ func lexNumber(l lex.Lexer, ctx interface {}) lex.LexFn {
   if !sl.scanNumber() {
     return sl.EmitErrorf("bad number syntax: %q", sl.BufferString())
   }
+
+/*
   if sign := sl.Peek(); sign == '+' || sign == '-' {
     // Complex: 1+2i. No spaces, must end in 'i'.
     if !sl.scanNumber() || sl.PrevByte() != 'i' {
       return sl.EmitErrorf("bad number syntax: %q", sl.BufferString())
     }
     sl.Emit(ItemComplex)
-  } else if dot := sl.Peek(); dot == '.' {
+  } else 
+*/
+  if dot := sl.Peek(); dot == '.' {
     sl.Emit(ItemNumber)
     return lexRange
   } else {
@@ -386,7 +415,7 @@ func (sl *Lexer) scanNumber() bool {
 func lexComment(l lex.Lexer, ctx interface {}) lex.LexFn {
   sl := ctx.(*Lexer)
   for {
-    if strings.HasPrefix(sl.RemainingString(), sl.tagEnd) {
+    if sl.PeekString(sl.tagEnd) {
       sl.Emit(ItemComment)
       return lexTagEnd
     }
@@ -400,7 +429,7 @@ func lexComment(l lex.Lexer, ctx interface {}) lex.LexFn {
 func lexQuotedString(l lex.Lexer, ctx interface {}, quote rune, t lex.ItemType) lex.LexFn {
   sl := ctx.(*Lexer)
   for {
-    if strings.HasPrefix(sl.RemainingString(), sl.tagEnd) {
+    if sl.PeekString(sl.tagEnd) {
       return sl.EmitErrorf("unexpected end of quoted string")
     }
 
@@ -428,26 +457,31 @@ func (l *Lexer) getSortedSymbols() LexSymbolList {
 }
 
 func lexInsideTag(l lex.Lexer, ctx interface {}) lex.LexFn {
+  guard := lex.Mark("lexInsideTag")
+  defer guard()
+
   sl := ctx.(*Lexer)
-  if strings.HasPrefix(sl.RemainingString(), sl.tagEnd) {
+  if sl.PeekString(sl.tagEnd) {
     return lexTagEnd
   }
 
   // Find registered symbols
   for _, sym := range sl.getSortedSymbols() {
-    if strings.HasPrefix(sl.RemainingString(), sym.Name) {
-      sl.AdvanceCursor(len(sym.Name))
+    if sl.AcceptString(sym.Name) {
       sl.Emit(sym.Type)
       return lexInsideTag
     }
   }
 
-  switch r := sl.Next(); {
+  r := sl.Next()
+  lex.Trace("r = '%q'\n", r)
+  switch {
   case r == lex.EOF:
     return sl.EmitErrorf("unclosed tag")
   case r == '#':
     return lexComment
   case isSpace(r):
+    sl.Backup()
     return lexSpace
   case isNumeric(r):
     sl.Backup()

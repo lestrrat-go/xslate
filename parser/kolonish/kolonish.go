@@ -15,7 +15,7 @@ func init() {
 }
 
 func NewLexer(template string) *parser.Lexer {
-  l := parser.NewLexer(template, SymbolSet)
+  l := parser.NewStringLexer(template, SymbolSet)
   l.SetTagStart("<:")
   l.SetTagEnd(":>")
 

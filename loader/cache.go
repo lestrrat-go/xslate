@@ -42,6 +42,7 @@ type Cache interface {
 // from the file system and caches in the file system, too
 type CachedByteCodeLoader struct {
   *StringByteCodeLoader // gives us LoadString
+  *ReaderByteCodeLoader // gives us LoadReader
   Fetcher TemplateFetcher
   Caches []Cache
   CacheLevel CacheStrategy
@@ -57,10 +58,29 @@ func NewCachedByteCodeLoader(
 ) *CachedByteCodeLoader {
   return &CachedByteCodeLoader {
     NewStringByteCodeLoader(parser, compiler),
+    NewReaderByteCodeLoader(parser, compiler),
     fetcher,
     []Cache { MemoryCache {}, cache },
     cacheLevel,
   }
+}
+
+func (l *CachedByteCodeLoader) DumpAST(v bool) {
+  l.StringByteCodeLoader.DumpAST(v)
+  l.ReaderByteCodeLoader.DumpAST(v)
+}
+
+func (l *CachedByteCodeLoader) DumpByteCode(v bool) {
+  l.StringByteCodeLoader.DumpByteCode(v)
+  l.ReaderByteCodeLoader.DumpByteCode(v)
+}
+
+func (l *CachedByteCodeLoader) ShouldDumpAST() bool {
+  return l.StringByteCodeLoader.ShouldDumpAST() || l.ReaderByteCodeLoader.ShouldDumpAST()
+}
+
+func (l *CachedByteCodeLoader) ShouldDumpByteCode() bool {
+  return l.StringByteCodeLoader.ShouldDumpByteCode() || l.ReaderByteCodeLoader.ShouldDumpByteCode()
 }
 
 // Load loads the ByteCode for template specified by `key`, which, for this
@@ -111,12 +131,12 @@ func (l *CachedByteCodeLoader) Load(key string) (*vm.ByteCode, error) {
     return nil, err
   }
 
-  content, err := source.Bytes()
+  rdr, err := source.Reader()
   if err != nil {
     return nil, err
   }
 
-  bc, err = l.LoadString(key, string(content))
+  bc, err = l.LoadReader(key, rdr)
   if err != nil {
     return nil, err
   }

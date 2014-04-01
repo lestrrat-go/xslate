@@ -29,6 +29,7 @@ func (s *Stack) Cur() int {
   return s.cur
 }
 
+// SetCur sets the current cursor location
 func (s *Stack) SetCur(c int) {
   s.cur = c
 }

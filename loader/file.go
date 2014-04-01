@@ -2,6 +2,7 @@ package loader
 
 import (
   "errors"
+  "io"
   "io/ioutil"
   "os"
   "path/filepath"
@@ -76,11 +77,20 @@ func (s *FileSource) LastModified() (time.Time, error) {
   return fi.ModTime(), nil
 }
 
-// Bytes returns the bytes in teh template file
-func (s *FileSource) Bytes() ([]byte, error) {
+func (s *FileSource) Reader() (io.Reader, error) {
   fh, err := os.Open(s.Path)
   if err != nil {
     return nil, err
   }
-  return ioutil.ReadAll(fh)
+  return fh, nil
 }
+
+// Bytes returns the bytes in teh template file
+func (s *FileSource) Bytes() ([]byte, error) {
+  rdr, err := s.Reader()
+  if err != nil {
+    return nil, err
+  }
+  return ioutil.ReadAll(rdr)
+}
+

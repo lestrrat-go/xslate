@@ -17,6 +17,7 @@ func NewFrame(s *Stack) *Frame {
   }
 }
 
+// Mark returns the current mark index
 func (f *Frame) Mark() int {
   return f.mark
 }

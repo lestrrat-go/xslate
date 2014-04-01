@@ -14,7 +14,7 @@ var space     = makeItem(parser.ItemSpace, 0, 1, " ")
 var tagStart  = makeItem(parser.ItemTagStart, 0, 1, "[%")
 var tagEnd    = makeItem(parser.ItemTagEnd, 0, 1, "[%")
 func makeLexer(input string) *parser.Lexer {
-  l := NewLexer(input)
+  l := NewStringLexer(input)
   return l
 }
 
