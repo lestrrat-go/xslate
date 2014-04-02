@@ -942,10 +942,8 @@ func txWrapper(st *State) {
     panic(fmt.Sprintf("Wrapper: Failed to compile %s: %s", target, err))
   }
 
-  buf := &bytes.Buffer {}
   vm := NewVM()
-  vm.Run(bc, vars, buf)
-  st.AppendOutputString(buf.String())
+  vm.Run(bc, vars, st.output)
   st.Advance()
 }
 
@@ -970,12 +968,10 @@ func txMacroCall(st *State) {
   x := st.sa.(int)
   bc := NewByteCode()
   bc.OpList = st.pc.OpList[x:]
-  buf := &bytes.Buffer {}
   vars := Vars { "count": 10, "text": "Hello" }
 
   vm := NewVM()
-  vm.Run(bc, vars, buf)
-  st.AppendOutputString(buf.String())
+  vm.Run(bc, vars, st.output)
   st.Advance()
 }
 
