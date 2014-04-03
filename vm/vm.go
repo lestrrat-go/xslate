@@ -15,7 +15,8 @@ The virtual machine accepts the bytecode, and input variables:
 package vm
 
 import (
-  "bytes"
+  "bufio"
+  "github.com/lestrrat/go-xslate/util"
   "io"
 )
 
@@ -44,7 +45,6 @@ func (vm *VM) CurrentOp() *Op {
 // Reset reinitializes certain state variables
 func (vm *VM) Reset() {
   vm.st.opidx = 0
-  vm.st.output = &bytes.Buffer {}
 }
 
 // Run executes the given vm.ByteCode using the given variables. For historical
@@ -54,6 +54,10 @@ func (vm *VM) Run(bc *ByteCode, v Vars, output io.Writer) {
   vm.Reset()
   st := vm.st
 
+  if ! util.IsBuffered(output) {
+    output = bufio.NewWriter(output)
+    defer output.(*bufio.Writer).Flush()
+  }
   st.output = output
   if bc != nil {
     st.pc = bc

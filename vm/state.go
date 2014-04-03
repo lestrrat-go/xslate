@@ -1,7 +1,6 @@
 package vm
 
 import (
-  "bytes"
   "fmt"
   "io"
   "os"
@@ -46,7 +45,6 @@ func NewState() *State {
     framestack: util.NewStack(5),
     frames:     util.NewStack(5),
     vars: make(Vars),
-    output: &bytes.Buffer {},
     warn: os.Stderr,
   }
 

@@ -1,11 +1,11 @@
 package vm
 
 import (
+  "bufio"
   "bytes"
   "fmt"
   "html"
   "io"
-  "io/ioutil"
   "reflect"
   "unicode"
   "unicode/utf8"
@@ -60,9 +60,8 @@ const (
   TXOPInclude
   TXOPWrapper
   TXOPFilter
-  TXOPPopOutput
-  TXOPPushOutput
-  TXOPNewOutput
+  TXOPSaveWriter
+  TXOPRestoreWriter
   TXOPEnd
   TXOPMax
 )
@@ -209,15 +208,12 @@ func init () {
     case TXOPFilter:
       h = txFilter
       n = "filter"
-    case TXOPPushOutput:
-      h = txPushOutput
-      n = "push_output"
-    case TXOPPopOutput:
-      h = txPopOutput
-      n = "pop_output"
-    case TXOPNewOutput:
-      h = txNewOutput
-      n = "new_output"
+    case TXOPSaveWriter:
+      h = txSaveWriter
+      n = "save_writer"
+    case TXOPRestoreWriter:
+      h = txRestoreWriter
+      n = "restore_writer"
     default:
       panic("No such optype")
     }
@@ -947,20 +943,21 @@ func txWrapper(st *State) {
   st.Advance()
 }
 
-func txPushOutput(st *State) {
+func txSaveWriter(st *State) {
   st.StackPush(st.output)
+
+  buf := &bytes.Buffer {}
+  st.StackPush(buf)
+  st.output = bufio.NewWriter(buf)
   st.Advance()
 }
 
-func txPopOutput(st *State) {
-  oldOutput := st.StackPop().(io.ReadWriter)
-  st.sa, _ = ioutil.ReadAll(st.output.(io.ReadWriter))
-  st.output = oldOutput
-  st.Advance()
-}
+func txRestoreWriter(st *State) {
+  st.output.(*bufio.Writer).Flush()
+  buf := st.StackPop().(*bytes.Buffer)
+  st.output = st.StackPop().(io.Writer)
 
-func txNewOutput(st *State) {
-  st.output = &bytes.Buffer {}
+  st.StackPush(buf.String())
   st.Advance()
 }
 

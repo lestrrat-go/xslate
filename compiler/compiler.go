@@ -138,18 +138,28 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeWrapper:
     x := n.(*parser.WrapperNode)
-    ctx.AppendOp(vm.TXOPPushOutput)
-    ctx.AppendOp(vm.TXOPNewOutput)
+
+    // Save the current io.Writer to the stack
+    // This also creates pushes a bytes.Buffer into the stack
+    // so that following operations write to that buffer
+    ctx.AppendOp(vm.TXOPSaveWriter)
+
+    // From this place on, executed opcodes will write to a temporary
+    // new output
     for _, v := range x.ListNode.Nodes {
       c.compile(ctx, v)
     }
-    ctx.AppendOp(vm.TXOPPopOutput)
 
-    ctx.AppendOp(vm.TXOPPush)
+    // Pop the original writer, and place it back to the output
+    // Also push the output onto the stack
+    ctx.AppendOp(vm.TXOPRestoreWriter)
+
     // Arguments to include (WITH foo = "bar") need to be evaulated
     // in the OUTER context, but the variables need to be set in the
     // include context
     c.compileAssignmentNodes(ctx, x.AssignmentNodes)
+
+    // Popt the "content"
     ctx.AppendOp(vm.TXOPPop)
     ctx.AppendOp(vm.TXOPPushmark)
     ctx.AppendOp(vm.TXOPWrapper, x.WrapperName)
