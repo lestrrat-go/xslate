@@ -17,6 +17,7 @@ func NewFrame(s *Stack) *Frame {
   }
 }
 
+// SetMark sets the offset from which this frame's variables may be stored
 func (f *Frame) SetMark(v int) {
   f.mark = v
 }

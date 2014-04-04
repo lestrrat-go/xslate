@@ -69,6 +69,7 @@ func (p *TTerse) ParseString(name, template string) (*parser.AST, error) {
   return b.Parse(name, lex)
 }
 
+// ParseReader gets the template content from an io.Reader type
 func (p *TTerse) ParseReader(name string, rdr io.Reader) (*parser.AST, error) {
   b := parser.NewBuilder()
   lex := NewReaderLexer(rdr)

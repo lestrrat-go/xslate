@@ -59,24 +59,41 @@ func (l *FileTemplateFetcher) FetchTemplate(path string) (TemplateSource, error)
 // FileSource is a TemplateSource variant that holds template information
 // in a file.
 type FileSource struct {
-  Path string
+  Path            string
+  LastStat        time.Time
+  LastStatResult  os.FileInfo
 }
 
 // NewFileSource creates a new FileSource
 func NewFileSource(path string) *FileSource {
-  return &FileSource { path }
+  return &FileSource { path, time.Time {}, nil }
 }
 
 // LastModified returns time when the target template file was last modified
 func (s *FileSource) LastModified() (time.Time, error) {
+  // Calling os.Stat() for *every* Render of the same source is a waste
+  // Only call os.Stat() if we haven't done so in the last 1 second
+  if time.Since(s.LastStat) < time.Second {
+    // A-ha! it's not that long ago we calculated this value, just return
+    // the same thing as our last call
+    return s.LastStatResult.ModTime(), nil
+  }
+
+  // If we got here, our previous check was too old or this is the first
+  // time we're checking for os.Stat()
   fi, err := os.Stat(s.Path)
   if err != nil {
     return time.Time {}, err
   }
 
-  return fi.ModTime(), nil
+  // Save these for later...
+  s.LastStat        = time.Now()
+  s.LastStatResult  = fi
+
+  return s.LastStatResult.ModTime(), nil
 }
 
+// Reader returns the io.Reader instance for the file source
 func (s *FileSource) Reader() (io.Reader, error) {
   fh, err := os.Open(s.Path)
   if err != nil {

@@ -11,7 +11,19 @@ type Stack struct {
   data []interface {}
 }
 
+// Reset clears the contents of the stack and pushes back the cursor
+// as if nothing is in the stack
+func (s *Stack) Reset() {
+  for i := 0; i < s.Size(); i++ {
+    s.data[i] = nil
+  }
+  s.cur = -1
+}
+
 func calcNewSize(base int) int {
+  if base < 100 {
+    return base * 2
+  }
   return int(float64(base) * 1.5)
 }
 

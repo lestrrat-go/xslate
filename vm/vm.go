@@ -16,7 +16,6 @@ package vm
 
 import (
   "bufio"
-  "github.com/lestrrat/go-xslate/util"
   "io"
 )
 
@@ -42,30 +41,22 @@ func (vm *VM) CurrentOp() *Op {
   return vm.st.CurrentOp()
 }
 
-// Reset reinitializes certain state variables
-func (vm *VM) Reset() {
-  vm.st.opidx = 0
-}
-
 // Run executes the given vm.ByteCode using the given variables. For historical
 // reasons, it also allows re-executing the previous bytecode instructions
 // given to a virtual machine, but this will probably be removed in the future
 func (vm *VM) Run(bc *ByteCode, v Vars, output io.Writer) {
-  vm.Reset()
   st := vm.st
 
-  if ! util.IsBuffered(output) {
+  if _, ok := output.(*bufio.Writer); ! ok {
     output = bufio.NewWriter(output)
     defer output.(*bufio.Writer).Flush()
   }
+  st.Reset()
+  st.pc     = bc
   st.output = output
-  if bc != nil {
-    st.pc = bc
-  }
-  if v != nil {
-    st.vars = v
-  }
+  st.vars   = v
   st.Loader = vm.Loader
+
   for op := st.CurrentOp(); op.Type() != TXOPEnd; op = st.CurrentOp() {
     op.Call(st)
   }

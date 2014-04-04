@@ -28,6 +28,7 @@ const (
   TXOPUnmarkRaw
   TXOPPrint
   TXOPPrintRaw
+  TXOPPrintRawConst
   TXOPSaveToLvar
   TXOPLoadLvar
   TXOPAdd
@@ -97,6 +98,9 @@ func init () {
     case TXOPPrintRaw:
       h = txPrintRaw
       n = "print_raw"
+    case TXOPPrintRawConst:
+      h = txPrintRawConst
+      n = "print_raw_const"
     case TXOPLiteral:
       h = txLiteral
       n = "literal"
@@ -383,6 +387,11 @@ func txPrint(st *State) {
   } else {
     st.AppendOutputString(interfaceToString(arg))
   }
+  st.Advance()
+}
+
+func txPrintRawConst(st *State) {
+  st.AppendOutputString(st.CurrentOp().ArgString())
   st.Advance()
 }
 

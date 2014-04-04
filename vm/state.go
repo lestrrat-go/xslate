@@ -174,3 +174,17 @@ func (st *State) StackPush(v interface {}) {
 func (st *State) LoadByteCode(key string) (*ByteCode, error) {
   return st.Loader.Load(key)
 }
+
+// Reset resets the whole State object
+func (st *State) Reset() {
+  st.opidx = 0
+  st.sa = nil
+  st.sb = nil
+  st.stack.Reset()
+  st.markstack.Reset()
+  st.frames.Reset()
+  st.framestack.Reset()
+
+  st.Pushmark()
+  st.PushFrame()
+}

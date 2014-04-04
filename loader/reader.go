@@ -41,10 +41,6 @@ func (l *ReaderByteCodeLoader) LoadReader(name string, rdr io.Reader) (*vm.ByteC
     return nil, err
   }
 
-  if l.ShouldDumpByteCode() {
-    fmt.Fprintf(os.Stderr, "ByteCode:\n%s\n", bc)
-  }
-
   return bc, nil
 }
 

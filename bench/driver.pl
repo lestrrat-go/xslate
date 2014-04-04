@@ -16,7 +16,7 @@ if (! -f "./go/xslate") {
 foreach my $cache (0, 1) {
     for my $lang ( "p5-xslate", "go-xslate" ) {
         print "# $lang (cache @{[ $cache ? 'ENABLED' : 'DISABLED' ]})\n";
-        for my $iter (10, 100, 1000) {
+        for my $iter (10, 100, 1000, 10000) {
             print "iter ($iter)\n";
             system @{$cmds{$lang}}, $iter, $cache;
         }

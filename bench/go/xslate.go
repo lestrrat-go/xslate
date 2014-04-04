@@ -1,6 +1,9 @@
 package main
 
 import (
+// "runtime/pprof"
+  "io/ioutil"
+  "bufio"
   "fmt"
   "os"
   "log"
@@ -41,17 +44,17 @@ func main() {
     },
   })
 
-  file, err := os.OpenFile("/dev/null", os.O_WRONLY, 0777)
-  if err != nil {
-    log.Fatalf("Failed to open /dev/null: %s", err)
-  }
-
   t0 := time.Now()
+//  profout, err := os.Create("xslate.prof")
+//  pprof.StartCPUProfile(profout)
+  f := bufio.NewWriter(ioutil.Discard)
   for i := 0; i < int(iter); i++ {
-    tx.RenderInto(file, "hello.tx", nil)
+    tx.RenderInto(f, "hello.tx", nil)
   }
+//  pprof.StopCPUProfile()
   elapsed := time.Since(t0)
 
-  fmt.Printf("* Elapsed %f secs\n", float64(elapsed.Nanoseconds()) / float64(time.Second))
+  fmt.Printf("* Elapsed %f secs\n", float64(elapsed.Seconds()))
+  fmt.Printf("* Secs per iter: %f sec/iter\n", float64(elapsed.Seconds()) / float64(iter))
   fmt.Printf("* Iter per sec: %f iter/sec\n", float64(iter) / float64(elapsed.Seconds()))
 }

@@ -12,7 +12,7 @@ my $tx = Text::Xslate->new(
 );
 my $t0 = [gettimeofday];
 {
-    open(my $fh, ">", "/dev/nill");
+    open(my $fh, ">", "/dev/null") or die "$!";
     local *STDOUT = $fh;
     for (1..$iter) {
         print $tx->render("hello.tx");
@@ -20,6 +20,6 @@ my $t0 = [gettimeofday];
 }
 
 my $elapsed = tv_interval($t0);
-print
-    "* Elapsed: $elapsed seconds\n",
-    "* Iter per sec: @{[$iter/$elapsed]} iter/sec\n";
+printf "* Elapsed: %f seconds\n", $elapsed;
+printf "* Secs per iter: %f secs/iter\n", @{[$elapsed/$iter]};
+printf "* Iter per sec: %f iter/sec\n", @{[$iter/$elapsed]};

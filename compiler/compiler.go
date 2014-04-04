@@ -43,6 +43,9 @@ func (c *BasicCompiler) Compile(ast *parser.AST) (*vm.ByteCode, error) {
   // When we're done compiling, always append an END op
   ctx.ByteCode.AppendOp(vm.TXOPEnd)
 
+  opt := &NaiveOptimizer {}
+  opt.Optimize(ctx.ByteCode)
+
   return ctx.ByteCode, nil
 }
 
