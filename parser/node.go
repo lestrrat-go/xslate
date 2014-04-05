@@ -143,27 +143,36 @@ func (n NodeType) String() string {
   }
 }
 
+// BaseNode is the most basic node with no extra data attached to it
 type BaseNode struct {
-  NodeType
+  NodeType // String() is delegated here
   pos int
 }
 
+// Pos returns the position of this node in the document
 func (n *BaseNode) Pos() int {
   return n.pos
 }
 
-type NoopNode struct {
-  BaseNode
+func (n *BaseNode) Copy() Node {
+  return &BaseNode { n.NodeType, n.pos }
+}
+
+func (n *BaseNode) Visit(c chan Node) {
+  c <-n
+}
+
+// Noop nodes don't need to be distinct
+var noop = &BaseNode { NodeNoop, 0 }
+
+// NewNoopNode returns a op that does nothing
+func NewNoopNode() *BaseNode {
+  return noop
 }
 
 type ListNode struct {
   BaseNode
   Nodes []Node
-}
-
-type TextNode struct {
-  BaseNode
-  Text []byte
 }
 
 type NumberNode struct {
@@ -176,27 +185,6 @@ func (l *ListNode) Visit(c chan Node) {
   for _, child := range l.Nodes {
     child.Visit(c)
   }
-}
-
-func (n *TextNode) Visit(c chan Node) {
-  c <- n
-}
-
-var noop = &NoopNode { BaseNode { NodeType: NodeNoop, pos: 0 } }
-func NewNoopNode() *NoopNode {
-  return noop
-}
-
-func (n NoopNode) Copy() Node {
-  return noop
-}
-
-func (n *NoopNode) String() string {
-  return "noop"
-}
-
-func (n *NoopNode) Visit(chan Node) {
-  // ignore
 }
 
 func NewListNode(pos int) *ListNode {
@@ -219,6 +207,11 @@ func (l *ListNode) Append(n Node) {
   l.Nodes = append(l.Nodes, n)
 }
 
+type TextNode struct {
+  BaseNode
+  Text []byte
+}
+
 func NewTextNode(pos int, arg string) *TextNode {
   return &TextNode {
     BaseNode { NodeText, pos },
@@ -232,6 +225,10 @@ func (n *TextNode) Copy() Node {
 
 func (n *TextNode) String() string {
   return fmt.Sprintf("%s %q", n.NodeType, n.Text)
+}
+
+func (n *TextNode) Visit(c chan Node) {
+  c <-n
 }
 
 type WrapperNode struct {

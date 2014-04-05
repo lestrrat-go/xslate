@@ -13,3 +13,17 @@ func TestNode_String(t *testing.T) {
     }
   }
 }
+
+func TestTextNode(t *testing.T) {
+  n := NewTextNode(0, "foo")
+  c := make(chan Node)
+  go func() {
+    n.Visit(c)
+    close(c)
+  }()
+  for v := range c {
+    if _, ok := v.(*TextNode); ! ok {
+      t.Errorf("expected TextNode, got %v", v)
+    }
+  }
+}
