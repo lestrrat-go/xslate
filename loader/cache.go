@@ -97,11 +97,6 @@ func (l *CachedByteCodeLoader) ShouldDumpByteCode() bool {
 // time is compared against that of the template file. If the template is
 // newer, it's compiled. Otherwise the cached version is used, saving us the
 // time to parse and compile the template.
-type CBCCache struct {
-  BC *vm.ByteCode
-  Source *FileSource
-}
-
 func (l *CachedByteCodeLoader) Load(key string) (bc *vm.ByteCode, err error) {
   defer func() {
     if bc != nil && err == nil && l.ShouldDumpByteCode() {

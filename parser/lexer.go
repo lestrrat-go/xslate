@@ -361,7 +361,7 @@ func lexNumber(l lex.Lexer, ctx interface {}) lex.LexFn {
     return sl.EmitErrorf("bad number syntax: %q", sl.BufferString())
   }
 
-/*
+/* XXX Remove complex number support
   if sign := sl.Peek(); sign == '+' || sign == '-' {
     // Complex: 1+2i. No spaces, must end in 'i'.
     if !sl.scanNumber() || sl.PrevByte() != 'i' {
@@ -373,9 +373,8 @@ func lexNumber(l lex.Lexer, ctx interface {}) lex.LexFn {
   if dot := sl.Peek(); dot == '.' {
     sl.Emit(ItemNumber)
     return lexRange
-  } else {
-    sl.Emit(ItemNumber)
   }
+  sl.Emit(ItemNumber)
   return lexInsideTag
 }
 
@@ -387,30 +386,30 @@ func (l *Lexer) scanInteger() bool {
   return ret
 }
 
-func (sl *Lexer) scanNumber() bool {
+func (l *Lexer) scanNumber() bool {
   // Optional leading sign.
-  sl.AcceptAny("+-")
+  l.AcceptAny("+-")
   // Is it hex?
   digits := "0123456789"
-  if sl.AcceptAny("0") && sl.AcceptAny("xX") {
+  if l.AcceptAny("0") && l.AcceptAny("xX") {
     digits = "0123456789abcdefABCDEF"
   }
-  sl.AcceptRun(digits)
-  if sl.AcceptString(".") {
-    if ! sl.AcceptRun(digits) {
-      sl.Backup()
+  l.AcceptRun(digits)
+  if l.AcceptString(".") {
+    if ! l.AcceptRun(digits) {
+      l.Backup()
     }
     return true
   }
-  if sl.AcceptAny("eE") {
-    sl.AcceptAny("+-")
-    sl.AcceptRun("0123456789")
+  if l.AcceptAny("eE") {
+    l.AcceptAny("+-")
+    l.AcceptRun("0123456789")
   }
   // Is it imaginary?
-  sl.AcceptString("i")
+  l.AcceptString("i")
   // Next thing mustn't be alphanumeric.
-  if isAlphaNumeric(sl.Peek()) {
-    sl.Next()
+  if isAlphaNumeric(l.Peek()) {
+    l.Next()
     return false
   }
   return true
