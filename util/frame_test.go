@@ -1,12 +1,11 @@
-package vm
+package util
 
 import (
   "testing"
 )
 
 func TestFrame_Lvar(t *testing.T) {
-  st := NewState()
-  f := st.CurrentFrame()
+  f := NewFrame(NewStack(5))
   f.SetLvar(0, 1)
   x := f.GetLvar(0)
   i, ok := x.(int)
