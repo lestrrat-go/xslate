@@ -5,8 +5,10 @@ use Getopt::Long;
 
 my $iter;
 my $cache;
+my $template;
 
 if (! GetOptions(
+    "template=s"   => \$template,
     "iterations=i" => \$iter,
     "cacheLevel=i" => \$cache,
 )) {
@@ -23,7 +25,7 @@ my $t0 = [gettimeofday];
     open(my $fh, ">", "/dev/null") or die "$!";
     local *STDOUT = $fh;
     for (1..$iter) {
-        print $tx->render("hello.tx");
+        print $tx->render($template);
     }
 }
 

@@ -1,0 +1,3 @@
+[% WRAPPER "wrapper.tx" %]
+Hello, I'm wrapped!
+[% END %]

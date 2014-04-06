@@ -2,17 +2,21 @@ package main
 
 import (
   "bufio"
-  "io/ioutil"
   "flag"
   "fmt"
+  "io"
+  "io/ioutil"
+  "os"
   "time"
   "github.com/lestrrat/go-xslate"
   prof "github.com/davecheney/profile"
 )
 
-var iter = flag.Int("iterations", 100, "Number of iterations to perform")
-var cacheLevel = flag.Int("cache", 1, "Use of cache (0=no cache, 1=cache + verify freshness, 2=always use cache)")
-var profile = flag.Bool("profile", false, "Generate profile")
+var iter        = flag.Int("iterations", 100, "Number of iterations to perform")
+var cacheLevel  = flag.Int("cache", 1, "Use of cache (0=no cache, 1=cache + verify freshness, 2=always use cache)")
+var profile     = flag.Bool("profile", false, "Generate profile")
+var template    = flag.String("template", "hello.tx", "Template file to use")
+var stdout      = flag.Bool("stdout", false, "Direct output to stdout")
 
 func main() {
   flag.Parse()
@@ -35,9 +39,20 @@ func main() {
     defer prof.Start(&config).Stop()
   }
 
-  f := bufio.NewWriter(ioutil.Discard)
+  var output io.Writer
+  if *stdout {
+    output = os.Stdout
+  } else {
+    output = ioutil.Discard
+  }
+  f := bufio.NewWriter(output)
+
   for i := 0; i < *iter; i++ {
-    tx.RenderInto(f, "hello.tx", nil)
+    err := tx.RenderInto(f, *template, nil)
+    if err != nil {
+      io.WriteString(os.Stderr, err.Error())
+    }
+    f.Flush()
   }
 
   elapsed := time.Since(t0)
