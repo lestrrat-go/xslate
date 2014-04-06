@@ -1,10 +1,18 @@
 use strict;
 use Time::HiRes qw(gettimeofday tv_interval);
 use Text::Xslate;
+use Getopt::Long;
 
+my $iter;
+my $cache;
 
-my $iter = shift @ARGV || 100; # 1_000_000;
-my $cache = @ARGV ? shift @ARGV : 1;
+if (! GetOptions(
+    "iterations=i" => \$iter,
+    "cacheLevel=i" => \$cache,
+)) {
+    exit 1;
+}
+
 my $tx = Text::Xslate->new(
     syntax => "TTerse",
     path => [ "." ],

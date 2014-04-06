@@ -1,7 +1,7 @@
 use strict;
 
-my @perl_cmd = qw(perl perl/xslate.pl);
-my @go_cmd   = qw(./go/xslate);
+my @perl_cmd = qw(perl perldriver.pl);
+my @go_cmd   = qw(./godriver);
 my %cmds     = (
     "p5-xslate" => \@perl_cmd,
     "go-xslate" => \@go_cmd,
@@ -18,7 +18,7 @@ foreach my $cache (0, 1) {
         print "# $lang (cache @{[ $cache ? 'ENABLED' : 'DISABLED' ]})\n";
         for my $iter (10, 100, 1000, 10000) {
             print "iter ($iter)\n";
-            system @{$cmds{$lang}}, $iter, $cache;
+            system @{$cmds{$lang}}, "--iterations", $iter, "--cache", $cache;
         }
         print "====\n";
     }
