@@ -8,10 +8,8 @@ my %cmds     = (
     "go-xslate" => \@go_cmd,
 );
 
-if (! -f "./go/xslate") {
-    chdir "go";
-    system "go", "build", "xslate.go";
-    chdir "..";
+if (! -f "./godriver") {
+    system "go", "build", "godriver.go";
 }
 
 foreach my $cache (0, 1) {

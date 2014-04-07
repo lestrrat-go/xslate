@@ -749,6 +749,8 @@ func invokeFuncSingleReturn(st *State, fun reflect.Value, args []reflect.Value) 
 // ...And that's how we manage function calls
 // See also: 
 func txFunCall(st *State) {
+  fmt.Printf("txFuncCall\n")
+
   // Everything in our lvars up to the current tip is our argument list
   mark := st.CurrentMark()
   tip  := st.stack.Cur()
@@ -764,17 +766,23 @@ func txFunCall(st *State) {
 
   x := st.sa
   st.sa = nil
-  if x != nil {
-    v := reflect.ValueOf(x)
-    if v.Type().Kind() == reflect.Func {
-      fun := reflect.ValueOf(x)
-      invokeFuncSingleReturn(st, fun, args)
-    }
+  if x == nil {
+    // Do nothing, just advance
+    st.Advance()
+    return
+  }
+
+  v := reflect.ValueOf(x)
+fmt.Printf("v = %v\n", v)
+  if v.Type().Kind() == reflect.Func {
+    fun := reflect.ValueOf(x)
+    invokeFuncSingleReturn(st, fun, args)
   }
   st.Advance()
 }
 
 func txFunCallSymbol(st *State) {
+  fmt.Printf("txFuncCallSymbol\n")
   // Everything in our lvars up to the current tip is our argument list
   mark := st.CurrentMark()
   tip  := st.stack.Cur()
@@ -939,9 +947,9 @@ func txWrapper(st *State) {
       vars.Set(interfaceToString(k), v)
     }
   }
-  vars.Set("content", rawString(interfaceToString(st.sa)))
+  vars.Set("content", rawString(st.sa.(string)))
 
-  target := interfaceToString(st.CurrentOp().Arg())
+  target := st.CurrentOp().ArgString()
   bc, err := st.LoadByteCode(target)
   if err != nil {
     panic(fmt.Sprintf("Wrapper: Failed to compile %s: %s", target, err))
@@ -983,6 +991,7 @@ func txMacroCall(st *State) {
 
 // Executes what's in st.sa
 func txFunCallOmni(st *State) {
+  fmt.Printf("txFuncCallOmni\n")
   t := reflect.ValueOf(st.sa)
   switch t.Kind() {
   case reflect.Int:
@@ -992,6 +1001,8 @@ func txFunCallOmni(st *State) {
   case reflect.Func:
     txFunCall(st)
   default:
-    panic(fmt.Sprintf("Unknown variable as function call: %s", st.sa))
+    st.Warnf("Unknown variable as function call: %s\n", st.sa)
+    st.sa = nil
+    st.Advance()
   }
 }

@@ -161,8 +161,9 @@ func DefaultLoader(tx *Xslate, args Args) error {
 
 // DefaultVM sets up and assigns the default VM to be used by Xslate
 func DefaultVM(tx *Xslate, args Args) error {
-  tx.VM = vm.NewVM()
-  tx.VM.Loader = tx.Loader
+  dvm := vm.NewVM()
+  dvm.Loader = tx.Loader
+  tx.VM = dvm
   return nil
 }
 
@@ -216,6 +217,11 @@ func (tx *Xslate) Configure(args ConfigureArgs) error {
     if err != nil {
       return err
     }
+  }
+
+  // Configure Functions
+  if funcs, ok := args.Get("Functions"); ok {
+    tx.VM.SetFunctions(vm.Vars(funcs.(Args)))
   }
 
   if Debug {
