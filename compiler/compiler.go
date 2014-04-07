@@ -46,6 +46,7 @@ func (c *BasicCompiler) Compile(ast *parser.AST) (*vm.ByteCode, error) {
   opt := &NaiveOptimizer {}
   opt.Optimize(ctx.ByteCode)
 
+  ctx.ByteCode.Name = ast.Name
   return ctx.ByteCode, nil
 }
 

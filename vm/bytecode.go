@@ -9,13 +9,14 @@ import (
 // ByteCode is the collection of op codes that the Xslate Virtual Machine
 // should run. It is created from a compiler.Compiler
 type ByteCode struct {
-  GeneratedOn time.Time
   OpList      []*Op
+  GeneratedOn time.Time
+  Name        string
 }
 
 // NewByteCode creates an empty ByteCode instance.
 func NewByteCode() *ByteCode {
-  return &ByteCode { time.Now(), []*Op {} }
+  return &ByteCode { []*Op {}, time.Now(), "" }
 }
 
 // Len returns the number of op codes in this ByteCode instance
@@ -46,7 +47,11 @@ func (b *ByteCode) AppendOp(o OpType, args ...interface{}) *Op {
 func (b *ByteCode) String() string {
   buf := &bytes.Buffer {}
 
-  fmt.Fprintf(buf, "Bytecode Generated On: %s\n", b.GeneratedOn)
+  fmt.Fprintf(buf,
+    "// Bytecode for '%s'\n// Generated On: %s\n",
+    b.Name,
+    b.GeneratedOn,
+  )
   for k, v := range b.OpList {
     fmt.Fprintf(buf, "%03d. %s\n", k + 1, v)
   }
