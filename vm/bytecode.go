@@ -12,11 +12,12 @@ type ByteCode struct {
   OpList      []*Op
   GeneratedOn time.Time
   Name        string
+  Version     float32
 }
 
 // NewByteCode creates an empty ByteCode instance.
 func NewByteCode() *ByteCode {
-  return &ByteCode { []*Op {}, time.Now(), "" }
+  return &ByteCode { []*Op {}, time.Now(), "", 1.0 }
 }
 
 // Len returns the number of op codes in this ByteCode instance
