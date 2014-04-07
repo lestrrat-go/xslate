@@ -16,7 +16,6 @@ package vm
 
 import (
   "bufio"
-  "fmt"
   "io"
 )
 
