@@ -947,9 +947,9 @@ func txWrapper(st *State) {
       vars.Set(interfaceToString(k), v)
     }
   }
-  vars.Set("content", rawString(interfaceToString(st.sa)))
+  vars.Set("content", rawString(st.sa.(string)))
 
-  target := interfaceToString(st.CurrentOp().Arg())
+  target := st.CurrentOp().ArgString()
   bc, err := st.LoadByteCode(target)
   if err != nil {
     panic(fmt.Sprintf("Wrapper: Failed to compile %s: %s", target, err))

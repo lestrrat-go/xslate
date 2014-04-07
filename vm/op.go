@@ -172,6 +172,10 @@ func (o *Op) ArgInt() int {
 
 // ArgString returns the string representatin of the argument
 func (o *Op) ArgString() string {
+  // In most cases we do this because it's a sring
+  if v, ok := o.uArg.(string); ok {
+    return v
+  }
   return interfaceToString(o.uArg)
 }
 
