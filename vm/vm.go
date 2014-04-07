@@ -73,7 +73,6 @@ func (vm *VM) Run(bc *ByteCode, vars Vars, output io.Writer) {
       st.vars[k] = v
     }
   }
-fmt.Printf("%#v\n", st.vars)
   st.Loader = vm.Loader
 
   for op := st.CurrentOp(); op.Type() != TXOPEnd; op = st.CurrentOp() {
