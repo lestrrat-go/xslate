@@ -16,6 +16,11 @@ func NewFuncDepot(namespace string) *FuncDepot {
   return &FuncDepot { namespace, make(map[string]reflect.Value) }
 }
 
+// Map returns the map of string to function
+func (fc *FuncDepot) Map() map[string]reflect.Value {
+  return fc.depot
+}
+
 // Get returns the function associated with the given key. The function
 // is wrapped as reflect.Value so reflection can be used to determine
 // attributes about this function

@@ -359,8 +359,33 @@ func TestXslate_Cache(t *testing.T) {
 }
 
 func TestXslate_FunCallVariable(t *testing.T) {
-  template := `[% epoch() %]`
-  renderStringAndCompare(t, template, Vars { "epoch": func() time.Time { return time.Unix(0, 0).In(time.UTC) } }, `1970-01-01 00:00:00 +0000 UTC`)
+  // Pass functions as variables. They are only available in the top most template,
+  // and in successive templates, only if you pass it using WITH directive
+  epoch := func() time.Time { return time.Unix(0, 0).In(time.UTC) }
+  renderStringAndCompare(t, `[% epoch() %]`, Vars { "epoch": epoch }, `1970-01-01 00:00:00 +0000 UTC`)
+
+  // This one uses manual registering of functions, which are global
+  x := func() {
+    tx, err := New(Args{
+      "Functions": Args{ 
+        "epoch": epoch,
+      },
+    })
+    if err != nil {
+      t.Fatalf("Failed to create xslate: %s", err)
+    }
+
+    output, err := tx.RenderString(`[% epoch() %]`, nil)
+    if err != nil {
+      t.Fatalf("Failed to render: %s", err)
+    }
+
+    expected := `1970-01-01 00:00:00 +0000 UTC`
+    if output != expected {
+      t.Errorf("Expected '%s', got '%s'", expected, output)
+    }
+  }
+  x()
 }
 
 func TestXslate_MethodCallVariable(t *testing.T) {

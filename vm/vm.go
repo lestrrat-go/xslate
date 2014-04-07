@@ -16,6 +16,7 @@ package vm
 
 import (
   "bufio"
+  "fmt"
   "io"
 )
 
@@ -28,12 +29,17 @@ type byteCodeLoader interface {
 // VM represents the Xslate Virtual Machine
 type VM struct {
   st *State
+  functions Vars
   Loader byteCodeLoader
 }
 
 // NewVM creates a new VM
 func NewVM() (*VM) {
-  return &VM { NewState(), nil }
+  return &VM { NewState(), nil, nil }
+}
+
+func (vm *VM) SetFunctions(vars Vars) {
+  vm.functions = vars
 }
 
 // CurrentOp returns the current Op to be executed
@@ -44,7 +50,7 @@ func (vm *VM) CurrentOp() *Op {
 // Run executes the given vm.ByteCode using the given variables. For historical
 // reasons, it also allows re-executing the previous bytecode instructions
 // given to a virtual machine, but this will probably be removed in the future
-func (vm *VM) Run(bc *ByteCode, v Vars, output io.Writer) {
+func (vm *VM) Run(bc *ByteCode, vars Vars, output io.Writer) {
   st := vm.st
 
   if _, ok := output.(*bufio.Writer); ! ok {
@@ -54,7 +60,20 @@ func (vm *VM) Run(bc *ByteCode, v Vars, output io.Writer) {
   st.Reset()
   st.pc     = bc
   st.output = output
-  st.vars   = v
+  st.vars   = Vars {}
+
+  if fc := vm.functions; fc != nil {
+    for k, v := range vm.functions {
+      st.vars[k] = v
+    }
+  }
+
+  if vars != nil {
+    for k, v := range vars {
+      st.vars[k] = v
+    }
+  }
+fmt.Printf("%#v\n", st.vars)
   st.Loader = vm.Loader
 
   for op := st.CurrentOp(); op.Type() != TXOPEnd; op = st.CurrentOp() {
