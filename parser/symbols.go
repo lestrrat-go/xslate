@@ -22,6 +22,7 @@ func init() {
   DefaultSymbolSet.Set(")",   ItemCloseParen,         0.0)
   DefaultSymbolSet.Set("[",   ItemOpenSquareBracket,  0.0)
   DefaultSymbolSet.Set("]",   ItemCloseSquareBracket, 0.0)
+  DefaultSymbolSet.Set("..",  ItemRange,              1.0)
   DefaultSymbolSet.Set(".",   ItemPeriod,             0.0)
   DefaultSymbolSet.Set(",",   ItemComma,              0.0)
   DefaultSymbolSet.Set("|",   ItemVerticalSlash,      0.0)
