@@ -16,6 +16,7 @@ package vm
 
 import (
   "bufio"
+  "fmt"
   "io"
 )
 
@@ -46,10 +47,23 @@ func (vm *VM) CurrentOp() *Op {
   return vm.st.CurrentOp()
 }
 
+// IsSupportedByteCodeVersion returns true if this VM can handle the
+// provided bytecode version
+func (vm *VM) IsSupportedByteCodeVersion(bc *ByteCode) bool {
+  return bc.Version == 1.0
+}
+
 // Run executes the given vm.ByteCode using the given variables. For historical
 // reasons, it also allows re-executing the previous bytecode instructions
 // given to a virtual machine, but this will probably be removed in the future
 func (vm *VM) Run(bc *ByteCode, vars Vars, output io.Writer) {
+  if ! vm.IsSupportedByteCodeVersion(bc) {
+    panic(fmt.Sprintf(
+      "error: ByteCode version %f no supported",
+      bc.Version,
+    ))
+  }
+
   st := vm.st
 
   if _, ok := output.(*bufio.Writer); ! ok {

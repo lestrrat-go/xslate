@@ -749,8 +749,6 @@ func invokeFuncSingleReturn(st *State, fun reflect.Value, args []reflect.Value) 
 // ...And that's how we manage function calls
 // See also: 
 func txFunCall(st *State) {
-  fmt.Printf("txFuncCall\n")
-
   // Everything in our lvars up to the current tip is our argument list
   mark := st.CurrentMark()
   tip  := st.stack.Cur()
@@ -773,7 +771,6 @@ func txFunCall(st *State) {
   }
 
   v := reflect.ValueOf(x)
-fmt.Printf("v = %v\n", v)
   if v.Type().Kind() == reflect.Func {
     fun := reflect.ValueOf(x)
     invokeFuncSingleReturn(st, fun, args)
@@ -782,7 +779,6 @@ fmt.Printf("v = %v\n", v)
 }
 
 func txFunCallSymbol(st *State) {
-  fmt.Printf("txFuncCallSymbol\n")
   // Everything in our lvars up to the current tip is our argument list
   mark := st.CurrentMark()
   tip  := st.stack.Cur()
@@ -991,7 +987,6 @@ func txMacroCall(st *State) {
 
 // Executes what's in st.sa
 func txFunCallOmni(st *State) {
-  fmt.Printf("txFuncCallOmni\n")
   t := reflect.ValueOf(st.sa)
   switch t.Kind() {
   case reflect.Int:

@@ -74,7 +74,10 @@ func (b *Builder) Parse(name string, l lex.Lexer) (ast *AST, err error) {
 
   b.Start(ctx)
   b.ParseStatements(ctx)
-  return &AST { Root: ctx.Root }, nil
+  return &AST {
+    Name: name,
+    Root: ctx.Root,
+  }, nil
 }
 
 func (b *Builder) Start(ctx *builderCtx) {
