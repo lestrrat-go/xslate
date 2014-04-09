@@ -37,7 +37,7 @@ func NewFileTemplateFetcher(paths []string) (*FileTemplateFetcher, error) {
 }
 
 // FetchTemplate returns a TemplateSource representing the template at path
-// `path`. Paths are serached relative to the paths given to NewFileTemplateFetcher()
+// `path`. Paths are searched relative to the paths given to NewFileTemplateFetcher()
 func (l *FileTemplateFetcher) FetchTemplate(path string) (TemplateSource, error) {
   if filepath.IsAbs(path) {
     return nil, ErrAbsolutePathNotAllowed
