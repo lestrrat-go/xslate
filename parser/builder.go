@@ -819,10 +819,10 @@ func (b *Builder) ParseList(ctx *builderCtx) Node {
     default:
       break OUTER
     }
+    item := b.NextNonSpace(ctx)
 
     // Depending on the next item, we have range operator or a literal list
     var child Node
-    item := b.NextNonSpace(ctx)
     switch nextN := b.PeekNonSpace(ctx); nextN.Type() {
     case ItemRange:
       b.Backup2(ctx, item)

@@ -193,6 +193,7 @@ func TestXslate_ListVariableFunctions(t *testing.T) {
 
 func TestXslate_ArrayVariableSlotAccess(t *testing.T) {
   renderStringAndCompare(t, `[% SET l = [ 0..9 ] %][% l[0] %]..[% l[9] %]`, nil, `0..9`)
+  renderStringAndCompare(t, `[% SET l = [ 0 .. 9 ] %][% l[0] %]..[% l[9] %]`, nil, `0..9`)
 }
 
 func TestXslate_StructVariable(t *testing.T) {
