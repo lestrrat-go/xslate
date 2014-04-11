@@ -140,9 +140,6 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     }
     ctx.AppendOp(vm.TXOPMethodCall, x.MethodName)
     ctx.AppendOp(vm.TXOPPopmark)
-  case parser.NodeWrapper:
-    x := n.(*parser.WrapperNode)
-    c.compileWrapper(ctx, x)
   case parser.NodeInclude:
     x := n.(*parser.IncludeNode)
 
@@ -195,31 +192,10 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
 
     c.compile(ctx, x.Child)
     ctx.AppendOp(vm.TXOPFilter, x.Name)
+  case parser.NodeWrapper:
+    c.compileWrapper(ctx, n.(*parser.WrapperNode))
   case parser.NodeMacro:
-    x := n.(*parser.MacroNode)
-    // The VM is responsible for passing arguments, which do not need
-    // to be declared as variables in the template. n.Arguments exists,
-    // but it's left untouched
-
-    // This goto effectively forces the VM to "ignore" this block of
-    // MACRO definition.
-    gotoOp := ctx.AppendOp(vm.TXOPGoto, 0)
-    start := ctx.ByteCode.Len()
-
-    // This is the actual "entry point"
-    ctx.AppendOp(vm.TXOPPushmark)
-    entryPoint := ctx.ByteCode.Len() - 1
-
-    for _, child := range x.Nodes {
-      c.compile(ctx, child)
-    }
-    ctx.AppendOp(vm.TXOPPopmark)
-    ctx.AppendOp(vm.TXOPEnd) // This END forces termination
-    gotoOp.SetArg(ctx.ByteCode.Len() - start + 1)
-
-    // Now remember about this definition
-    ctx.AppendOp(vm.TXOPLiteral, entryPoint)
-    ctx.AppendOp(vm.TXOPSaveToLvar, x.LocalVar.Offset)
+    c.compileMacro(ctx, n.(*parser.MacroNode))
   default:
     fmt.Printf("Unknown node: %s\n", n.Type())
   }
@@ -329,8 +305,6 @@ func (c *BasicCompiler) compileWhile(ctx *context, x *parser.WhileNode) {
 }
 
 func (c *BasicCompiler) compileWrapper(ctx *context, x *parser.WrapperNode) {
-  
-
   // Save the current io.Writer to the stack
   // This also creates pushes a bytes.Buffer into the stack
   // so that following operations write to that buffer
@@ -356,4 +330,30 @@ func (c *BasicCompiler) compileWrapper(ctx *context, x *parser.WrapperNode) {
   ctx.AppendOp(vm.TXOPPushmark)
   ctx.AppendOp(vm.TXOPWrapper, x.WrapperName)
   ctx.AppendOp(vm.TXOPPopmark)
+}
+
+func (c *BasicCompiler) compileMacro(ctx *context, x *parser.MacroNode) {
+  // The VM is responsible for passing arguments, which do not need
+  // to be declared as variables in the template. n.Arguments exists,
+  // but it's left untouched
+
+  // This goto effectively forces the VM to "ignore" this block of
+  // MACRO definition.
+  gotoOp := ctx.AppendOp(vm.TXOPGoto, 0)
+  start := ctx.ByteCode.Len()
+
+  // This is the actual "entry point"
+  ctx.AppendOp(vm.TXOPPushmark)
+  entryPoint := ctx.ByteCode.Len() - 1
+
+  for _, child := range x.Nodes {
+    c.compile(ctx, child)
+  }
+  ctx.AppendOp(vm.TXOPPopmark)
+  ctx.AppendOp(vm.TXOPEnd) // This END forces termination
+  gotoOp.SetArg(ctx.ByteCode.Len() - start + 1)
+
+  // Now remember about this definition
+  ctx.AppendOp(vm.TXOPLiteral, entryPoint)
+  ctx.AppendOp(vm.TXOPSaveToLvar, x.LocalVar.Offset)
 }
