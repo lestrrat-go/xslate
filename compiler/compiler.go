@@ -142,32 +142,7 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeWrapper:
     x := n.(*parser.WrapperNode)
-
-    // Save the current io.Writer to the stack
-    // This also creates pushes a bytes.Buffer into the stack
-    // so that following operations write to that buffer
-    ctx.AppendOp(vm.TXOPSaveWriter)
-
-    // From this place on, executed opcodes will write to a temporary
-    // new output
-    for _, v := range x.ListNode.Nodes {
-      c.compile(ctx, v)
-    }
-
-    // Pop the original writer, and place it back to the output
-    // Also push the output onto the stack
-    ctx.AppendOp(vm.TXOPRestoreWriter)
-
-    // Arguments to include (WITH foo = "bar") need to be evaulated
-    // in the OUTER context, but the variables need to be set in the
-    // include context
-    c.compileAssignmentNodes(ctx, x.AssignmentNodes)
-
-    // Popt the "content"
-    ctx.AppendOp(vm.TXOPPop)
-    ctx.AppendOp(vm.TXOPPushmark)
-    ctx.AppendOp(vm.TXOPWrapper, x.WrapperName)
-    ctx.AppendOp(vm.TXOPPopmark)
+    c.compileWrapper(ctx, x)
   case parser.NodeInclude:
     x := n.(*parser.IncludeNode)
 
@@ -350,5 +325,35 @@ func (c *BasicCompiler) compileWhile(ctx *context, x *parser.WhileNode) {
   // Go back to condPos
   ctx.AppendOp(vm.TXOPGoto, -1 * (ctx.ByteCode.Len() - condPos + 1))
   ifop.SetArg(ctx.ByteCode.Len() - ifPos + 1)
+  ctx.AppendOp(vm.TXOPPopmark)
+}
+
+func (c *BasicCompiler) compileWrapper(ctx *context, x *parser.WrapperNode) {
+  
+
+  // Save the current io.Writer to the stack
+  // This also creates pushes a bytes.Buffer into the stack
+  // so that following operations write to that buffer
+  ctx.AppendOp(vm.TXOPSaveWriter)
+
+  // From this place on, executed opcodes will write to a temporary
+  // new output
+  for _, v := range x.ListNode.Nodes {
+    c.compile(ctx, v)
+  }
+
+  // Pop the original writer, and place it back to the output
+  // Also push the output onto the stack
+  ctx.AppendOp(vm.TXOPRestoreWriter)
+
+  // Arguments to include (WITH foo = "bar") need to be evaulated
+  // in the OUTER context, but the variables need to be set in the
+  // include context
+  c.compileAssignmentNodes(ctx, x.AssignmentNodes)
+
+  // Popt the "content"
+  ctx.AppendOp(vm.TXOPPop)
+  ctx.AppendOp(vm.TXOPPushmark)
+  ctx.AppendOp(vm.TXOPWrapper, x.WrapperName)
   ctx.AppendOp(vm.TXOPPopmark)
 }

@@ -2,12 +2,10 @@ package xslate
 
 import (
   "bytes"
-  "errors"
   "fmt"
-  "io/ioutil"
+  "github.com/lestrrat/go-xslate/test"
   "log"
   "os"
-  "path/filepath"
   "reflect"
   "regexp"
   "strings"
@@ -38,50 +36,6 @@ func createTx(path, cacheDir string, cacheLevel ...int) (*Xslate, error) {
   }
 
   return x, nil
-}
-
-// Given key (relative path) => template content, creates physical files
-// in a temporary location. The root directory, along with any error
-// is returned
-func generateTemplates(files map[string]string) (string, error) {
-  baseDir, err := ioutil.TempDir("", "xslate-test-")
-  if err != nil {
-    panic("Failed to create temporary directory!")
-  }
-
-  for k, v := range files {
-    fullpath := filepath.Join(baseDir, k)
-
-    dir := filepath.Dir(fullpath)
-
-STAT:
-    fi, err := os.Stat(dir)
-    if err != nil { // non-existent
-      err = os.MkdirAll(dir, 0777)
-      if err != nil {
-        return "", err
-      }
-
-      goto STAT
-    }
-
-    if ! fi.IsDir() {
-      return "", errors.New("error: Directory location already occupied by non-dir")
-    }
-
-    fh, err := os.OpenFile(fullpath, os.O_CREATE|os.O_WRONLY, 0666)
-    if err != nil {
-      return "", err
-    }
-    defer fh.Close()
-
-    _, err = fh.WriteString(v)
-    if err != nil {
-      return "", err
-    }
-  }
-
-  return baseDir, nil
 }
 
 func ExampleXslate () {
@@ -284,19 +238,14 @@ func TestXslate_IfElse(t *testing.T) {
 }
 
 func TestXslate_Include(t *testing.T) {
-  files := map[string]string {
-    "include/index.tx": `[% INCLUDE "include/parts.tx" %]`,
-    "include/parts.tx": `Hello, World! I'm included!`,
-    "include/include_var.tx": `[% SET name = "include/parts.tx" %][% INCLUDE name %]`,
-  }
+  c := test.NewCtx(t)
+  defer c.Cleanup()
 
-  root, err := generateTemplates(files)
-  if err != nil {
-    t.Fatalf("Failed to create template files: %s", err)
-  }
-  defer os.RemoveAll(root)
+  c.File("include/index.tx").WriteString(`[% INCLUDE "include/parts.tx" %]`)
+  c.File("include/parts.tx").WriteString(`Hello, World! I'm included!`)
+  c.File("include/include_var.tx").WriteString(`[% SET name = "include/parts.tx" %][% INCLUDE name %]`)
 
-  tx, err := createTx(root, filepath.Join(root, "cache"))
+  tx, err := createTx(c.BaseDir, c.Mkpath("cache"))
   if err != nil {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }
@@ -305,18 +254,12 @@ func TestXslate_Include(t *testing.T) {
 }
 
 func TestXslate_IncludeWithArgs(t *testing.T) {
-  files := map[string]string {
-    "include/index.tx": `[% INCLUDE "include/parts.tx" WITH name = "Bob", foo = "Bar" %]`,
-    "include/parts.tx": `Hello World, [% name %]!`,
-  }
+  c := test.NewCtx(t)
+  defer c.Cleanup()
+  c.File("include/index.tx").WriteString(`[% INCLUDE "include/parts.tx" WITH name = "Bob", foo = "Bar" %]`)
+  c.File("include/parts.tx").WriteString(`Hello World, [% name %]!`)
 
-  root, err := generateTemplates(files)
-  if err != nil {
-    t.Fatalf("Failed to create template files: %s", err)
-  }
-  defer os.RemoveAll(root)
-
-  tx, err := createTx(root, filepath.Join(root, "cache"))
+  tx, err := createTx(c.BaseDir, c.Mkpath("cache"))
   if err != nil {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }
@@ -324,17 +267,12 @@ func TestXslate_IncludeWithArgs(t *testing.T) {
 }
 
 func TestXslate_Cache(t *testing.T) {
-  files := map[string]string {
-    "test.tx": `Hello World, [% name %]!`,
-  }
+  c := test.NewCtx(t)
+  defer c.Cleanup()
 
-  root, err := generateTemplates(files)
-  if err != nil {
-    t.Fatalf("Failed to create template files: %s", err)
-  }
-  defer os.RemoveAll(root)
+  c.File("test.tx").WriteString(`Hello World, [% name %]!`)
 
-  tx, err := createTx(root, filepath.Join(root, "cache"))
+  tx, err := createTx(c.BaseDir, c.Mkpath("cache"))
   if err != nil {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }
@@ -347,7 +285,7 @@ func TestXslate_Cache(t *testing.T) {
 
   time.Sleep(5 * time.Millisecond)
   now := time.Now()
-  err = os.Chtimes(filepath.Join(root, "test.tx"), now, now)
+  err = os.Chtimes(c.Mkpath("test.tx"), now, now)
   if err != nil {
     t.Logf("Chtimes failed: %s", err)
   }
@@ -474,18 +412,13 @@ func TestXslate_FilterUri(t *testing.T) {
 }
 
 func TestXslate_Wrapper(t *testing.T) {
-  files := map[string]string {
-    "wrapper/index.tx": `[% WRAPPER "wrapper/wrapper.tx" %]<b>World</b>[% END %]`,
-    "wrapper/wrapper.tx": `<html><body><h1>Hello [% content %] Bob!</h1></body></html>`,
-  }
+  c := test.NewCtx(t)
+  defer c.Cleanup()
 
-  root, err := generateTemplates(files)
-  if err != nil {
-    t.Fatalf("Failed to create template files: %s", err)
-  }
-  defer os.RemoveAll(root)
+  c.File("wrapper/index.tx").WriteString(`[% WRAPPER "wrapper/wrapper.tx" %]<b>World</b>[% END %]`)
+  c.File("wrapper/wrapper.tx").WriteString(`<html><body><h1>Hello [% content %] Bob!</h1></body></html>`)
 
-  tx, err := createTx(root, filepath.Join(root, "cache"))
+  tx, err := createTx(c.BaseDir, c.Mkpath("cache"))
   if err != nil {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }
@@ -493,18 +426,13 @@ func TestXslate_Wrapper(t *testing.T) {
 }
 
 func TestXslate_WrapperWithArgs(t *testing.T) {
-  files := map[string]string {
-    "wrapper/index.tx": `[% WRAPPER "wrapper/wrapper.tx" WITH name = "Bob" %]Hello, Hello![% END %]`,
-    "wrapper/wrapper.tx": `Hello World [% name %]! [% content %] Hello World [% name %]!`,
-  }
+  c := test.NewCtx(t)
+  defer c.Cleanup()
 
-  root, err := generateTemplates(files)
-  if err != nil {
-    t.Fatalf("Failed to create template files: %s", err)
-  }
-  defer os.RemoveAll(root)
+  c.File("wrapper/index.tx").WriteString(`[% WRAPPER "wrapper/wrapper.tx" WITH name = "Bob" %]Hello, Hello![% END %]`)
+  c.File("wrapper/wrapper.tx").WriteString(`Hello World [% name %]! [% content %] Hello World [% name %]!`)
 
-  tx, err := createTx(root, filepath.Join(root, "cache"))
+  tx, err := createTx(c.BaseDir, c.Mkpath("cache"))
   if err != nil {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }
@@ -512,17 +440,11 @@ func TestXslate_WrapperWithArgs(t *testing.T) {
 }
 
 func TestXslate_RenderInto(t *testing.T) {
-  files := map[string]string {
-    "render_into/index.tx": `Hello World, [% name %]!`,
-  }
+  c := test.NewCtx(t)
+  defer c.Cleanup()
 
-  root, err := generateTemplates(files)
-  if err != nil {
-    t.Fatalf("Failed to create template files: %s", err)
-  }
-  defer os.RemoveAll(root)
-
-  tx, err := createTx(root, filepath.Join(root, "cache"))
+  c.File("render_into/index.tx").WriteString(`Hello World, [% name %]!`)
+  tx, err := createTx(c.BaseDir, c.Mkpath("cache"))
   if err != nil {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }
@@ -540,17 +462,11 @@ func TestXslate_RenderInto(t *testing.T) {
 }
 
 func TestXslate_Error(t *testing.T) {
-  files := map[string]string {
-    "errors/index.tx": "Hello World,\n[% name ",
-  }
+  c := test.NewCtx(t)
+  defer c.Cleanup()
 
-  root, err := generateTemplates(files)
-  if err != nil {
-    t.Fatalf("Failed to create template files: %s", err)
-  }
-  defer os.RemoveAll(root)
-
-  tx, err := createTx(root, filepath.Join(root, "cache"))
+  c.File("errors/index.tx").WriteString("Hello World,\n[% name ")
+  tx, err := createTx(c.BaseDir, c.Mkpath("cache"))
   if err != nil {
     t.Fatalf("Failed to create xslate instance: %s", err)
   }

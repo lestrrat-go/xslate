@@ -2,6 +2,7 @@ package compiler
 
 import (
   "github.com/lestrrat/go-xslate/parser/tterse"
+  "github.com/lestrrat/go-xslate/test"
   "github.com/lestrrat/go-xslate/vm"
   "testing"
 )
@@ -38,3 +39,27 @@ func TestCompile_RawText(t *testing.T) {
 func TestCompile_LocalVar(t *testing.T) {
   compile(t, `[% s %]`)
 }
+
+func TestCompile_Wrapper(t *testing.T) {
+  c := test.NewCtx(t)
+  defer c.Cleanup()
+
+  index := c.File("index.tx")
+  index.WriteString(`[% WRAPPER "wrapper.tx" %]Hello[% END %]`)
+  c.File("wrapper.tx").WriteString(`Hello, [% content %], Hello`)
+
+  p := tterse.New()
+  ast, err := p.Parse("index.tx", index.Read())
+  if err != nil {
+    t.Fatalf("Failed to parse template: %s", err)
+  }
+
+  comp := New()
+  bc, err := comp.Compile(ast)
+  if err != nil {
+    t.Fatalf("Failed to compile ast: %s", err)
+  }
+
+  t.Logf("-> %+v", bc)
+}
+

@@ -2,24 +2,19 @@ package xslate
 
 import (
   "bytes"
+  "github.com/lestrrat/go-xslate/test"
   tt "text/template"
   ht "html/template"
-  "os"
-  "path/filepath"
   "testing"
 )
 
 func BenchmarkXslateHelloWorld(b *testing.B) {
-  files := map[string]string {
-    "xslate/hello.tx": `Hello World, [% name %]!`,
-  }
-  root, err := generateTemplates(files)
-  if err != nil {
-    b.Fatalf("Failed to create template files: %s", err)
-  }
-  defer os.RemoveAll(root)
+  c := test.NewCtx(b)
+  defer c.Cleanup()
 
-  tx, err := createTx(root, filepath.Join(root, "cache"), 2)
+  c.File("xslate/hello.tx").WriteString(`Hello World, [% name %]!`)
+
+  tx, err := createTx(c.BaseDir, c.Mkpath("cache"), 2)
   if err != nil {
     b.Fatalf("Failed to create xslate instance: %s", err)
   }
