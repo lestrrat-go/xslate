@@ -141,18 +141,7 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
     ctx.AppendOp(vm.TXOPMethodCall, x.MethodName)
     ctx.AppendOp(vm.TXOPPopmark)
   case parser.NodeInclude:
-    x := n.(*parser.IncludeNode)
-
-    c.compile(ctx, x.IncludeTarget)
-    ctx.AppendOp(vm.TXOPPush)
-    // Arguments to include (WITH foo = "bar") need to be evaulated
-    // in the OUTER context, but the variables need to be set in the
-    // include context
-    c.compileAssignmentNodes(ctx, x.AssignmentNodes)
-    ctx.AppendOp(vm.TXOPPop)
-    ctx.AppendOp(vm.TXOPPushmark)
-    ctx.AppendOp(vm.TXOPInclude)
-    ctx.AppendOp(vm.TXOPPopmark)
+    c.compileInclude(ctx, n.(*parser.IncludeNode))
   case parser.NodeGroup:
     c.compile(ctx, n.(*parser.UnaryNode).Child)
   case parser.NodeEquals, parser.NodeNotEquals, parser.NodeLT, parser.NodeGT:
@@ -172,21 +161,7 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
       panic("Unknown operator")
     }
   case parser.NodePlus, parser.NodeMinus, parser.NodeMul, parser.NodeDiv:
-    x := n.(*parser.BinaryNode)
-
-    c.compileBinaryOperands(ctx, x)
-    switch n.Type() {
-    case parser.NodePlus:
-      ctx.AppendOp(vm.TXOPAdd)
-    case parser.NodeMinus:
-      ctx.AppendOp(vm.TXOPSub)
-    case parser.NodeMul:
-      ctx.AppendOp(vm.TXOPMul)
-    case parser.NodeDiv:
-      ctx.AppendOp(vm.TXOPDiv)
-    default:
-      panic("Unknown arithmetic")
-    }
+    c.compileBinaryArithmetic(ctx, n.(*parser.BinaryNode))
   case parser.NodeFilter:
     x := n.(*parser.FilterNode)
 
@@ -356,4 +331,33 @@ func (c *BasicCompiler) compileMacro(ctx *context, x *parser.MacroNode) {
   // Now remember about this definition
   ctx.AppendOp(vm.TXOPLiteral, entryPoint)
   ctx.AppendOp(vm.TXOPSaveToLvar, x.LocalVar.Offset)
+}
+
+func (c *BasicCompiler) compileInclude(ctx *context, x *parser.IncludeNode) {
+  c.compile(ctx, x.IncludeTarget)
+  ctx.AppendOp(vm.TXOPPush)
+  // Arguments to include (WITH foo = "bar") need to be evaulated
+  // in the OUTER context, but the variables need to be set in the
+  // include context
+  c.compileAssignmentNodes(ctx, x.AssignmentNodes)
+  ctx.AppendOp(vm.TXOPPop)
+  ctx.AppendOp(vm.TXOPPushmark)
+  ctx.AppendOp(vm.TXOPInclude)
+  ctx.AppendOp(vm.TXOPPopmark)
+}
+
+func (c *BasicCompiler) compileBinaryArithmetic(ctx *context, x *parser.BinaryNode) {
+  c.compileBinaryOperands(ctx, x)
+  switch x.Type() {
+  case parser.NodePlus:
+    ctx.AppendOp(vm.TXOPAdd)
+  case parser.NodeMinus:
+    ctx.AppendOp(vm.TXOPSub)
+  case parser.NodeMul:
+    ctx.AppendOp(vm.TXOPMul)
+  case parser.NodeDiv:
+    ctx.AppendOp(vm.TXOPDiv)
+  default:
+    panic("Unknown arithmetic")
+  }
 }
