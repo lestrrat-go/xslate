@@ -13,7 +13,9 @@ type Ctx struct {
 }
 
 type Tester interface {
+  Errorf(string, ...interface{})
   Fatalf(string, ...interface {})
+  Logf(string, ...interface{})
 }
 
 /*

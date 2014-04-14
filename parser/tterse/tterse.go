@@ -2,7 +2,6 @@ package tterse
 
 import (
   "io"
-  "github.com/lestrrat/go-lex"
   "github.com/lestrrat/go-xslate/parser"
 )
 
@@ -30,9 +29,7 @@ func init() {
 }
 
 // TTerse is the main parser for TTerse
-type TTerse struct {
-  items []lex.LexItem
-}
+type TTerse struct {}
 
 // NewStringLexer creates a new lexer
 func NewStringLexer(template string) *parser.Lexer {

@@ -57,6 +57,7 @@ import (
   "github.com/lestrrat/go-xslate/compiler"
   "github.com/lestrrat/go-xslate/loader"
   "github.com/lestrrat/go-xslate/parser"
+  "github.com/lestrrat/go-xslate/parser/kolonish"
   "github.com/lestrrat/go-xslate/parser/tterse"
   "github.com/lestrrat/go-xslate/vm"
 )
@@ -117,6 +118,8 @@ func DefaultParser(tx *Xslate, args Args) error {
   switch syntax {
   case "TTerse":
     tx.Parser = tterse.New()
+  case "Kolon", "Kolonish":
+    tx.Parser = kolonish.New()
   default:
     return fmt.Errorf("error: Syntax '%s' not available", syntax)
   }
