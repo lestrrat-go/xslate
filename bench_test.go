@@ -2,22 +2,20 @@ package xslate
 
 import (
   "bytes"
-  "github.com/lestrrat/go-xslate/test"
   tt "text/template"
   ht "html/template"
   "testing"
 )
 
 func BenchmarkXslateHelloWorld(b *testing.B) {
-  c := test.NewCtx(b)
+  c := newTestCtx(b)
   defer c.Cleanup()
 
   c.File("xslate/hello.tx").WriteString(`Hello World, [% name %]!`)
 
-  tx, err := createTx(c.BaseDir, c.Mkpath("cache"), 2)
-  if err != nil {
-    b.Fatalf("Failed to create xslate instance: %s", err)
-  }
+  lcfg, _ := c.XslateArgs.Get("Loader")
+  lcfg.(Args)["CacheLevel"] = 2
+  tx := c.CreateTx()
 
   vars := Vars { "name": "Bob" }
   b.ResetTimer()

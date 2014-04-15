@@ -45,31 +45,6 @@ func (c *testctx) CreateTx() *Xslate {
   return tx
 }
 
-func createTx(path, cacheDir string, cacheLevel ...int) (*Xslate, error) {
-  if len(cacheLevel) == 0 {
-    cacheLevel = []int { 1 }
-  }
-
-  x, err := New(Args {
-    // Optional. Currently only supports TTerse
-    "Parser": Args {
-      "Syntax": "TTerse",
-    },
-    // Compiler: DefaultCompiler, // don't need to specify
-    "Loader": Args {
-      "CacheDir": cacheDir,
-      "CacheLevel": cacheLevel[0],
-      "LoadPaths": []string { path },
-    },
-  })
-
-  if err != nil {
-    return nil, err
-  }
-
-  return x, nil
-}
-
 func ExampleXslate () {
   tx, err := New(Args {
     "Parser": Args {
