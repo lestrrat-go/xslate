@@ -10,7 +10,7 @@ Attempt to port Perl5's Text::Xslate to Go
 Play with it!
 =============
 
-[Go-Xslate Playground](http://play-go-xslate.appstop.com) is a little toy that allows you to try out Xslate template rendering. Note that for obvious reasons you cannot use directives that use external templates, such as WRAPPEr and INCLUDE
+[Go-Xslate Playground](http://play-go-xslate.appspot.com) is a little toy that allows you to try out Xslate template rendering. Note that for obvious reasons you cannot use directives that use external templates, such as WRAPPEr and INCLUDE
 
 If you find templates that you think should work but doesn't, please file an issue using this service. You need to first "share" the current template that you're using, and then copy that new generated URL to file the issue.
 
