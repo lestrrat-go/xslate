@@ -1,127 +1,127 @@
 package vm
 
 import (
-  "fmt"
-  "reflect"
-  "strconv"
+	"fmt"
+	"reflect"
+	"strconv"
 )
 
 var hexdigits = []byte("0123456789ABCDEF")
-func escapeUri(thing []byte) []byte {
-  ret := make([]byte, 0, len(thing))
-  for _, v := range thing {
-    if !shouldEscapeUri(v) {
-      ret = append(ret, v)
-    } else {
-      ret = append(ret, '%')
-      ret = append(ret, hexdigits[v & 0xf0 >> 4])
-      ret = append(ret, hexdigits[v & 0x0f])
-    }
-  }
 
-  return ret
+func escapeUri(thing []byte) []byte {
+	ret := make([]byte, 0, len(thing))
+	for _, v := range thing {
+		if !shouldEscapeUri(v) {
+			ret = append(ret, v)
+		} else {
+			ret = append(ret, '%')
+			ret = append(ret, hexdigits[v&0xf0>>4])
+			ret = append(ret, hexdigits[v&0x0f])
+		}
+	}
+
+	return ret
 }
 
 func escapeUriString(thing string) string {
-  return string(escapeUri([]byte(thing)))
+	return string(escapeUri([]byte(thing)))
 }
 
 func shouldEscapeUri(v byte) bool {
-  switch v {
-  case 0x2D, 0x2E, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5F, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69:
-    return false
-  default:
-    return true
-  }
+	switch v {
+	case 0x2D, 0x2E, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5F, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69:
+		return false
+	default:
+		return true
+	}
 }
 
-func isInterfaceStringType(v interface {}) bool {
-  t := reflect.TypeOf(v)
-  switch t.Kind() {
-  case reflect.String:
-    return true
-  case reflect.Array, reflect.Slice:
-    return t.Elem().Kind() == reflect.Uint8
-  }
-  return false
+func isInterfaceStringType(v interface{}) bool {
+	t := reflect.TypeOf(v)
+	switch t.Kind() {
+	case reflect.String:
+		return true
+	case reflect.Array, reflect.Slice:
+		return t.Elem().Kind() == reflect.Uint8
+	}
+	return false
 }
 
 func isInterfaceNumeric(v interface{}) bool {
-  switch reflect.TypeOf(v).Kind() {
-  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
-    return true
-  }
-  return false
+	switch reflect.TypeOf(v).Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+		return true
+	}
+	return false
 }
 
 func interfaceToNumeric(v interface{}) reflect.Value {
-  if isInterfaceNumeric(v) {
-    return reflect.ValueOf(v)
-  }
-  return reflect.ValueOf(0)
+	if isInterfaceNumeric(v) {
+		return reflect.ValueOf(v)
+	}
+	return reflect.ValueOf(0)
 }
 
 // Given possibly non-matched pair of things to perform arithmetic
 // operations on, align their types so that the given operation
 // can be performed correctly.
 // e.g. given int, float, we align them to float, float
-func alignTypesForArithmetic(left, right interface {}) (reflect.Value, reflect.Value) {
-  // These avoid crashes for accessing nil interfaces
-  if left == nil {
-    left = 0
-  }
-  if right == nil {
-    right = 0
-  }
+func alignTypesForArithmetic(left, right interface{}) (reflect.Value, reflect.Value) {
+	// These avoid crashes for accessing nil interfaces
+	if left == nil {
+		left = 0
+	}
+	if right == nil {
+		right = 0
+	}
 
-  leftV  := interfaceToNumeric(left)
-  rightV := interfaceToNumeric(right)
+	leftV := interfaceToNumeric(left)
+	rightV := interfaceToNumeric(right)
 
-  if leftV.Kind() == rightV.Kind() {
-    return leftV, rightV
-  }
+	if leftV.Kind() == rightV.Kind() {
+		return leftV, rightV
+	}
 
-  var alignTo reflect.Type
-  if leftV.Kind() > rightV.Kind() {
-    alignTo = leftV.Type()
-  } else {
-    alignTo = rightV.Type()
-  }
+	var alignTo reflect.Type
+	if leftV.Kind() > rightV.Kind() {
+		alignTo = leftV.Type()
+	} else {
+		alignTo = rightV.Type()
+	}
 
-  return leftV.Convert(alignTo), rightV.Convert(alignTo)
+	return leftV.Convert(alignTo), rightV.Convert(alignTo)
 }
 
-func interfaceToString(arg interface {}) string {
-  t := reflect.TypeOf(arg)
-  var v string
-  switch t.Kind() {
-  case reflect.String:
-    v = string(reflect.ValueOf(arg).String())
-  case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-    v = strconv.FormatInt(reflect.ValueOf(arg).Int(), 10)
-  case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-    v = strconv.FormatUint(reflect.ValueOf(arg).Uint(), 10)
-  case reflect.Float32, reflect.Float64:
-    v = strconv.FormatFloat(reflect.ValueOf(arg).Float(), 'f', -1, 64)
-  case reflect.Bool:
-    if reflect.ValueOf(arg).Bool() {
-      v = "true"
-    } else {
-      v = "false"
-    }
-  default:
-    v = fmt.Sprintf("%s", arg)
-  }
-  return v
+func interfaceToString(arg interface{}) string {
+	t := reflect.TypeOf(arg)
+	var v string
+	switch t.Kind() {
+	case reflect.String:
+		v = string(reflect.ValueOf(arg).String())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		v = strconv.FormatInt(reflect.ValueOf(arg).Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		v = strconv.FormatUint(reflect.ValueOf(arg).Uint(), 10)
+	case reflect.Float32, reflect.Float64:
+		v = strconv.FormatFloat(reflect.ValueOf(arg).Float(), 'f', -1, 64)
+	case reflect.Bool:
+		if reflect.ValueOf(arg).Bool() {
+			v = "true"
+		} else {
+			v = "false"
+		}
+	default:
+		v = fmt.Sprintf("%s", arg)
+	}
+	return v
 }
 
-func interfaceToBool(arg interface {}) bool {
-  t := reflect.TypeOf(arg)
-  if t.Kind() == reflect.Bool {
-    return arg.(bool)
-  }
+func interfaceToBool(arg interface{}) bool {
+	t := reflect.TypeOf(arg)
+	if t.Kind() == reflect.Bool {
+		return arg.(bool)
+	}
 
-  z := reflect.Zero(t)
-  return reflect.DeepEqual(z, t)
+	z := reflect.Zero(t)
+	return reflect.DeepEqual(z, t)
 }
-
