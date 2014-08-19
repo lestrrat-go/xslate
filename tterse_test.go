@@ -444,3 +444,9 @@ func TestTTerse_Macro(t *testing.T) {
 9: Hello
 10: Hello`)
 }
+
+func TestTTerse_NilOnIfBlock(t *testing.T) {
+	c := newTestCtx(t)
+	defer c.Cleanup()
+	c.renderString(`hello [% IF name %][% name %][% ELSE %]unknown[% END %]!`, Vars{"name":nil})
+}

@@ -117,6 +117,10 @@ func interfaceToString(arg interface{}) string {
 }
 
 func interfaceToBool(arg interface{}) bool {
+	if arg == nil {
+		return false
+	}
+
 	t := reflect.TypeOf(arg)
 	if t.Kind() == reflect.Bool {
 		return arg.(bool)
