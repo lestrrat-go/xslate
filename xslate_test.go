@@ -64,9 +64,13 @@ func ExampleXslate() {
 	fmt.Fprintf(os.Stdout, output)
 }
 
-func (c *testctx) renderStringAndCompare(template string, vars Vars, expected interface{}) {
+func (c *testctx) renderString(template string, vars Vars) (string, error) {
 	x := c.CreateTx()
-	output, err := x.RenderString(template, vars)
+	return x.RenderString(template, vars)
+}
+
+func (c *testctx) renderStringAndCompare(template string, vars Vars, expected interface{}) {
+	output, err := c.renderString(template, vars)
 
 	if err != nil {
 		c.Fatalf("Failed to render template: %s", err)
