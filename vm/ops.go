@@ -915,6 +915,12 @@ func txInclude(st *State) {
 	//   object that gets passed to the included template
 
 	vars := Vars{}
+	if x := st.Vars(); x != nil {
+		for k, v := range x {
+			vars.Set(k, v)
+		}
+	}
+
 	if x := st.sb; x != nil {
 		hash := x.(map[interface{}]interface{})
 		// Need to covert this to Vars (map[string]interface{})
@@ -939,6 +945,12 @@ func txInclude(st *State) {
 func txWrapper(st *State) {
 	// See txInclude
 	vars := Vars{}
+	if x := st.Vars(); x != nil {
+		for k, v := range x {
+			vars.Set(k, v)
+		}
+	}
+
 	if x := st.sb; x != nil {
 		hash := x.(map[interface{}]interface{})
 		// Need to covert this to Vars (map[string]interface{})

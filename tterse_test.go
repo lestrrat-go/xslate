@@ -197,6 +197,16 @@ func TestTTerse_IncludeWithArgs(t *testing.T) {
 	c.renderAndCompare(tx, "include/index.tx", nil, "Hello World, Bob!")
 }
 
+func TestTTerse_IncludeWithVars(t *testing.T) {
+	c := newTestCtx(t)
+	defer c.Cleanup()
+	c.File("include/index.tx").WriteString(`[% INCLUDE "include/parts.tx" %]`)
+	c.File("include/parts.tx").WriteString(`Hello World, [% name %]!`)
+
+	tx := c.CreateTx()
+	c.renderAndCompare(tx, "include/index.tx", Vars{"name": "Bob"}, "Hello World, Bob!")
+}
+
 func TestTTerse_Cache(t *testing.T) {
 	c := newTestCtx(t)
 	defer c.Cleanup()
@@ -378,6 +388,17 @@ func TestTTerse_WrapperWithArgs(t *testing.T) {
 
 	tx := c.CreateTx()
 	c.renderAndCompare(tx, "wrapper/index.tx", nil, "Hello World Bob! Hello, Hello! Hello World Bob!")
+}
+
+func TestTTerse_WrapperWithVars(t *testing.T) {
+	c := newTestCtx(t)
+	defer c.Cleanup()
+
+	c.File("wrapper/index.tx").WriteString(`[% WRAPPER "wrapper/wrapper.tx" %]Hello, Hello![% END %]`)
+	c.File("wrapper/wrapper.tx").WriteString(`Hello World [% name %]! [% content %] Hello World [% name %]!`)
+
+	tx := c.CreateTx()
+	c.renderAndCompare(tx, "wrapper/index.tx", Vars{"name": "Bob"}, "Hello World Bob! Hello, Hello! Hello World Bob!")
 }
 
 func TestTTerse_RenderInto(t *testing.T) {
