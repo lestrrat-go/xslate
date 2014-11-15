@@ -4,14 +4,15 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/lestrrat/go-xslate/functions"
-	"github.com/lestrrat/go-xslate/functions/array"
-	"github.com/lestrrat/go-xslate/functions/hash"
 	"html"
 	"io"
 	"reflect"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/lestrrat/go-xslate/functions"
+	"github.com/lestrrat/go-xslate/functions/array"
+	"github.com/lestrrat/go-xslate/functions/hash"
 )
 
 // These TXOP... constants are identifiers for each op
@@ -607,29 +608,44 @@ func txHTMLEscape(st *State) {
 	st.Advance()
 }
 
-func txEquals(st *State) {
+func _txEquals(st *State) bool {
 	var leftV, rightV interface{}
-	if isInterfaceNumeric(st.sb) {
+
+	switch {
+	case isInterfaceNumeric(st.sb):
 		leftV, rightV = alignTypesForArithmetic(st.sb, st.sa)
-	} else if isInterfaceStringType(st.sb) {
+	case isInterfaceStringType(st.sb):
 		leftV, rightV = interfaceToString(st.sb), interfaceToString(st.sa)
-	} else {
+	default:
 		leftV, rightV = st.sb, st.sa
 	}
-	st.sa = leftV == rightV
+
+	switch leftV.(type) {
+	case reflect.Value:
+		leftVV := leftV.(reflect.Value)
+		rightVV := rightV.(reflect.Value)
+		switch leftVV.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return leftVV.Int() == rightVV.Int()
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return leftVV.Uint() == rightVV.Uint()
+		case reflect.Float32, reflect.Float64:
+			return leftVV.Float() == rightVV.Float()
+		default:
+			panic(fmt.Sprintf("Unhandled type in '==': %s", leftVV.Kind()))
+		}
+	default:
+		return leftV == rightV
+	}
+}
+
+func txEquals(st *State) {
+	st.sa = _txEquals(st)
 	st.Advance()
 }
 
 func txNotEquals(st *State) {
-	var leftV, rightV interface{}
-	if isInterfaceNumeric(st.sb) {
-		leftV, rightV = alignTypesForArithmetic(st.sb, st.sa)
-	} else if isInterfaceStringType(st.sb) {
-		leftV, rightV = interfaceToString(st.sb), interfaceToString(st.sa)
-	} else {
-		leftV, rightV = st.sb, st.sa
-	}
-	st.sa = leftV != rightV
+	st.sa = !_txEquals(st)
 	st.Advance()
 }
 
