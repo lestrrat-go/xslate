@@ -70,6 +70,7 @@ func (c *testctx) renderString(template string, vars Vars) (string, error) {
 }
 
 func (c *testctx) renderStringAndCompare(template string, vars Vars, expected interface{}) {
+	c.Logf("Using template '%s', with vars '%#v'", template, vars)
 	output, err := c.renderString(template, vars)
 
 	if err != nil {
