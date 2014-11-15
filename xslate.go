@@ -26,7 +26,7 @@ The simplest way to use Xslate is to prepare a directory with Xslate templates
 
   tx, _ := xslate.New(xslate.Args {
     "Loader": xslate.Args {
-      Paths: []string { "/path/to/templates" },
+      "LoadPaths": []string { "/path/to/templates" },
     },
   })
   output, _ := tx.Render("main.tx", xslate.Vars { ... })
