@@ -21,7 +21,7 @@ func makeLexer(input string) *parser.Lexer {
 
 func lexit(input string) *parser.Lexer {
 	l := makeLexer(input)
-	go l.Run(l)
+	go l.Run()
 	return l
 }
 
