@@ -203,32 +203,33 @@ func isNumeric(r rune) bool {
 
 func NewStringLexer(template string, ss *LexSymbolSet) *Lexer {
 	l := &Lexer{
-		lex.NewStringLexer(template, lexRawString),
+		nil,
 		"",
 		"",
 		ss,
 	}
+	l.Lexer = lex.NewStringLexer(template, l.lexRawString)
 	return l
 }
 
 func NewReaderLexer(rdr io.Reader, ss *LexSymbolSet) *Lexer {
 	l := &Lexer{
-		lex.NewReaderLexer(rdr, lexRawString),
+		nil,
 		"",
 		"",
 		ss,
 	}
+	l.Lexer = lex.NewReaderLexer(rdr, l.lexRawString)
 	return l
 }
 
-func lexRawString(l lex.Lexer, ctx interface{}) lex.LexFn {
-	sl := ctx.(*Lexer)
+func (sl *Lexer) lexRawString(l lex.Lexer) lex.LexFn {
 	for {
 		if sl.PeekString(sl.tagStart) {
 			if len(l.BufferString()) > 0 {
 				sl.Emit(ItemRawString)
 			}
-			return lexTagStart
+			return sl.lexTagStart
 		}
 		if sl.Next() == lex.EOF {
 			break
@@ -242,7 +243,7 @@ func lexRawString(l lex.Lexer, ctx interface{}) lex.LexFn {
 	return nil
 }
 
-func lexSpace(l lex.Lexer, ctx interface{}) lex.LexFn {
+func (sl *Lexer) lexSpace(l lex.Lexer) lex.LexFn {
 	guard := lex.Mark("lexSpace")
 	defer guard()
 
@@ -259,29 +260,26 @@ func lexSpace(l lex.Lexer, ctx interface{}) lex.LexFn {
 	if count > 0 {
 		l.Emit(ItemSpace)
 	}
-	return lexInsideTag
+	return sl.lexInsideTag
 }
 
-func lexTagStart(l lex.Lexer, ctx interface{}) lex.LexFn {
-	sl := ctx.(*Lexer)
+func (sl *Lexer) lexTagStart(l lex.Lexer) lex.LexFn {
 	if !sl.AcceptString(sl.tagStart) {
 		sl.EmitErrorf("Expected tag start (%s)", sl.tagStart)
 	}
 	sl.Emit(ItemTagStart)
-	return lexInsideTag
+	return sl.lexInsideTag
 }
 
-func lexTagEnd(l lex.Lexer, ctx interface{}) lex.LexFn {
-	sl := ctx.(*Lexer)
+func (sl *Lexer) lexTagEnd(l lex.Lexer) lex.LexFn {
 	if !sl.AcceptString(sl.tagEnd) {
 		sl.EmitErrorf("Expected tag end (%s)", sl.tagEnd)
 	}
 	sl.Emit(ItemTagEnd)
-	return lexRawString
+	return sl.lexRawString
 }
 
-func lexIdentifier(l lex.Lexer, ctx interface{}) lex.LexFn {
-	sl := ctx.(*Lexer)
+func (sl *Lexer) lexIdentifier(l lex.Lexer) lex.LexFn {
 Loop:
 	for {
 		switch r := sl.Next(); {
@@ -308,7 +306,7 @@ Loop:
 			break Loop
 		}
 	}
-	return lexInsideTag
+	return sl.lexInsideTag
 }
 
 func (l *Lexer) atTerminator() bool {
@@ -329,8 +327,7 @@ func (l *Lexer) atTerminator() bool {
 	return false
 }
 
-func lexRange(l lex.Lexer, ctx interface{}) lex.LexFn {
-	sl := ctx.(*Lexer)
+func (sl *Lexer) lexRange(l lex.Lexer) lex.LexFn {
 	for i := 0; i < 2; i++ {
 		if sl.Peek() != '.' {
 			return sl.EmitErrorf("bad range syntax: %q", sl.BufferString())
@@ -340,23 +337,21 @@ func lexRange(l lex.Lexer, ctx interface{}) lex.LexFn {
 	sl.Emit(ItemRange)
 
 	if isNumeric(sl.Peek()) {
-		return lexInteger
+		return sl.lexInteger
 	}
-	return lexIdentifier
+	return sl.lexIdentifier
 }
 
-func lexInteger(l lex.Lexer, ctx interface{}) lex.LexFn {
-	sl := ctx.(*Lexer)
+func (sl *Lexer) lexInteger(l lex.Lexer) lex.LexFn {
 	if sl.scanInteger() {
 		sl.Emit(ItemNumber)
 	} else {
 		return sl.EmitErrorf("bad integer syntax: %q", sl.BufferString())
 	}
-	return lexInsideTag
+	return sl.lexInsideTag
 }
 
-func lexNumber(l lex.Lexer, ctx interface{}) lex.LexFn {
-	sl := ctx.(*Lexer)
+func (sl *Lexer) lexNumber(l lex.Lexer) lex.LexFn {
 	if !sl.scanNumber() {
 		return sl.EmitErrorf("bad number syntax: %q", sl.BufferString())
 	}
@@ -372,10 +367,10 @@ func lexNumber(l lex.Lexer, ctx interface{}) lex.LexFn {
 	*/
 	if dot := sl.Peek(); dot == '.' {
 		sl.Emit(ItemNumber)
-		return lexRange
+		return sl.lexRange
 	}
 	sl.Emit(ItemNumber)
-	return lexInsideTag
+	return sl.lexInsideTag
 }
 
 func (l *Lexer) scanInteger() bool {
@@ -415,22 +410,20 @@ func (l *Lexer) scanNumber() bool {
 	return true
 }
 
-func lexComment(l lex.Lexer, ctx interface{}) lex.LexFn {
-	sl := ctx.(*Lexer)
+func (sl *Lexer) lexComment(l lex.Lexer) lex.LexFn {
 	for {
 		if sl.PeekString(sl.tagEnd) {
 			sl.Emit(ItemComment)
-			return lexTagEnd
+			return sl.lexTagEnd
 		}
 		if isEndOfLine(sl.Next()) {
 			sl.Emit(ItemComment)
-			return lexTagEnd
+			return sl.lexTagEnd
 		}
 	}
 }
 
-func lexQuotedString(l lex.Lexer, ctx interface{}, quote rune, t lex.ItemType) lex.LexFn {
-	sl := ctx.(*Lexer)
+func (sl *Lexer) lexQuotedString(l lex.Lexer, quote rune, t lex.ItemType) lex.LexFn {
 	for {
 		if sl.PeekString(sl.tagEnd) {
 			return sl.EmitErrorf("unexpected end of quoted string")
@@ -440,39 +433,38 @@ func lexQuotedString(l lex.Lexer, ctx interface{}, quote rune, t lex.ItemType) l
 		switch r {
 		case quote:
 			sl.Emit(t)
-			return lexInsideTag
+			return sl.lexInsideTag
 		case lex.EOF:
 			return sl.EmitErrorf("unexpected end of quoted string")
 		}
 	}
 }
 
-func lexDoubleQuotedString(l lex.Lexer, ctx interface{}) lex.LexFn {
-	return lexQuotedString(l, ctx, '"', ItemDoubleQuotedString)
+func (sl *Lexer) lexDoubleQuotedString(l lex.Lexer) lex.LexFn {
+	return sl.lexQuotedString(l, '"', ItemDoubleQuotedString)
 }
 
-func lexSingleQuotedString(l lex.Lexer, ctx interface{}) lex.LexFn {
-	return lexQuotedString(l, ctx, '\'', ItemSingleQuotedString)
+func (sl *Lexer) lexSingleQuotedString(l lex.Lexer) lex.LexFn {
+	return sl.lexQuotedString(l, '\'', ItemSingleQuotedString)
 }
 
 func (l *Lexer) getSortedSymbols() LexSymbolList {
 	return l.symbols.GetSortedList()
 }
 
-func lexInsideTag(l lex.Lexer, ctx interface{}) lex.LexFn {
+func (sl *Lexer) lexInsideTag(l lex.Lexer) lex.LexFn {
 	guard := lex.Mark("lexInsideTag")
 	defer guard()
 
-	sl := ctx.(*Lexer)
 	if sl.PeekString(sl.tagEnd) {
-		return lexTagEnd
+		return sl.lexTagEnd
 	}
 
 	// Find registered symbols
 	for _, sym := range sl.getSortedSymbols() {
 		if sl.AcceptString(sym.Name) {
 			sl.Emit(sym.Type)
-			return lexInsideTag
+			return sl.lexInsideTag
 		}
 	}
 
@@ -482,23 +474,23 @@ func lexInsideTag(l lex.Lexer, ctx interface{}) lex.LexFn {
 	case r == lex.EOF:
 		return sl.EmitErrorf("unclosed tag")
 	case r == '#':
-		return lexComment
+		return sl.lexComment
 	case isSpace(r):
 		sl.Backup()
-		return lexSpace
+		return sl.lexSpace
 	case isNumeric(r):
 		sl.Backup()
-		return lexNumber
+		return sl.lexNumber
 	case r == '"':
-		return lexDoubleQuotedString
+		return sl.lexDoubleQuotedString
 	case r == '\'':
-		return lexSingleQuotedString
+		return sl.lexSingleQuotedString
 	case isAlphaNumeric(r):
 		sl.Backup()
-		return lexIdentifier
+		return sl.lexIdentifier
 	default:
 		return sl.EmitErrorf("unrecognized character in tag: %#U", r)
 	}
 
-	return lexInsideTag
+	return sl.lexInsideTag
 }

@@ -80,7 +80,7 @@ func (b *Builder) Parse(name string, l lex.Lexer) (ast *AST, err error) {
 }
 
 func (b *Builder) Start(ctx *builderCtx) {
-	go ctx.Lexer.Run(ctx.Lexer)
+	go ctx.Lexer.Run()
 }
 
 func (b *Builder) Backup(ctx *builderCtx) {
