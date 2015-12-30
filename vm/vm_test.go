@@ -329,15 +329,18 @@ func TestVM_FunCallFromDepot(t *testing.T) {
 }
 
 func TestVM_MethodCall(t *testing.T) {
+	t1 := time.Now()
+	t2 := t1.Add(time.Nanosecond)
+
 	bc := NewByteCode()
-	// tx.Render(..., &Vars { t: time.Now() })
-	// [% t.Before(time.Now()) %]
-	bc.AppendOp(TXOPLiteral, time.Now())
+	// tx.Render(..., &Vars { t: t1 })
+	// [% t.Before(t2) %]
+	bc.AppendOp(TXOPLiteral, t1)
 	bc.AppendOp(TXOPSaveToLvar, 0)
 	bc.AppendOp(TXOPPushmark)
 	bc.AppendOp(TXOPLoadLvar, 0)
 	bc.AppendOp(TXOPPush)
-	bc.AppendOp(TXOPLiteral, time.Now())
+	bc.AppendOp(TXOPLiteral, t2)
 	bc.AppendOp(TXOPPush)
 	bc.AppendOp(TXOPMethodCall, "Before")
 	bc.AppendOp(TXOPPopmark)
