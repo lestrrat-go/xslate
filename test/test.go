@@ -3,7 +3,6 @@ package test
 import (
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -59,7 +58,7 @@ func (f *File) FullPath() string {
 
 func (f *File) Mkdir() {
 	fullpath := f.FullPath()
-	dir := path.Dir(fullpath)
+	dir := filepath.Dir(fullpath)
 
 	_, err := os.Stat(dir)
 	if err != nil { // non-existent
