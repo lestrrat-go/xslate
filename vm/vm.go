@@ -18,6 +18,8 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+
+	"github.com/lestrrat/go-xslate/internal/rvpool"
 )
 
 // NewVM creates a new VM
@@ -60,8 +62,11 @@ func (vm *VM) Run(bc *ByteCode, vars Vars, output io.Writer) {
 	st.Reset()
 	st.pc = bc
 	st.output = output
-	st.vars = Vars{}
+	newvars := Vars(rvpool.Get())
+	defer rvpool.Release(newvars)
+	defer newvars.Reset()
 
+	st.vars = newvars
 	if fc := vm.functions; fc != nil {
 		for k, v := range vm.functions {
 			st.vars[k] = v

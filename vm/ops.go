@@ -13,6 +13,8 @@ import (
 	"github.com/lestrrat/go-xslate/functions"
 	"github.com/lestrrat/go-xslate/functions/array"
 	"github.com/lestrrat/go-xslate/functions/hash"
+	"github.com/lestrrat/go-xslate/internal/rbpool"
+	"github.com/lestrrat/go-xslate/internal/rvpool"
 )
 
 func init() {
@@ -861,7 +863,9 @@ func txInclude(st *State) {
 	// st.sb should contain the map[interface{}]interface{}
 	//   object that gets passed to the included template
 
-	vars := Vars{}
+	vars := Vars(rvpool.Get())
+	defer rvpool.Release(vars)
+	defer vars.Reset()
 	if x := st.Vars(); x != nil {
 		for k, v := range x {
 			vars.Set(k, v)
@@ -882,7 +886,9 @@ func txInclude(st *State) {
 		panic(fmt.Sprintf("Include: Failed to compile %s: %s", target, err))
 	}
 
-	buf := &bytes.Buffer{}
+	buf := rbpool.Get()
+	defer rbpool.Release(buf)
+
 	vm := NewVM()
 	vm.Run(bc, vars, buf)
 	st.AppendOutputString(buf.String())
@@ -891,7 +897,10 @@ func txInclude(st *State) {
 
 func txWrapper(st *State) {
 	// See txInclude
-	vars := Vars{}
+	vars := Vars(rvpool.Get())
+	defer rvpool.Release(vars)
+	defer vars.Reset()
+
 	if x := st.Vars(); x != nil {
 		for k, v := range x {
 			vars.Set(k, v)
@@ -921,7 +930,8 @@ func txWrapper(st *State) {
 func txSaveWriter(st *State) {
 	st.StackPush(st.output)
 
-	buf := &bytes.Buffer{}
+	buf := rbpool.Get()
+
 	st.StackPush(buf)
 	st.output = bufio.NewWriter(buf)
 	st.Advance()
@@ -933,6 +943,8 @@ func txRestoreWriter(st *State) {
 	st.output = st.StackPop().(io.Writer)
 
 	st.StackPush(buf.String())
+	rbpool.Release(buf)
+
 	st.Advance()
 }
 

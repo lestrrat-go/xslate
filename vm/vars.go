@@ -15,3 +15,9 @@ func (v Vars) Get(k interface{}) (interface{}, bool) {
 	x, ok := v[key]
 	return x, ok
 }
+
+func (v *Vars) Reset() {
+	for k := range *v {
+		delete(*v, k)
+	}
+}

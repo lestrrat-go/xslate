@@ -1,7 +1,6 @@
 package node
 
 import (
-	"bytes"
 	"fmt"
 	"reflect"
 )
@@ -188,9 +187,7 @@ func (n *ForeachNode) Copy() Node {
 }
 
 func (n *ForeachNode) String() string {
-	b := &bytes.Buffer{}
-	fmt.Fprintf(b, "%s %s (%d)", n.NodeType, n.IndexVarName, n.IndexVarIdx)
-	return b.String()
+	return fmt.Sprintf("%s %s (%d)", n.NodeType, n.IndexVarName, n.IndexVarIdx)
 }
 
 func NewWhileNode(pos int, n Node) *WhileNode {

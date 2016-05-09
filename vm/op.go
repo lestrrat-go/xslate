@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/lestrrat/go-xslate/internal/rbpool"
 	"github.com/pkg/errors"
 )
 
@@ -36,7 +37,8 @@ func NewOp(o OpType, args ...interface{}) *Op {
 // MarshalBinary is used to serialize an Op into a binary form. This
 // is used to cache the ByteCode
 func (o Op) MarshalBinary() ([]byte, error) {
-	buf := &bytes.Buffer{}
+	buf := rbpool.Get()
+	defer rbpool.Release(buf)
 
 	// Write the code/opcode
 	if err := binary.Write(buf, binary.LittleEndian, int64(o.OpType)); err != nil {
