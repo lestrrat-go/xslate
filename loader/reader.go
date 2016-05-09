@@ -2,23 +2,13 @@ package loader
 
 import (
 	"fmt"
+	"io"
+	"os"
+
 	"github.com/lestrrat/go-xslate/compiler"
 	"github.com/lestrrat/go-xslate/parser"
 	"github.com/lestrrat/go-xslate/vm"
-	"io"
-	"os"
 )
-
-// ReaderByteCodeLoader is a fancy name for objects that can "given a template
-// string, parse and compile it". This is one of the most common operations
-// that users want to do, but it needs to be separate from other loaders
-// because there's no sane way to cache intermediate results, and therefore
-// has significant performance penalty
-type ReaderByteCodeLoader struct {
-	*Flags
-	Parser   parser.Parser
-	Compiler compiler.Compiler
-}
 
 // NewReaderByteCodeLoader creates a new object
 func NewReaderByteCodeLoader(p parser.Parser, c compiler.Compiler) *ReaderByteCodeLoader {

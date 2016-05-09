@@ -8,23 +8,10 @@ import (
 	"github.com/lestrrat/go-xslate/vm"
 )
 
-// Compiler is the interface to objects that can convert AST trees to
-// actual Xslate Virtual Machine bytecode (see vm.ByteCode)
-type Compiler interface {
-	Compile(*parser.AST) (*vm.ByteCode, error)
-}
-
-type context struct {
-	ByteCode *vm.ByteCode
-}
-
 // AppendOp creates and appends a new op to the current set of ByteCode
 func (ctx *context) AppendOp(o vm.OpType, args ...interface{}) *vm.Op {
 	return ctx.ByteCode.AppendOp(o, args...)
 }
-
-// BasicCompiler is the default compiler used by Xslate
-type BasicCompiler struct{}
 
 // New creates a new BasicCompiler instance
 func New() *BasicCompiler {

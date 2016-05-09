@@ -11,20 +11,6 @@ import (
 	"github.com/lestrrat/go-xslate/util"
 )
 
-type Builder struct {
-}
-
-// Frame is the frame struct used during parsing, which has a bit of
-// extension over the common Frame struct.
-type Frame struct {
-	*util.Frame
-	Node node.Appender
-
-	// This contains names of local variables, mapped to their
-	// respective location in the framestack
-	LvarNames map[string]int
-}
-
 func NewFrame(s *util.Stack) *Frame {
 	f := &Frame{
 		util.NewFrame(s),

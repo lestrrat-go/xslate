@@ -6,15 +6,6 @@ import (
 	"time"
 )
 
-// ByteCode is the collection of op codes that the Xslate Virtual Machine
-// should run. It is created from a compiler.Compiler
-type ByteCode struct {
-	OpList      []*Op
-	GeneratedOn time.Time
-	Name        string
-	Version     float32
-}
-
 // NewByteCode creates an empty ByteCode instance.
 func NewByteCode() *ByteCode {
 	return &ByteCode{[]*Op{}, time.Now(), "", 1.0}

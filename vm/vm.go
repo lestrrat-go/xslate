@@ -20,19 +20,6 @@ import (
 	"io"
 )
 
-// This interface exists solely to avoid importing loader.ByteCodeLoader
-// which is a cause for import loop
-type byteCodeLoader interface {
-	Load(string) (*ByteCode, error)
-}
-
-// VM represents the Xslate Virtual Machine
-type VM struct {
-	st        *State
-	functions Vars
-	Loader    byteCodeLoader
-}
-
 // NewVM creates a new VM
 func NewVM() *VM {
 	return &VM{NewState(), nil, nil}

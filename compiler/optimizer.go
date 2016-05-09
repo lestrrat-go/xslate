@@ -5,14 +5,6 @@ import (
 	"github.com/lestrrat/go-xslate/vm"
 )
 
-// Optimizer is the interface of things that can optimize the ByteCode
-type Optimizer interface {
-	Optimize(*vm.ByteCode) error
-}
-
-// NaiveOptimizer is the default ByteCode optimizer
-type NaiveOptimizer struct{}
-
 // Optimize modifies the ByteCode in place to an optimized version
 func (o *NaiveOptimizer) Optimize(bc *vm.ByteCode) error {
 	for i := 0; i < bc.Len(); i++ {

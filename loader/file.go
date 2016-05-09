@@ -14,12 +14,6 @@ import (
 // templates by absolute path, but this probably should be configurable
 var ErrAbsolutePathNotAllowed = errors.New("error: Absolute paths are not allowed")
 
-// FileTemplateFetcher is a TemplateFetcher that loads template strings
-// in the file system.
-type FileTemplateFetcher struct {
-	Paths []string
-}
-
 // NewFileTemplateFetcher creates a new struct. `paths` must give us the
 // directories for us to look the templates in
 func NewFileTemplateFetcher(paths []string) (*FileTemplateFetcher, error) {
@@ -54,19 +48,6 @@ func (l *FileTemplateFetcher) FetchTemplate(path string) (TemplateSource, error)
 		return NewFileSource(fullpath), nil
 	}
 	return nil, ErrTemplateNotFound
-}
-
-// FileSource is a TemplateSource variant that holds template information
-// in a file.
-type FileSource struct {
-	Path           string
-	LastStat       time.Time
-	LastStatResult os.FileInfo
-}
-
-// NewFileSource creates a new FileSource
-func NewFileSource(path string) *FileSource {
-	return &FileSource{path, time.Time{}, nil}
 }
 
 // LastModified returns time when the target template file was last modified

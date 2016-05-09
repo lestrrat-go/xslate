@@ -166,13 +166,6 @@ func init() {
 	lex.TypeNames[ItemEnd] = "End"
 }
 
-type Lexer struct {
-	lex.Lexer
-	tagStart string
-	tagEnd   string
-	symbols  *LexSymbolSet
-}
-
 func (l *Lexer) SetTagStart(s string) {
 	l.tagStart = s
 }

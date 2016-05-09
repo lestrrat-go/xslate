@@ -8,17 +8,6 @@ import (
 	"os"
 )
 
-// StringByteCodeLoader is a fancy name for objects that can "given a template
-// string, parse and compile it". This is one of the most common operations
-// that users want to do, but it needs to be separate from other loaders
-// because there's no sane way to cache intermediate results, and therefore
-// has significant performance penalty
-type StringByteCodeLoader struct {
-	*Flags
-	Parser   parser.Parser
-	Compiler compiler.Compiler
-}
-
 // NewStringByteCodeLoader creates a new object
 func NewStringByteCodeLoader(p parser.Parser, c compiler.Compiler) *StringByteCodeLoader {
 	return &StringByteCodeLoader{NewFlags(), p, c}

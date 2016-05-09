@@ -7,9 +7,6 @@ import (
 	"reflect"
 )
 
-// OpType is an integer identifying the type of op code
-type OpType int
-
 // Type returns the ... OpType. This seems redundunt, but having this method
 // allows us to embed OpType in Op and have the ability to call Typ()
 // without having to re-declare it
@@ -20,17 +17,6 @@ func (o OpType) Type() OpType {
 // String returns the textual representation of an OpType
 func (o OpType) String() string {
 	return opnames[o]
-}
-
-// OpHandler describes an op's actual code
-type OpHandler func(*State)
-
-// Op represents a single op. It has an OpType, OpHandler, and an optional
-// parameter to be used
-type Op struct {
-	OpType
-	OpHandler
-	uArg interface{}
 }
 
 // NewOp creates a new Op
