@@ -18,10 +18,11 @@ func BenchmarkXslateHelloWorld(b *testing.B) {
 	tx := c.CreateTx()
 
 	vars := Vars{"name": "Bob"}
+	buf := bytes.Buffer{}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		buf := &bytes.Buffer{}
-		tx.RenderInto(buf, "xslate/hello.tx", vars)
+		buf.Reset()
+		tx.RenderInto(&buf, "xslate/hello.tx", vars)
 	}
 }
 

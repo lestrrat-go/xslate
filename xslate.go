@@ -46,8 +46,6 @@ It is strongly recommended that you use the caching layer to boost performance.
 package xslate
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -57,11 +55,13 @@ import (
 	"strconv"
 
 	"github.com/lestrrat/go-xslate/compiler"
+	"github.com/lestrrat/go-xslate/internal/rbpool"
 	"github.com/lestrrat/go-xslate/loader"
 	"github.com/lestrrat/go-xslate/parser"
 	"github.com/lestrrat/go-xslate/parser/kolonish"
 	"github.com/lestrrat/go-xslate/parser/tterse"
 	"github.com/lestrrat/go-xslate/vm"
+	"github.com/pkg/errors"
 )
 
 // Debug enables debug output. This can be toggled by setting XSLATE_DEBUG
@@ -296,11 +296,13 @@ func (tx *Xslate) DumpByteCode(b bool) {
 //
 // `Render()` returns the resulting text from processing the template.
 // `err` is nil on success, otherwise it contains an `error` value.
-func (tx *Xslate) Render(name string, vars Vars) (string, error) {
-	buf := &bytes.Buffer{}
+func (tx Xslate) Render(name string, vars Vars) (string, error) {
+	buf := rbpool.Get()
+	defer rbpool.Release(buf)
+
 	err := tx.RenderInto(buf, name, vars)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to render template")
 	}
 
 	return buf.String(), nil
@@ -318,10 +320,12 @@ func (tx *Xslate) RenderString(template string, vars Vars) (string, error) {
 	_, file, line, _ := runtime.Caller(1)
 	bc, err := tx.Loader.LoadString(fmt.Sprintf("%s:%d", file, line), template)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to parse template string")
 	}
 
-	buf := &bytes.Buffer{}
+	buf := rbpool.Get()
+	defer rbpool.Release(buf)
+
 	tx.VM.Run(bc, vm.Vars(vars), buf)
 	return buf.String(), nil
 }

@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"bytes"
 	"fmt"
 
+	"github.com/lestrrat/go-xslate/internal/rbpool"
 	"github.com/lestrrat/go-xslate/node"
 )
 
@@ -20,7 +20,9 @@ func (ast *AST) Visit() <-chan node.Node {
 
 // String returns the textual representation of this AST
 func (ast *AST) String() string {
-	buf := &bytes.Buffer{}
+	buf := rbpool.Get()
+	defer rbpool.Release(buf)
+
 	c := ast.Visit()
 	k := 0
 	for v := range c {

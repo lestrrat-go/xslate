@@ -1,9 +1,10 @@
 package vm
 
 import (
-	"bytes"
 	"fmt"
 	"time"
+
+	"github.com/lestrrat/go-xslate/internal/rbpool"
 )
 
 // NewByteCode creates an empty ByteCode instance.
@@ -37,7 +38,8 @@ func (b *ByteCode) AppendOp(o OpType, args ...interface{}) *Op {
 
 // String returns the textual representation of this ByteCode
 func (b *ByteCode) String() string {
-	buf := &bytes.Buffer{}
+	buf := rbpool.Get()
+	defer rbpool.Release(buf)
 
 	fmt.Fprintf(buf,
 		"// Bytecode for '%s'\n// Generated On: %s\n",
