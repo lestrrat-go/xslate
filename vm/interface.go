@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lestrrat/go-xslate/util"
+	"github.com/lestrrat/go-xslate/internal/stack"
 )
 
 // ByteCode is the collection of op codes that the Xslate Virtual Machine
@@ -36,8 +36,8 @@ type State struct {
 	opidx int
 	pc    *ByteCode
 
-	stack     *util.Stack
-	markstack *util.Stack
+	stack     *stack.Stack
+	markstack *stack.Stack
 
 	// output
 	output io.Writer
@@ -52,8 +52,8 @@ type State struct {
 	targ interface{}
 
 	// Stack used by frames
-	framestack *util.Stack
-	frames     *util.Stack
+	framestack *stack.Stack
+	frames     *stack.Stack
 
 	Loader byteCodeLoader
 }

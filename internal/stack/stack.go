@@ -1,4 +1,4 @@
-package util
+package stack
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ func calcNewSize(base int) int {
 }
 
 // NewStack creates a new Stack of initial size `size`.
-func NewStack(size int) *Stack {
+func New(size int) *Stack {
 	return &Stack{
 		cur:  -1,
 		data: make([]interface{}, size),

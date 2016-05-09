@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lestrrat/go-xslate/util"
+	"github.com/lestrrat/go-xslate/internal/frame"
+	"github.com/lestrrat/go-xslate/internal/stack"
 )
 
 // NewState creates a new State struct
@@ -12,10 +13,10 @@ func NewState() *State {
 	st := &State{
 		opidx:      0,
 		pc:         NewByteCode(),
-		stack:      util.NewStack(5),
-		markstack:  util.NewStack(5),
-		framestack: util.NewStack(5),
-		frames:     util.NewStack(5),
+		stack:      stack.New(5),
+		markstack:  stack.New(5),
+		framestack: stack.New(5),
+		frames:     stack.New(5),
 		vars:       make(Vars),
 		warn:       os.Stderr,
 	}
@@ -56,20 +57,20 @@ func (st *State) CurrentOp() *Op {
 }
 
 // PushFrame pushes a new frame to the frame stack
-func (st *State) PushFrame() *util.Frame {
-	f := util.NewFrame(st.framestack)
+func (st *State) PushFrame() *frame.Frame {
+	f := frame.New(st.framestack)
 	st.frames.Push(f)
 	f.SetMark(st.frames.Cur())
 	return f
 }
 
 // PopFrame pops the frame from the top of the frame stack
-func (st *State) PopFrame() *util.Frame {
+func (st *State) PopFrame() *frame.Frame {
 	x := st.frames.Pop()
 	if x == nil {
 		return nil
 	}
-	f := x.(*util.Frame)
+	f := x.(*frame.Frame)
 	for i := st.framestack.Cur(); i > f.Mark(); i-- {
 		st.framestack.Pop()
 	}
@@ -77,12 +78,12 @@ func (st *State) PopFrame() *util.Frame {
 }
 
 // CurrentFrame returns the frame currently at the top of the frame stack
-func (st *State) CurrentFrame() *util.Frame {
+func (st *State) CurrentFrame() *frame.Frame {
 	x, err := st.frames.Top()
 	if err != nil {
 		return nil
 	}
-	return x.(*util.Frame)
+	return x.(*frame.Frame)
 }
 
 // Warnf is used to generate warnings during virtual machine execution

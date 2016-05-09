@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/lestrrat/go-lex"
+	"github.com/lestrrat/go-xslate/internal/frame"
 	"github.com/lestrrat/go-xslate/node"
-	"github.com/lestrrat/go-xslate/util"
 )
 
 const (
@@ -99,7 +99,7 @@ type Builder struct {
 // Frame is the frame struct used during parsing, which has a bit of
 // extension over the common Frame struct.
 type Frame struct {
-	*util.Frame
+	*frame.Frame
 	Node node.Appender
 
 	// This contains names of local variables, mapped to their

@@ -1,4 +1,4 @@
-package util
+package stack
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 type IntWrap struct{ i int }
 
 func TestStack_Grow(t *testing.T) {
-	s := NewStack(5)
+	s := New(5)
 	for i := 0; i < 10; i++ {
 		if i%2 == 0 {
 			s.Push(i)

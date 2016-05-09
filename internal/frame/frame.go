@@ -1,20 +1,26 @@
-package util
+package frame
+
+import "github.com/lestrrat/go-xslate/internal/stack"
 
 // Frame represents a single stack frame. It has a reference to the main
 // stack where the actual data resides. Frame is just a convenient
 // wrapper to remember when the Frame started
 type Frame struct {
 	name  string
-	stack *Stack
+	stack *stack.Stack
 	mark  int
 }
 
-// NewFrame creates a new Frame instance.
-func NewFrame(s *Stack) *Frame {
+// New creates a new Frame instance.
+func New(s *stack.Stack) *Frame {
 	return &Frame{
 		mark:  0,
 		stack: s,
 	}
+}
+
+func (f Frame) Stack() *stack.Stack {
+	return f.stack
 }
 
 // SetMark sets the offset from which this frame's variables may be stored
