@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/lestrrat/go-lex"
+	"github.com/lestrrat/go-xslate/node"
 	"github.com/lestrrat/go-xslate/util"
 )
 
@@ -17,7 +18,7 @@ type Builder struct {
 // extension over the common Frame struct.
 type Frame struct {
 	*util.Frame
-	Node NodeAppender
+	Node node.Appender
 
 	// This contains names of local variables, mapped to their
 	// respective location in the framestack
@@ -38,7 +39,7 @@ type builderCtx struct {
 	Text            string
 	Line            int
 	Lexer           lex.Lexer
-	Root            *ListNode
+	Root            *node.ListNode
 	PeekCount       int
 	Tokens          [3]lex.LexItem
 	CurrentStackTop int
@@ -56,7 +57,7 @@ func (b *Builder) Parse(name string, l lex.Lexer) (ast *AST, err error) {
 	ctx := &builderCtx{
 		ParseName:  name,
 		Lexer:      l,
-		Root:       NewRootNode(),
+		Root:       node.NewRootNode(),
 		Tokens:     [3]lex.LexItem{},
 		FrameStack: util.NewStack(5),
 		Frames:     util.NewStack(5),
@@ -180,12 +181,12 @@ func (ctx *builderCtx) CurrentFrame() *Frame {
 	return x.(*Frame)
 }
 
-func (ctx *builderCtx) PushParentNode(n NodeAppender) {
+func (ctx *builderCtx) PushParentNode(n node.Appender) {
 	frame := ctx.PushFrame()
 	frame.Node = n
 }
 
-func (ctx *builderCtx) PopParentNode() NodeAppender {
+func (ctx *builderCtx) PopParentNode() node.Appender {
 	frame := ctx.PopFrame()
 	if frame != nil {
 		return frame.Node
@@ -193,7 +194,7 @@ func (ctx *builderCtx) PopParentNode() NodeAppender {
 	return nil
 }
 
-func (ctx *builderCtx) CurrentParentNode() NodeAppender {
+func (ctx *builderCtx) CurrentParentNode() node.Appender {
 	frame := ctx.CurrentFrame()
 	if frame != nil {
 		return frame.Node
@@ -201,7 +202,7 @@ func (ctx *builderCtx) CurrentParentNode() NodeAppender {
 	return nil
 }
 
-func (b *Builder) ParseStatements(ctx *builderCtx) Node {
+func (b *Builder) ParseStatements(ctx *builderCtx) node.Node {
 	ctx.PushParentNode(ctx.Root)
 	for b.Peek(ctx).Type() != ItemEOF {
 		n := b.ParseTemplateOrText(ctx)
@@ -212,7 +213,7 @@ func (b *Builder) ParseStatements(ctx *builderCtx) Node {
 	return nil
 }
 
-func (b *Builder) ParseTemplateOrText(ctx *builderCtx) Node {
+func (b *Builder) ParseTemplateOrText(ctx *builderCtx) node.Node{
 	token := b.PeekNonSpace(ctx)
 	switch token.Type() {
 	case ItemRawString:
@@ -220,12 +221,11 @@ func (b *Builder) ParseTemplateOrText(ctx *builderCtx) Node {
 	case ItemTagStart:
 		return b.ParseTemplate(ctx)
 	default:
-		panic(fmt.Sprintf("fuck %s", token))
+		panic(fmt.Sprintf("Unexpected token: %s", token))
 	}
-	return nil
 }
 
-func (b *Builder) ParseRawString(ctx *builderCtx) Node {
+func (b *Builder) ParseRawString(ctx *builderCtx) node.Node{
 	const whiteSpace = " \t\r\n"
 	token := b.NextNonSpace(ctx)
 	if token.Type() != ItemRawString {
@@ -250,8 +250,8 @@ func (b *Builder) ParseRawString(ctx *builderCtx) Node {
 		}
 	}
 
-	n := NewPrintRawNode(token.Pos())
-	n.Append(NewTextNode(token.Pos(), value))
+	n := node.NewPrintRawNode(token.Pos())
+	n.Append(node.NewTextNode(token.Pos(), value))
 
 	return n
 }
@@ -267,7 +267,7 @@ func (b *Builder) Unexpected(ctx *builderCtx, format string, args ...interface{}
 	panic(msg)
 }
 
-func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
+func (b *Builder) ParseTemplate(ctx *builderCtx) node.Node{
 	// consume tagstart
 	start := b.NextNonSpace(ctx)
 	if start.Type() != ItemTagStart {
@@ -279,16 +279,16 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
 		b.NextNonSpace(ctx)
 	}
 
-	var tmpl Node
+	var tmpl node.Node
 	switch b.PeekNonSpace(ctx).Type() {
 	case ItemEnd:
 		b.NextNonSpace(ctx)
 		for keepPopping := true; keepPopping; {
 			parent := ctx.PopParentNode()
 			switch parent.Type() {
-			case NodeRoot:
+			case node.Root:
 				b.Unexpected(ctx, "Unexpected END")
-			case NodeElse:
+			case node.Else:
 				// no op
 			default:
 				keepPopping = false
@@ -315,7 +315,7 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
 		tmpl = b.ParseInclude(ctx)
 	case ItemTagEnd: // Silly, but possible
 		b.NextNonSpace(ctx)
-		tmpl = NewNoopNode()
+		tmpl = node.NewNoopNode()
 	case ItemIdentifier, ItemNumber, ItemDoubleQuotedString, ItemSingleQuotedString, ItemOpenParen:
 		tmpl = b.ParseExpressionOrAssignment(ctx, true)
 	case ItemIf:
@@ -343,14 +343,14 @@ func (b *Builder) ParseTemplate(ctx *builderCtx) Node {
 	return tmpl
 }
 
-func (b *Builder) ParseExpressionOrAssignment(ctx *builderCtx, canPrint bool) Node {
+func (b *Builder) ParseExpressionOrAssignment(ctx *builderCtx, canPrint bool) node.Node{
 	// There's a special case for assignment where SET is omitted
 	// [% foo = ... %] instead of [% SET foo = ... %]
 	next := b.NextNonSpace(ctx)
 	following := b.PeekNonSpace(ctx)
 	b.Backup2(ctx, next)
 
-	var n Node
+	var n node.Node
 	if next.Type() == ItemIdentifier {
 		switch following.Type() {
 		case ItemAssign, ItemAssignAdd, ItemAssignSub, ItemAssignMul, ItemAssignDiv:
@@ -366,7 +366,7 @@ func (b *Builder) ParseExpressionOrAssignment(ctx *builderCtx, canPrint bool) No
 	return n
 }
 
-func (b *Builder) ParseWrapper(ctx *builderCtx) Node {
+func (b *Builder) ParseWrapper(ctx *builderCtx) node.Node{
 	wrapper := b.Next(ctx)
 	if wrapper.Type() != ItemWrapper {
 		panic("fuck")
@@ -382,7 +382,7 @@ func (b *Builder) ParseWrapper(ctx *builderCtx) Node {
 		b.Unexpected(ctx, "Expected identifier, got %s", tmpl)
 	}
 
-	n := NewWrapperNode(wrapper.Pos(), template)
+	n := node.NewWrapperNode(wrapper.Pos(), template)
 	ctx.CurrentParentNode().Append(n)
 	ctx.PushParentNode(n)
 
@@ -417,43 +417,43 @@ LOOP:
 	return nil
 }
 
-func (b *Builder) ParseAssignment(ctx *builderCtx) Node {
+func (b *Builder) ParseAssignment(ctx *builderCtx) node.Node{
 	symbol := b.NextNonSpace(ctx)
 	if symbol.Type() != ItemIdentifier {
 		b.Unexpected(ctx, "Expected identifier, got %s", symbol)
 	}
 
 	b.DeclareLocalVarIfNew(ctx, symbol)
-	node := NewAssignmentNode(symbol.Pos(), symbol.Value())
+	n := node.NewAssignmentNode(symbol.Pos(), symbol.Value())
 
 	eq := b.NextNonSpace(ctx)
 	switch eq.Type() {
 	case ItemAssign:
-		node.Expression = b.ParseExpression(ctx, false)
+		n.Expression = b.ParseExpression(ctx, false)
 	case ItemAssignAdd:
-		add := NewPlusNode(symbol.Pos())
+		add := node.NewPlusNode(symbol.Pos())
 		add.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
 		add.Right = b.ParseExpression(ctx, false)
-		node.Expression = add
+		n.Expression = add
 	case ItemAssignSub:
-		sub := NewMinusNode(symbol.Pos())
+		sub := node.NewMinusNode(symbol.Pos())
 		sub.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
 		sub.Right = b.ParseExpression(ctx, false)
-		node.Expression = sub
+		n.Expression = sub
 	case ItemAssignMul:
-		mul := NewMulNode(symbol.Pos())
+		mul := node.NewMulNode(symbol.Pos())
 		mul.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
 		mul.Right = b.ParseExpression(ctx, false)
-		node.Expression = mul
+		n.Expression = mul
 	case ItemAssignDiv:
-		div := NewDivNode(symbol.Pos())
+		div := node.NewDivNode(symbol.Pos())
 		div.Left = b.LocalVarOrFetchSymbol(ctx, symbol)
 		div.Right = b.ParseExpression(ctx, false)
-		node.Expression = div
+		n.Expression = div
 	default:
 		b.Unexpected(ctx, "Expected assign, got %s", eq)
 	}
-	return node
+	return n
 }
 
 func (b *Builder) DeclareLocalVarIfNew(ctx *builderCtx, symbol lex.LexItem) {
@@ -462,14 +462,14 @@ func (b *Builder) DeclareLocalVarIfNew(ctx *builderCtx, symbol lex.LexItem) {
 	}
 }
 
-func (b *Builder) LocalVarOrFetchSymbol(ctx *builderCtx, token lex.LexItem) Node {
+func (b *Builder) LocalVarOrFetchSymbol(ctx *builderCtx, token lex.LexItem) node.Node{
 	if idx, ok := ctx.HasLocalVar(token.Value()); ok {
-		return NewLocalVarNode(token.Pos(), token.Value(), idx)
+		return node.NewLocalVarNode(token.Pos(), token.Value(), idx)
 	}
-	return NewFetchSymbolNode(token.Pos(), token.Value())
+	return node.NewFetchSymbolNode(token.Pos(), token.Value())
 }
 
-func (b *Builder) ParseTerm(ctx *builderCtx) Node {
+func (b *Builder) ParseTerm(ctx *builderCtx) node.Node{
 	token := b.NextNonSpace(ctx)
 	switch token.Type() {
 	case ItemIdentifier:
@@ -483,7 +483,7 @@ func (b *Builder) ParseTerm(ctx *builderCtx) Node {
 	}
 }
 
-func (b *Builder) ParseFunCall(ctx *builderCtx, invocant Node) Node {
+func (b *Builder) ParseFunCall(ctx *builderCtx, invocant node.Node) node.Node {
 	next := b.NextNonSpace(ctx)
 	if next.Type() != ItemOpenParen {
 		b.Unexpected(ctx, "Expected '(', got %s", next.Type())
@@ -495,22 +495,22 @@ func (b *Builder) ParseFunCall(ctx *builderCtx, invocant Node) Node {
 		b.Unexpected(ctx, "Expected ')', got %s", closeParen.Type())
 	}
 
-	return NewFunCallNode(invocant.Pos(), invocant, args.(*ListNode))
+	return node.NewFunCallNode(invocant.Pos(), invocant, args.(*node.ListNode))
 }
 
-func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant Node) Node {
+func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant node.Node) node.Node{
 	// We have already seen identifier followed by a period
 	symbol := b.NextNonSpace(ctx)
 	if symbol.Type() != ItemIdentifier {
 		b.Unexpected(ctx, "Expected identifier for method call or map lookup, got %s", symbol.Type())
 	}
 
-	var n Node
+	var n node.Node
 	next := b.NextNonSpace(ctx)
 	if next.Type() != ItemOpenParen {
 		// it's a map lookup. Put back that extra token we read
 		b.Backup(ctx)
-		n = NewFetchFieldNode(invocant.Pos(), invocant, symbol.Value())
+		n = node.NewFetchFieldNode(invocant.Pos(), invocant, symbol.Value())
 	} else {
 		// It's a method call! Parse the list
 		args := b.ParseList(ctx)
@@ -518,7 +518,7 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant Node) Nod
 		if closeParen.Type() != ItemCloseParen {
 			b.Unexpected(ctx, "Expected ')', got %s", closeParen.Type())
 		}
-		n = NewMethodCallNode(invocant.Pos(), invocant, symbol.Value(), args.(*ListNode))
+		n = node.NewMethodCallNode(invocant.Pos(), invocant, symbol.Value(), args.(*node.ListNode))
 	}
 
 	// If we are followed by another period, we are going to have to
@@ -530,7 +530,7 @@ func (b *Builder) ParseMethodCallOrMapLookup(ctx *builderCtx, invocant Node) Nod
 	return n
 }
 
-func (b *Builder) ParseArrayElementFetch(ctx *builderCtx, invocant Node) Node {
+func (b *Builder) ParseArrayElementFetch(ctx *builderCtx, invocant node.Node) node.Node{
 	openBracket := b.NextNonSpace(ctx)
 	if openBracket.Type() != ItemOpenSquareBracket {
 		b.Unexpected(ctx, "Expected '[', got %s", openBracket)
@@ -538,7 +538,7 @@ func (b *Builder) ParseArrayElementFetch(ctx *builderCtx, invocant Node) Node {
 
 	index := b.ParseExpression(ctx, false)
 
-	n := NewFetchArrayElementNode(openBracket.Pos())
+	n := node.NewFetchArrayElementNode(openBracket.Pos())
 	n.Left = invocant
 	n.Right = index
 
@@ -550,10 +550,10 @@ func (b *Builder) ParseArrayElementFetch(ctx *builderCtx, invocant Node) Node {
 	return n
 }
 
-func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n Node) {
+func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n node.Node) {
 	defer func() {
 		if n != nil && canPrint {
-			n = NewPrintNode(n.Pos(), n)
+			n = node.NewPrintNode(n.Pos(), n)
 		}
 	}()
 
@@ -575,7 +575,7 @@ func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n Node) {
 	next := b.PeekNonSpace(ctx)
 
 	switch n.Type() {
-	case NodeLocalVar, NodeFetchSymbol:
+	case node.LocalVar, node.FetchSymbol:
 		switch next.Type() {
 		case ItemPeriod:
 			// It's either a method call, or a map lookup
@@ -592,7 +592,7 @@ func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n Node) {
 	next = b.NextNonSpace(ctx)
 	switch next.Type() {
 	case ItemPlus:
-		tmp := NewPlusNode(next.Pos())
+		tmp := node.NewPlusNode(next.Pos())
 		tmp.Left = n
 		tmp.Right = b.ParseExpression(ctx, false)
 		n = tmp
@@ -605,41 +605,41 @@ func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n Node) {
 			// Postchomp! not arithmetic!
 			return
 		}
-		tmp := NewMinusNode(next.Pos())
+		tmp := node.NewMinusNode(next.Pos())
 		tmp.Left = n
 		tmp.Right = b.ParseExpression(ctx, false)
 		n = tmp
 		return
 	case ItemAsterisk:
-		tmp := NewMulNode(next.Pos())
+		tmp := node.NewMulNode(next.Pos())
 		tmp.Left = n
 		tmp.Right = b.ParseExpression(ctx, false)
 		n = tmp
 		return
 	case ItemSlash:
-		tmp := NewDivNode(next.Pos())
+		tmp := node.NewDivNode(next.Pos())
 		tmp.Left = n
 		tmp.Right = b.ParseExpression(ctx, false)
 		n = tmp
 		return
 	case ItemEquals:
-		tmp := NewEqualsNode(next.Pos())
+		tmp := node.NewEqualsNode(next.Pos())
 		tmp.Left = n
 		tmp.Right = b.ParseExpression(ctx, false)
 		n = tmp
 	case ItemNotEquals:
-		tmp := NewNotEqualsNode(next.Pos())
+		tmp := node.NewNotEqualsNode(next.Pos())
 		tmp.Left = n
 		tmp.Right = b.ParseExpression(ctx, false)
 		n = tmp
 	case ItemLT:
-		tmp := NewLTNode(next.Pos())
+		tmp := node.NewLTNode(next.Pos())
 		tmp.Left = n
 		tmp.Right = b.ParseExpression(ctx, false)
 		n = tmp
 		return
 	case ItemGT:
-		tmp := NewGTNode(next.Pos())
+		tmp := node.NewGTNode(next.Pos())
 		tmp.Left = n
 		tmp.Right = b.ParseExpression(ctx, false)
 		n = tmp
@@ -653,7 +653,7 @@ func (b *Builder) ParseExpression(ctx *builderCtx, canPrint bool) (n Node) {
 	return
 }
 
-func (b *Builder) ParseFilter(ctx *builderCtx, n Node) Node {
+func (b *Builder) ParseFilter(ctx *builderCtx, n node.Node) node.Node{
 	vslash := b.NextNonSpace(ctx)
 	if vslash.Type() != ItemVerticalSlash {
 		b.Unexpected(ctx, "Expected '|', got %s", vslash.Type())
@@ -664,21 +664,21 @@ func (b *Builder) ParseFilter(ctx *builderCtx, n Node) Node {
 		b.Unexpected(ctx, "Expected idenfitier, got %s", id.Type())
 	}
 
-	filter := NewFilterNode(id.Pos(), id.Value(), n)
+	filter := node.NewFilterNode(id.Pos(), id.Value(), n)
 
 	if b.PeekNonSpace(ctx).Type() == ItemVerticalSlash {
-		filter = b.ParseFilter(ctx, filter).(*FilterNode)
+		filter = b.ParseFilter(ctx, filter).(*node.FilterNode)
 	}
 
 	return filter
 }
 
-func (b *Builder) ParseLiteral(ctx *builderCtx) Node {
+func (b *Builder) ParseLiteral(ctx *builderCtx) node.Node{
 	t := b.NextNonSpace(ctx)
 	switch t.Type() {
 	case ItemDoubleQuotedString, ItemSingleQuotedString:
 		v := t.Value()
-		return NewTextNode(t.Pos(), v[1:len(v)-1])
+		return node.NewTextNode(t.Pos(), v[1:len(v)-1])
 	case ItemNumber:
 		v := t.Value()
 		// XXX TODO: parse hex/oct/bin
@@ -687,20 +687,20 @@ func (b *Builder) ParseLiteral(ctx *builderCtx) Node {
 			if err != nil { // shouldn't happen, as we were able to lex it
 				b.Unexpected(ctx, "Could not parse number: %s", err)
 			}
-			return NewFloatNode(t.Pos(), f)
+			return node.NewFloatNode(t.Pos(), f)
 		}
 		i, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
 			b.Unexpected(ctx, "Could not parse number: %s", err)
 		}
-		return NewIntNode(t.Pos(), i)
+		return node.NewIntNode(t.Pos(), i)
 	default:
 		b.Unexpected(ctx, "Expected literal value, got %s", t)
 	}
 	return nil
 }
 
-func (b *Builder) ParseForeach(ctx *builderCtx) Node {
+func (b *Builder) ParseForeach(ctx *builderCtx) node.Node{
 	foreach := b.NextNonSpace(ctx)
 	if foreach.Type() != ItemForeach {
 		b.Unexpected(ctx, "Expected FOREACH, got %s", foreach)
@@ -711,7 +711,7 @@ func (b *Builder) ParseForeach(ctx *builderCtx) Node {
 		b.Unexpected(ctx, "Expected identifier, got %s", localsym)
 	}
 
-	forNode := NewForeachNode(foreach.Pos(), localsym.Value())
+	forNode := node.NewForeachNode(foreach.Pos(), localsym.Value())
 	// use current frame mark
 	forNode.IndexVarIdx = ctx.CurrentFrame().Mark()
 
@@ -730,7 +730,7 @@ func (b *Builder) ParseForeach(ctx *builderCtx) Node {
 	return nil
 }
 
-func (b *Builder) ParseWhile(ctx *builderCtx) Node {
+func (b *Builder) ParseWhile(ctx *builderCtx) node.Node{
 	while := b.NextNonSpace(ctx)
 	if while.Type() != ItemWhile {
 		b.Unexpected(ctx, "Expected WHILE, got %s", while)
@@ -738,7 +738,7 @@ func (b *Builder) ParseWhile(ctx *builderCtx) Node {
 
 	condition := b.ParseExpression(ctx, false)
 
-	whileNode := NewWhileNode(while.Pos(), condition)
+	whileNode := node.NewWhileNode(while.Pos(), condition)
 
 	ctx.CurrentParentNode().Append(whileNode)
 	ctx.PushParentNode(whileNode)
@@ -747,7 +747,7 @@ func (b *Builder) ParseWhile(ctx *builderCtx) Node {
 	return nil
 }
 
-func (b *Builder) ParseRange(ctx *builderCtx) Node {
+func (b *Builder) ParseRange(ctx *builderCtx) node.Node{
 	start := b.ParseTerm(ctx)
 	if start == nil {
 		b.Unexpected(ctx, "Expected term (start range), got %s", b.PeekNonSpace(ctx).Value())
@@ -763,20 +763,20 @@ func (b *Builder) ParseRange(ctx *builderCtx) Node {
 		b.Unexpected(ctx, "Expected term (end range), got %s", b.PeekNonSpace(ctx).Value())
 	}
 
-	return NewRangeNode(start.Pos(), start, end)
+	return node.NewRangeNode(start.Pos(), start, end)
 }
 
-func (b *Builder) ParseListVariableOrMakeArray(ctx *builderCtx) Node {
+func (b *Builder) ParseListVariableOrMakeArray(ctx *builderCtx) node.Node{
 	list := b.PeekNonSpace(ctx)
 
-	var n Node
+	var n node.Node
 	switch list.Type() {
 	case ItemIdentifier:
 		b.NextNonSpace(ctx)
 		if idx, ok := ctx.HasLocalVar(list.Value()); ok {
-			n = NewLocalVarNode(list.Pos(), list.Value(), idx)
+			n = node.NewLocalVarNode(list.Pos(), list.Value(), idx)
 		} else {
-			n = NewFetchSymbolNode(list.Pos(), list.Value())
+			n = node.NewFetchSymbolNode(list.Pos(), list.Value())
 		}
 		if b.PeekNonSpace(ctx).Type() == ItemPeriod {
 			b.NextNonSpace(ctx)
@@ -790,7 +790,7 @@ func (b *Builder) ParseListVariableOrMakeArray(ctx *builderCtx) Node {
 	return n
 }
 
-func (b *Builder) ParseMakeArray(ctx *builderCtx) Node {
+func (b *Builder) ParseMakeArray(ctx *builderCtx) node.Node{
 	openB := b.NextNonSpace(ctx)
 	if openB.Type() != ItemOpenSquareBracket {
 		b.Unexpected(ctx, "Expected '[', got %s", openB.Value())
@@ -803,11 +803,11 @@ func (b *Builder) ParseMakeArray(ctx *builderCtx) Node {
 		b.Unexpected(ctx, "Expected ']', got %s", closeB.Value())
 	}
 
-	return NewMakeArrayNode(openB.Pos(), child)
+	return node.NewMakeArrayNode(openB.Pos(), child)
 }
 
-func (b *Builder) ParseList(ctx *builderCtx) Node {
-	n := NewListNode(b.PeekNonSpace(ctx).Pos())
+func (b *Builder) ParseList(ctx *builderCtx) node.Node{
+	n := node.NewListNode(b.PeekNonSpace(ctx).Pos())
 OUTER:
 	for {
 		// At the beginning of this loop, we must see an
@@ -821,7 +821,7 @@ OUTER:
 		item := b.NextNonSpace(ctx)
 
 		// Depending on the next item, we have range operator or a literal list
-		var child Node
+		var child node.Node
 		switch nextN := b.PeekNonSpace(ctx); nextN.Type() {
 		case ItemRange:
 			b.Backup2(ctx, item)
@@ -842,7 +842,7 @@ OUTER:
 	return n
 }
 
-func (b *Builder) ParseIf(ctx *builderCtx) Node {
+func (b *Builder) ParseIf(ctx *builderCtx) node.Node{
 	ifToken := b.NextNonSpace(ctx)
 	if ifToken.Type() != ItemIf {
 		b.Unexpected(ctx, "Expected if, got %s", ifToken)
@@ -856,7 +856,7 @@ func (b *Builder) ParseIf(ctx *builderCtx) Node {
 	}
 
 	exp := b.ParseExpression(ctx, false)
-	ifNode := NewIfNode(ifToken.Pos(), exp)
+	ifNode := node.NewIfNode(ifToken.Pos(), exp)
 
 	if expectCloseParen {
 		closeParenToken := b.NextNonSpace(ctx)
@@ -871,18 +871,18 @@ func (b *Builder) ParseIf(ctx *builderCtx) Node {
 	return nil
 }
 
-func (b *Builder) ParseElse(ctx *builderCtx) Node {
+func (b *Builder) ParseElse(ctx *builderCtx) node.Node{
 	elseToken := b.NextNonSpace(ctx)
 	if elseToken.Type() != ItemElse {
 		b.Unexpected(ctx, "Expected else, got %s", elseToken)
 	}
 
 	// CurrentParentNode must be "If" in order for "else" to work
-	if ctx.CurrentParentNode().Type() != NodeIf {
+	if ctx.CurrentParentNode().Type() != node.If {
 		b.Unexpected(ctx, "Found else without if")
 	}
 
-	elseNode := NewElseNode(elseToken.Pos())
+	elseNode := node.NewElseNode(elseToken.Pos())
 	elseNode.IfNode = ctx.CurrentParentNode()
 	ctx.CurrentParentNode().Append(elseNode)
 	ctx.PushParentNode(elseNode)
@@ -890,7 +890,7 @@ func (b *Builder) ParseElse(ctx *builderCtx) Node {
 	return nil
 }
 
-func (b *Builder) ParseInclude(ctx *builderCtx) Node {
+func (b *Builder) ParseInclude(ctx *builderCtx) node.Node{
 	incToken := b.NextNonSpace(ctx)
 	if incToken.Type() != ItemInclude {
 		b.Unexpected(ctx, "Expected include, got %s", incToken)
@@ -898,7 +898,7 @@ func (b *Builder) ParseInclude(ctx *builderCtx) Node {
 
 	// Next thing must be the name of the included template
 	n := b.ParseExpression(ctx, false)
-	x := NewIncludeNode(incToken.Pos(), n)
+	x := node.NewIncludeNode(incToken.Pos(), n)
 	ctx.PushFrame()
 
 	if b.PeekNonSpace(ctx).Type() != ItemWith {
@@ -923,13 +923,13 @@ func (b *Builder) ParseInclude(ctx *builderCtx) Node {
 	return x
 }
 
-func (b *Builder) ParseGroup(ctx *builderCtx) Node {
+func (b *Builder) ParseGroup(ctx *builderCtx) node.Node{
 	openParenToken := b.NextNonSpace(ctx)
 	if openParenToken.Type() != ItemOpenParen {
 		b.Unexpected(ctx, "Expected '(', got %s", openParenToken)
 	}
 
-	n := NewGroupNode(openParenToken.Pos())
+	n := node.NewGroupNode(openParenToken.Pos())
 	n.Child = b.ParseExpression(ctx, false)
 
 	closeParenToken := b.NextNonSpace(ctx)
@@ -940,7 +940,7 @@ func (b *Builder) ParseGroup(ctx *builderCtx) Node {
 	return n
 }
 
-func (b *Builder) ParseMacro(ctx *builderCtx) Node {
+func (b *Builder) ParseMacro(ctx *builderCtx) node.Node{
 	macroToken := b.NextNonSpace(ctx)
 	if macroToken.Type() != ItemMacro {
 		b.Unexpected(ctx, "Expected 'MACRO', got %s", macroToken)
@@ -954,8 +954,8 @@ func (b *Builder) ParseMacro(ctx *builderCtx) Node {
 
 	idx := ctx.DeclareLocalVar(nameToken.Value())
 
-	macro := NewMacroNode(nameToken.Pos(), nameToken.Value())
-	macro.LocalVar = NewLocalVarNode(nameToken.Pos(), nameToken.Value(), idx)
+	macro := node.NewMacroNode(nameToken.Pos(), nameToken.Value())
+	macro.LocalVar = node.NewLocalVarNode(nameToken.Pos(), nameToken.Value(), idx)
 	ctx.CurrentParentNode().Append(macro)
 	ctx.PushParentNode(macro)
 
@@ -971,7 +971,7 @@ func (b *Builder) ParseMacro(ctx *builderCtx) Node {
 			}
 
 			//      idx := ctx.DeclareLocalVar(next.Value())
-			//      macro.AppendArg(NewLocalVarNode(next.Pos(), next.Value(), idx))
+			//      macro.AppendArg(node.NewLocalVarNode(next.Pos(), next.Value(), idx))
 
 			next = b.NextNonSpace(ctx)
 			if next.Type() != ItemComma {

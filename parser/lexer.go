@@ -491,6 +491,4 @@ func (sl *Lexer) lexInsideTag(l lex.Lexer) lex.LexFn {
 	default:
 		return sl.EmitErrorf("unrecognized character in tag: %#U", r)
 	}
-
-	return sl.lexInsideTag
 }

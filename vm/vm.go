@@ -88,6 +88,7 @@ func (vm *VM) Run(bc *ByteCode, vars Vars, output io.Writer) {
 	}
 	st.Loader = vm.Loader
 
+	// This is the main loop
 	for op := st.CurrentOp(); op.Type() != TXOPEnd; op = st.CurrentOp() {
 		op.Call(st)
 	}
