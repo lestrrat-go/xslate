@@ -1,0 +1,8 @@
+hash: 52071a6fde18f0d382119715131d3186ead268f611bfd4519149965613daa18f
+updated: 2016-05-09T12:35:49.392434652+09:00
+imports:
+- name: github.com/davecheney/profile
+  version: 867e56f7b923dac5d47fd39ac837b329d0313454
+- name: github.com/lestrrat/go-lex
+  version: c1847b3ac9e62f4b1d693f43438c8533f29d7726
+devImports: []
