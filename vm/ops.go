@@ -365,6 +365,8 @@ func txSaveToLvar(st *State) {
 
 func txLoadLvar(st *State) {
 	idx := st.CurrentOp().ArgInt()
+fmt.Printf("idx = %d\n")
+fmt.Printf("st.CurrentFrame().Stack(): %s\n", st.CurrentFrame().Stack())
 	st.sa = st.CurrentFrame().GetLvar(idx)
 	st.Advance()
 }
