@@ -51,7 +51,7 @@ func (c *BasicCompiler) Compile(ast *parser.AST) (*vm.ByteCode, error) {
 	return ctx.ByteCode, nil
 }
 
-func (c *BasicCompiler) compile(ctx *context, n node.) {
+func (c *BasicCompiler) compile(ctx *context, n node.Node) {
 	switch n.Type() {
 	case node.Text:
 		// XXX probably not true all the time
@@ -177,14 +177,14 @@ func (c *BasicCompiler) compile(ctx *context, n node.) {
 	}
 }
 
-func (c *BasicCompiler) compileIf(ctx *context, n node.) {
+func (c *BasicCompiler) compileIf(ctx *context, n node.Node) {
 	x := n.(*node.IfNode)
 	ctx.AppendOp(vm.TXOPPushmark)
 	c.compile(ctx, x.BooleanExpression)
 	ifop := ctx.AppendOp(vm.TXOPAnd, 0)
 	pos := ctx.ByteCode.Len()
 
-	var elseNode node.
+	var elseNode node.Node
 	children := x.ListNode.Nodes
 	for _, child := range children {
 		if child.Type() == node.Else {
@@ -220,7 +220,7 @@ func (c *BasicCompiler) compileBinaryOperands(ctx *context, x *node.BinaryNode) 
 	}
 }
 
-func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []node.) {
+func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []node.Node) {
 	if len(assignnodes) <= 0 {
 		return
 	}

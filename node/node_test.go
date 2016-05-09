@@ -6,7 +6,7 @@ import (
 )
 
 func TestNode_String(t *testing.T) {
-	for i := 0; i < int(NodeMax); i++ {
+	for i := 0; i < int(Max); i++ {
 		nt := NodeType(i)
 		if strings.HasPrefix(nt.String(), "Unknown") {
 			t.Errorf("%#v does not have String() implemented", nt)
