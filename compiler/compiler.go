@@ -51,18 +51,18 @@ func (c *BasicCompiler) Compile(ast *parser.AST) (*vm.ByteCode, error) {
 	return ctx.ByteCode, nil
 }
 
-func (c *BasicCompiler) compile(ctx *context, n node.Node) {
+func (c *BasicCompiler) compile(ctx *context, n node.) {
 	switch n.Type() {
-	case node.NodeText:
+	case node.Text:
 		// XXX probably not true all the time
 		ctx.AppendOp(vm.TXOPLiteral, n.(*node.TextNode).Text)
-	case node.NodeFetchSymbol:
+	case node.FetchSymbol:
 		ctx.AppendOp(vm.TXOPFetchSymbol, n.(*node.TextNode).Text)
-	case node.NodeFetchField:
+	case node.FetchField:
 		ffnode := n.(*node.FetchFieldNode)
 		c.compile(ctx, ffnode.Container)
 		ctx.AppendOp(vm.TXOPFetchFieldSymbol, ffnode.FieldName)
-	case node.NodeFetchArrayElement:
+	case node.FetchArrayElement:
 		faenode := n.(*node.BinaryNode)
 		ctx.AppendOp(vm.TXOPPushmark)
 		c.compile(ctx, faenode.Right)
@@ -71,36 +71,36 @@ func (c *BasicCompiler) compile(ctx *context, n node.Node) {
 		ctx.AppendOp(vm.TXOPPush)
 		ctx.AppendOp(vm.TXOPFetchArrayElement)
 		ctx.AppendOp(vm.TXOPPopmark)
-	case node.NodeLocalVar:
+	case node.LocalVar:
 		l := n.(*node.LocalVarNode)
 		ctx.AppendOp(vm.TXOPLoadLvar, l.Offset)
-	case node.NodeAssignment:
+	case node.Assignment:
 		c.compile(ctx, n.(*node.AssignmentNode).Expression)
 		ctx.AppendOp(vm.TXOPSaveToLvar, 0) // XXX this 0 must be pre-computed
-	case node.NodePrint:
+	case node.Print:
 		c.compile(ctx, n.(*node.ListNode).Nodes[0])
 		ctx.AppendOp(vm.TXOPPrint)
-	case node.NodePrintRaw:
+	case node.PrintRaw:
 		c.compile(ctx, n.(*node.ListNode).Nodes[0])
 		ctx.AppendOp(vm.TXOPPrintRaw)
-	case node.NodeForeach:
+	case node.Foreach:
 		c.compileForeach(ctx, n.(*node.ForeachNode))
-	case node.NodeWhile:
+	case node.While:
 		c.compileWhile(ctx, n.(*node.WhileNode))
-	case node.NodeIf:
+	case node.If:
 		c.compileIf(ctx, n)
-	case node.NodeElse:
+	case node.Else:
 		gotoOp := ctx.AppendOp(vm.TXOPGoto, 0)
 		pos := ctx.ByteCode.Len()
 		for _, child := range n.(*node.ElseNode).ListNode.Nodes {
 			c.compile(ctx, child)
 		}
 		gotoOp.SetArg(ctx.ByteCode.Len() - pos + 1)
-	case node.NodeMakeArray:
+	case node.MakeArray:
 		x := n.(*node.UnaryNode)
 		c.compile(ctx, x.Child)
 		ctx.AppendOp(vm.TXOPMakeArray)
-	case node.NodeRange:
+	case node.Range:
 		x := n.(*node.BinaryNode)
 		c.compile(ctx, x.Right)
 		ctx.AppendOp(vm.TXOPPush)
@@ -108,18 +108,18 @@ func (c *BasicCompiler) compile(ctx *context, n node.Node) {
 		ctx.AppendOp(vm.TXOPMoveToSb)
 		ctx.AppendOp(vm.TXOPPop)
 		ctx.AppendOp(vm.TXOPRange)
-	case node.NodeInt:
+	case node.Int:
 		x := n.(*node.NumberNode)
 		ctx.AppendOp(vm.TXOPLiteral, x.Value.Int())
-	case node.NodeList:
+	case node.List:
 		x := n.(*node.ListNode)
 		for _, v := range x.Nodes {
 			c.compile(ctx, v)
-			if v.Type() != node.NodeRange {
+			if v.Type() != node.Range {
 				ctx.AppendOp(vm.TXOPPush)
 			}
 		}
-	case node.NodeFunCall:
+	case node.FunCall:
 		x := n.(*node.FunCallNode)
 
 		for _, child := range x.Args.Nodes {
@@ -129,7 +129,7 @@ func (c *BasicCompiler) compile(ctx *context, n node.Node) {
 
 		c.compile(ctx, x.Invocant)
 		ctx.AppendOp(vm.TXOPFunCallOmni)
-	case node.NodeMethodCall:
+	case node.MethodCall:
 		x := n.(*node.MethodCallNode)
 
 		c.compile(ctx, x.Invocant)
@@ -141,53 +141,53 @@ func (c *BasicCompiler) compile(ctx *context, n node.Node) {
 		}
 		ctx.AppendOp(vm.TXOPMethodCall, x.MethodName)
 		ctx.AppendOp(vm.TXOPPopmark)
-	case node.NodeInclude:
+	case node.Include:
 		c.compileInclude(ctx, n.(*node.IncludeNode))
-	case node.NodeGroup:
+	case node.Group:
 		c.compile(ctx, n.(*node.UnaryNode).Child)
-	case node.NodeEquals, node.NodeNotEquals, node.NodeLT, node.NodeGT:
+	case node.Equals, node.NotEquals, node.LT, node.GT:
 		x := n.(*node.BinaryNode)
 
 		c.compileBinaryOperands(ctx, x)
 		switch n.Type() {
-		case node.NodeEquals:
+		case node.Equals:
 			ctx.AppendOp(vm.TXOPEquals)
-		case node.NodeNotEquals:
+		case node.NotEquals:
 			ctx.AppendOp(vm.TXOPNotEquals)
-		case node.NodeLT:
+		case node.LT:
 			ctx.AppendOp(vm.TXOPLessThan)
-		case node.NodeGT:
+		case node.GT:
 			ctx.AppendOp(vm.TXOPGreaterThan)
 		default:
 			panic("Unknown operator")
 		}
-	case node.NodePlus, node.NodeMinus, node.NodeMul, node.NodeDiv:
+	case node.Plus, node.Minus, node.Mul, node.Div:
 		c.compileBinaryArithmetic(ctx, n.(*node.BinaryNode))
-	case node.NodeFilter:
+	case node.Filter:
 		x := n.(*node.FilterNode)
 
 		c.compile(ctx, x.Child)
 		ctx.AppendOp(vm.TXOPFilter, x.Name)
-	case node.NodeWrapper:
+	case node.Wrapper:
 		c.compileWrapper(ctx, n.(*node.WrapperNode))
-	case node.NodeMacro:
+	case node.Macro:
 		c.compileMacro(ctx, n.(*node.MacroNode))
 	default:
 		fmt.Printf("Unknown node: %s\n", n.Type())
 	}
 }
 
-func (c *BasicCompiler) compileIf(ctx *context, n node.Node) {
+func (c *BasicCompiler) compileIf(ctx *context, n node.) {
 	x := n.(*node.IfNode)
 	ctx.AppendOp(vm.TXOPPushmark)
 	c.compile(ctx, x.BooleanExpression)
 	ifop := ctx.AppendOp(vm.TXOPAnd, 0)
 	pos := ctx.ByteCode.Len()
 
-	var elseNode node.Node
+	var elseNode node.
 	children := x.ListNode.Nodes
 	for _, child := range children {
-		if child.Type() == node.NodeElse {
+		if child.Type() == node.Else {
 			elseNode = child
 		} else {
 			c.compile(ctx, child)
@@ -206,7 +206,7 @@ func (c *BasicCompiler) compileIf(ctx *context, n node.Node) {
 }
 
 func (c *BasicCompiler) compileBinaryOperands(ctx *context, x *node.BinaryNode) {
-	if x.Right.Type() == node.NodeGroup {
+	if x.Right.Type() == node.Group {
 		// Grouped node
 		c.compile(ctx, x.Right)
 		ctx.AppendOp(vm.TXOPPush)
@@ -220,7 +220,7 @@ func (c *BasicCompiler) compileBinaryOperands(ctx *context, x *node.BinaryNode) 
 	}
 }
 
-func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []node.Node) {
+func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []node.) {
 	if len(assignnodes) <= 0 {
 		return
 	}
@@ -350,13 +350,13 @@ func (c *BasicCompiler) compileInclude(ctx *context, x *node.IncludeNode) {
 func (c *BasicCompiler) compileBinaryArithmetic(ctx *context, x *node.BinaryNode) {
 	c.compileBinaryOperands(ctx, x)
 	switch x.Type() {
-	case node.NodePlus:
+	case node.Plus:
 		ctx.AppendOp(vm.TXOPAdd)
-	case node.NodeMinus:
+	case node.Minus:
 		ctx.AppendOp(vm.TXOPSub)
-	case node.NodeMul:
+	case node.Mul:
 		ctx.AppendOp(vm.TXOPMul)
-	case node.NodeDiv:
+	case node.Div:
 		ctx.AppendOp(vm.TXOPDiv)
 	default:
 		panic("Unknown arithmetic")

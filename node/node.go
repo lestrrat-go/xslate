@@ -28,42 +28,42 @@ type Appender interface {
 }
 
 const (
-	NodeNoop NodeType = iota
-	NodeRoot
-	NodeText
-	NodeNumber
-	NodeInt
-	NodeFloat
-	NodeIf
-	NodeElse
-	NodeList
-	NodeForeach
-	NodeWhile
-	NodeWrapper
-	NodeInclude
-	NodeAssignment
-	NodeLocalVar
-	NodeFetchField
-	NodeFetchArrayElement
-	NodeMethodCall
-	NodeFunCall
-	NodePrint
-	NodePrintRaw
-	NodeFetchSymbol
-	NodeRange
-	NodePlus
-	NodeMinus
-	NodeMul
-	NodeDiv
-	NodeEquals
-	NodeNotEquals
-	NodeLT
-	NodeGT
-	NodeMakeArray
-	NodeGroup
-	NodeFilter
-	NodeMacro
-	NodeMax
+	Noop NodeType = iota
+	Root
+	Text
+	Number
+	Int
+	Float
+	If
+	Else
+	List
+	Foreach
+	While
+	Wrapper
+	Include
+	Assignment
+	LocalVar
+	FetchField
+	FetchArrayElement
+	MethodCall
+	FunCall
+	Print
+	PrintRaw
+	FetchSymbol
+	Range
+	Plus
+	Minus
+	Mul
+	Div
+	Equals
+	NotEquals
+	LT
+	GT
+	MakeArray
+	Group
+	Filter
+	Macro
+	Max
 )
 
 // BaseNode is the most basic node with no extra data attached to it
@@ -86,7 +86,7 @@ func (n *BaseNode) Visit(c chan Node) {
 }
 
 // Noop nodes don't need to be distinct
-var noop = &BaseNode{NodeNoop, 0}
+var noop = &BaseNode{Noop, 0}
 
 // NewNoopNode returns a op that does nothing
 func NewNoopNode() *BaseNode {
@@ -112,7 +112,7 @@ func (l *ListNode) Visit(c chan Node) {
 
 func NewListNode(pos int) *ListNode {
 	return &ListNode{
-		BaseNode{NodeList, pos},
+		BaseNode{List, pos},
 		[]Node{},
 	}
 }
@@ -137,7 +137,7 @@ type TextNode struct {
 
 func NewTextNode(pos int, arg string) *TextNode {
 	return &TextNode{
-		BaseNode{NodeText, pos},
+		BaseNode{Text, pos},
 		[]byte(arg),
 	}
 }
@@ -168,7 +168,7 @@ func NewWrapperNode(pos int, template string) *WrapperNode {
 		template,
 		[]Node{},
 	}
-	n.NodeType = NodeWrapper
+	n.NodeType = Wrapper
 	return n
 }
 
@@ -204,7 +204,7 @@ type AssignmentNode struct {
 
 func NewAssignmentNode(pos int, symbol string) *AssignmentNode {
 	n := &AssignmentNode{
-		BaseNode{NodeAssignment, pos},
+		BaseNode{Assignment, pos},
 		NewLocalVarNode(pos, symbol, 0), // TODO
 		nil,
 	}
@@ -213,7 +213,7 @@ func NewAssignmentNode(pos int, symbol string) *AssignmentNode {
 
 func (n *AssignmentNode) Copy() Node {
 	x := &AssignmentNode{
-		BaseNode{NodeAssignment, n.pos},
+		BaseNode{Assignment, n.pos},
 		n.Assignee,
 		n.Expression,
 	}
@@ -234,7 +234,7 @@ type LocalVarNode struct {
 
 func NewLocalVarNode(pos int, symbol string, idx int) *LocalVarNode {
 	n := &LocalVarNode{
-		BaseNode{NodeLocalVar, pos},
+		BaseNode{LocalVar, pos},
 		symbol,
 		idx,
 	}
@@ -267,7 +267,7 @@ func NewForeachNode(pos int, symbol string) *ForeachNode {
 		IndexVarIdx:  0,
 		List:         nil,
 	}
-	n.NodeType = NodeForeach
+	n.NodeType = Foreach
 	return n
 }
 
@@ -286,7 +286,7 @@ func (n *ForeachNode) Copy() Node {
 		IndexVarIdx:  n.IndexVarIdx,
 		List:         n.List.Copy(),
 	}
-	x.NodeType = NodeForeach
+	x.NodeType = Foreach
 	return n
 }
 
@@ -306,7 +306,7 @@ func NewWhileNode(pos int, n Node) *WhileNode {
 		NewListNode(pos),
 		n,
 	}
-	x.NodeType = NodeWhile
+	x.NodeType = While
 	return x
 }
 
@@ -332,7 +332,7 @@ type MethodCallNode struct {
 
 func NewMethodCallNode(pos int, invocant Node, method string, args *ListNode) *MethodCallNode {
 	return &MethodCallNode{
-		BaseNode{NodeMethodCall, pos},
+		BaseNode{MethodCall, pos},
 		invocant,
 		method,
 		args,
@@ -357,7 +357,7 @@ type FunCallNode struct {
 
 func NewFunCallNode(pos int, invocant Node, args *ListNode) *FunCallNode {
 	return &FunCallNode{
-		BaseNode{NodeFunCall, pos},
+		BaseNode{FunCall, pos},
 		invocant,
 		args,
 	}
@@ -381,7 +381,7 @@ type FetchFieldNode struct {
 
 func NewFetchFieldNode(pos int, container Node, field string) *FetchFieldNode {
 	n := &FetchFieldNode{
-		BaseNode{NodeFetchField, pos},
+		BaseNode{FetchField, pos},
 		container,
 		field,
 	}
@@ -390,7 +390,7 @@ func NewFetchFieldNode(pos int, container Node, field string) *FetchFieldNode {
 
 func (n *FetchFieldNode) Copy() Node {
 	return &FetchFieldNode{
-		BaseNode{NodeFetchField, n.pos},
+		BaseNode{FetchField, n.pos},
 		n.Container.Copy(),
 		n.FieldName,
 	}
@@ -403,13 +403,13 @@ func (n *FetchFieldNode) Visit(c chan Node) {
 
 func NewRootNode() *ListNode {
 	n := NewListNode(0)
-	n.NodeType = NodeRoot
+	n.NodeType = Root
 	return n
 }
 
 func NewNumberNode(pos int, num reflect.Value) *NumberNode {
 	return &NumberNode{
-		BaseNode{NodeNumber, pos},
+		BaseNode{Number, pos},
 		num,
 	}
 }
@@ -426,32 +426,32 @@ func (n *NumberNode) Visit(c chan Node) {
 
 func NewIntNode(pos int, v int64) *NumberNode {
 	n := NewNumberNode(pos, reflect.ValueOf(v))
-	n.NodeType = NodeInt
+	n.NodeType = Int
 	return n
 }
 
 func NewFloatNode(pos int, v float64) *NumberNode {
 	n := NewNumberNode(pos, reflect.ValueOf(v))
-	n.NodeType = NodeFloat
+	n.NodeType = Float
 	return n
 }
 
 func NewPrintNode(pos int, arg Node) *ListNode {
 	n := NewListNode(pos)
-	n.NodeType = NodePrint
+	n.NodeType = Print
 	n.Append(arg)
 	return n
 }
 
 func NewPrintRawNode(pos int) *ListNode {
 	n := NewListNode(pos)
-	n.NodeType = NodePrintRaw
+	n.NodeType = PrintRaw
 	return n
 }
 
 func NewFetchSymbolNode(pos int, symbol string) *TextNode {
 	n := NewTextNode(pos, symbol)
-	n.NodeType = NodeFetchSymbol
+	n.NodeType = FetchSymbol
 	return n
 }
 
@@ -465,7 +465,7 @@ func NewIfNode(pos int, exp Node) *IfNode {
 		NewListNode(pos),
 		exp,
 	}
-	n.NodeType = NodeIf
+	n.NodeType = If
 	return n
 }
 
@@ -501,13 +501,13 @@ func NewElseNode(pos int) *ElseNode {
 		NewListNode(pos),
 		nil,
 	}
-	n.NodeType = NodeElse
+	n.NodeType = Else
 	return n
 }
 
 func NewRangeNode(pos int, start, end Node) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodeRange, pos},
+		BaseNode{Range, pos},
 		start,
 		end,
 	}
@@ -532,7 +532,7 @@ func (n *UnaryNode) Copy() Node {
 
 func NewMakeArrayNode(pos int, child Node) *UnaryNode {
 	return &UnaryNode{
-		BaseNode{NodeMakeArray, pos},
+		BaseNode{MakeArray, pos},
 		child,
 	}
 }
@@ -545,7 +545,7 @@ type IncludeNode struct {
 
 func NewIncludeNode(pos int, include Node) *IncludeNode {
 	return &IncludeNode{
-		BaseNode{NodeInclude, pos},
+		BaseNode{Include, pos},
 		include,
 		[]Node{},
 	}
@@ -572,7 +572,7 @@ type BinaryNode struct {
 
 func NewPlusNode(pos int) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodePlus, pos},
+		BaseNode{Plus, pos},
 		nil,
 		nil,
 	}
@@ -580,7 +580,7 @@ func NewPlusNode(pos int) *BinaryNode {
 
 func NewMinusNode(pos int) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodeMinus, pos},
+		BaseNode{Minus, pos},
 		nil,
 		nil,
 	}
@@ -588,7 +588,7 @@ func NewMinusNode(pos int) *BinaryNode {
 
 func NewMulNode(pos int) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodeMul, pos},
+		BaseNode{Mul, pos},
 		nil,
 		nil,
 	}
@@ -596,7 +596,7 @@ func NewMulNode(pos int) *BinaryNode {
 
 func NewDivNode(pos int) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodeDiv, pos},
+		BaseNode{Div, pos},
 		nil,
 		nil,
 	}
@@ -604,7 +604,7 @@ func NewDivNode(pos int) *BinaryNode {
 
 func NewEqualsNode(pos int) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodeEquals, pos},
+		BaseNode{Equals, pos},
 		nil,
 		nil,
 	}
@@ -612,7 +612,7 @@ func NewEqualsNode(pos int) *BinaryNode {
 
 func NewNotEqualsNode(pos int) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodeNotEquals, pos},
+		BaseNode{NotEquals, pos},
 		nil,
 		nil,
 	}
@@ -620,7 +620,7 @@ func NewNotEqualsNode(pos int) *BinaryNode {
 
 func NewLTNode(pos int) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodeLT, pos},
+		BaseNode{LT, pos},
 		nil,
 		nil,
 	}
@@ -628,7 +628,7 @@ func NewLTNode(pos int) *BinaryNode {
 
 func NewGTNode(pos int) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodeGT, pos},
+		BaseNode{GT, pos},
 		nil,
 		nil,
 	}
@@ -650,7 +650,7 @@ func (n *BinaryNode) Visit(c chan Node) {
 
 func NewGroupNode(pos int) *UnaryNode {
 	return &UnaryNode{
-		BaseNode{NodeGroup, pos},
+		BaseNode{Group, pos},
 		nil,
 	}
 }
@@ -663,7 +663,7 @@ type FilterNode struct {
 func NewFilterNode(pos int, name string, child Node) *FilterNode {
 	return &FilterNode{
 		&UnaryNode{
-			BaseNode{NodeFilter, pos},
+			BaseNode{Filter, pos},
 			child,
 		},
 		name,
@@ -673,7 +673,7 @@ func NewFilterNode(pos int, name string, child Node) *FilterNode {
 func (n *FilterNode) Copy() Node {
 	return &FilterNode{
 		&UnaryNode{
-			BaseNode{NodeFilter, n.pos},
+			BaseNode{Filter, n.pos},
 			n.Child.Copy(),
 		},
 		n.Name,
@@ -687,7 +687,7 @@ func (n *FilterNode) Visit(c chan Node) {
 
 func NewFetchArrayElementNode(pos int) *BinaryNode {
 	return &BinaryNode{
-		BaseNode{NodeFetchArrayElement, pos},
+		BaseNode{FetchArrayElement, pos},
 		nil,
 		nil,
 	}
@@ -707,7 +707,7 @@ func NewMacroNode(pos int, name string) *MacroNode {
 		nil,
 		[]*LocalVarNode{},
 	}
-	n.NodeType = NodeMacro
+	n.NodeType = Macro
 	return n
 }
 

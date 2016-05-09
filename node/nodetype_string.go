@@ -4,9 +4,9 @@ package node
 
 import "fmt"
 
-const _NodeType_name = "NodeNoopNodeRootNodeTextNodeNumberNodeIntNodeFloatNodeIfNodeElseNodeListNodeForeachNodeWhileNodeWrapperNodeIncludeNodeAssignmentNodeLocalVarNodeFetchFieldNodeFetchArrayElementNodeMethodCallNodeFunCallNodePrintNodePrintRawNodeFetchSymbolNodeRangeNodePlusNodeMinusNodeMulNodeDivNodeEqualsNodeNotEqualsNodeLTNodeGTNodeMakeArrayNodeGroupNodeFilterNodeMacroNodeMax"
+const _NodeType_name = "NoopRootTextNumberIntFloatIfElseListForeachWhileWrapperIncludeAssignmentLocalVarFetchFieldFetchArrayElementMethodCallFunCallPrintPrintRawFetchSymbolRangePlusMinusMulDivEqualsNotEqualsLTGTMakeArrayGroupFilterMacroMax"
 
-var _NodeType_index = [...]uint16{0, 8, 16, 24, 34, 41, 50, 56, 64, 72, 83, 92, 103, 114, 128, 140, 154, 175, 189, 200, 209, 221, 236, 245, 253, 262, 269, 276, 286, 299, 305, 311, 324, 333, 343, 352, 359}
+var _NodeType_index = [...]uint8{0, 4, 8, 12, 18, 21, 26, 28, 32, 36, 43, 48, 55, 62, 72, 80, 90, 107, 117, 124, 129, 137, 148, 153, 157, 162, 165, 168, 174, 183, 185, 187, 196, 201, 207, 212, 215}
 
 func (i NodeType) String() string {
 	if i < 0 || i >= NodeType(len(_NodeType_index)-1) {

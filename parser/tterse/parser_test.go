@@ -16,7 +16,7 @@ func parse(t *testing.T, tmpl string) *parser.AST {
 	return ast
 }
 
-func matchNodeTypes(t *testing.T, ast *parser.AST, expected []node.NodeType) {
+func matchNodeTypes(t *testing.T, ast *parser.AST, expected []node.Type) {
 	i := 0
 	for n := range ast.Visit() {
 		t.Logf("n -> %s", n.Type())
@@ -41,10 +41,10 @@ func TestRawString(t *testing.T) {
 	ast := parse(t, tmpl)
 
 	// Expect nodes to be in this order:
-	expected := []node.NodeType{
-		node.NodeRoot,
-		node.NodePrintRaw,
-		node.NodeText,
+	expected := []node.Type{
+		node.Root,
+		node.PrintRaw,
+		node.Text,
 	}
 	matchNodeTypes(t, ast, expected)
 }
@@ -53,15 +53,15 @@ func TestGetLocalVariable(t *testing.T) {
 	tmpl := `[% SET name = "Bob" %]Hello World, [% name %]`
 	ast := parse(t, tmpl)
 
-	expected := []node.NodeType{
-		node.NodeRoot,
-		node.NodeAssignment,
-		node.NodeLocalVar,
-		node.NodeText,
-		node.NodePrintRaw,
-		node.NodeText,
-		node.NodePrint,
-		node.NodeLocalVar,
+	expected := []node.Type{
+		node.Root,
+		node.Assignment,
+		node.LocalVar,
+		node.Text,
+		node.PrintRaw,
+		node.Text,
+		node.Print,
+		node.LocalVar,
 	}
 	matchNodeTypes(t, ast, expected)
 }
@@ -69,13 +69,13 @@ func TestGetLocalVariable(t *testing.T) {
 func TestForeachLoop(t *testing.T) {
 	tmpl := `[% FOREACH x IN list %]Hello World, [% x %][% END %]`
 	ast := parse(t, tmpl)
-	expected := []node.NodeType{
-		node.NodeRoot,
-		node.NodeForeach,
-		node.NodePrintRaw,
-		node.NodeText,
-		node.NodePrint,
-		node.NodeLocalVar,
+	expected := []node.Type{
+		node.Root,
+		node.Foreach,
+		node.PrintRaw,
+		node.Text,
+		node.Print,
+		node.LocalVar,
 	}
 	matchNodeTypes(t, ast, expected)
 }
@@ -103,13 +103,13 @@ func TestSimpleAssign(t *testing.T) {
 	tmpl := `[% SET s = 1 %][% s %]`
 	ast := parse(t, tmpl)
 
-	expected := []node.NodeType{
-		node.NodeRoot,
-		node.NodeAssignment,
-		node.NodeLocalVar,
-		node.NodeInt,
-		node.NodePrint,
-		node.NodeLocalVar,
+	expected := []node.Type{
+		node.Root,
+		node.Assignment,
+		node.LocalVar,
+		node.Int,
+		node.Print,
+		node.LocalVar,
 	}
 
 	matchNodeTypes(t, ast, expected)
