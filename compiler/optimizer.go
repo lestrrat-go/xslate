@@ -1,7 +1,8 @@
 package compiler
 
 import (
-	"fmt"
+	"errors"
+
 	"github.com/lestrrat/go-xslate/vm"
 )
 
@@ -10,7 +11,7 @@ func (o *NaiveOptimizer) Optimize(bc *vm.ByteCode) error {
 	for i := 0; i < bc.Len(); i++ {
 		op := bc.Get(i)
 		if op == nil {
-			return fmt.Errorf("failed to fetch op %d", i)
+			return errors.New("failed to fetch op '" + op.String() + "'")
 		}
 		switch op.Type() {
 		case vm.TXOPLiteral:

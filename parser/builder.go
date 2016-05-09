@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"github.com/lestrrat/go-lex"
 	"github.com/lestrrat/go-xslate/node"
 	"github.com/lestrrat/go-xslate/util"
+	"github.com/pkg/errors"
 )
 
 func NewFrame(s *util.Stack) *Frame {

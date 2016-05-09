@@ -3,7 +3,6 @@ package loader
 import (
 	"bufio"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,10 +11,8 @@ import (
 	"github.com/lestrrat/go-xslate/compiler"
 	"github.com/lestrrat/go-xslate/parser"
 	"github.com/lestrrat/go-xslate/vm"
+	"github.com/pkg/errors"
 )
-
-// ErrCacheMiss is returned when the bytecode could not be found in the cache
-var ErrCacheMiss = errors.New("cache miss")
 
 // NewCachedByteCodeLoader creates a new CachedByteCodeLoader
 func NewCachedByteCodeLoader(
@@ -82,7 +79,7 @@ func (l *CachedByteCodeLoader) Load(key string) (bc *vm.ByteCode, err error) {
 
 			t, err := entity.Source.LastModified()
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "failed to get last-modified from source")
 			}
 
 			if t.Before(entity.ByteCode.GeneratedOn) {
@@ -97,18 +94,18 @@ func (l *CachedByteCodeLoader) Load(key string) (bc *vm.ByteCode, err error) {
 	if source == nil {
 		source, err = l.Fetcher.FetchTemplate(key)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to fetch template")
 		}
 	}
 
 	rdr, err := source.Reader()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get the reader")
 	}
 
 	bc, err = l.LoadReader(key, rdr)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to read byte code")
 	}
 
 	entity := &CacheEntity{bc, source}
@@ -143,14 +140,14 @@ func (c *FileCache) Get(key string) (*CacheEntity, error) {
 	// Need to avoid race condition
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to open cache file '"+path+"'")
 	}
 	defer file.Close()
 
 	var entity CacheEntity
 	dec := gob.NewDecoder(file)
 	if err = dec.Decode(&entity); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to gob decode from cache file '"+path+"'")
 	}
 
 	return &entity, nil
@@ -160,13 +157,13 @@ func (c *FileCache) Get(key string) (*CacheEntity, error) {
 func (c *FileCache) Set(key string, entity *CacheEntity) error {
 	path := c.GetCachePath(key)
 	if err := os.MkdirAll(filepath.Dir(path), 0777); err != nil {
-		return err
+		return errors.Wrap(err, "failed to create directory for cache file")
 	}
 
 	// Need to avoid race condition
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to open/create a cache file")
 	}
 	defer file.Close()
 
@@ -174,7 +171,7 @@ func (c *FileCache) Set(key string, entity *CacheEntity) error {
 	defer f.Flush()
 	enc := gob.NewEncoder(f)
 	if err = enc.Encode(entity); err != nil {
-		return err
+		return errors.Wrap(err, "failed to encode Entity via gob")
 	}
 
 	return nil
@@ -182,14 +179,14 @@ func (c *FileCache) Set(key string, entity *CacheEntity) error {
 
 // Delete deletes the cache
 func (c *FileCache) Delete(key string) error {
-	return os.Remove(c.GetCachePath(key))
+	return errors.Wrap(os.Remove(c.GetCachePath(key)), "failed to remove file cache file")
 }
 
 // Get returns the cached ByteCode
 func (c MemoryCache) Get(key string) (*CacheEntity, error) {
 	bc, ok := c[key]
 	if !ok {
-		return nil, ErrCacheMiss
+		return nil, errors.New("cache miss")
 	}
 	return bc, nil
 }

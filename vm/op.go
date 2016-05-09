@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"reflect"
+
+	"github.com/pkg/errors"
 )
 
 // Type returns the ... OpType. This seems redundunt, but having this method
@@ -38,7 +40,7 @@ func (o Op) MarshalBinary() ([]byte, error) {
 
 	// Write the code/opcode
 	if err := binary.Write(buf, binary.LittleEndian, int64(o.OpType)); err != nil {
-		return nil, fmt.Errorf("error: Op.MarshalBinary failed: %s", err)
+		return nil, errors.Wrap(err, "failed to marshal op to binary")
 	}
 
 	// If this has args, we need to encode the args
@@ -87,7 +89,7 @@ func (o *Op) UnmarshalBinary(data []byte) error {
 
 	var t int64
 	if err := binary.Read(buf, binary.LittleEndian, &t); err != nil {
-		return fmt.Errorf("error: Op.UnmarshalBinary optype check failed: %s", err)
+		return errors.Wrap(err, "optype check failed during UnmarshalBinary")
 	}
 
 	o.OpType = OpType(t)
@@ -95,7 +97,7 @@ func (o *Op) UnmarshalBinary(data []byte) error {
 
 	var hasArg int64
 	if err := binary.Read(buf, binary.LittleEndian, &hasArg); err != nil {
-		return fmt.Errorf("error: Op.UnmarshalBinary hasArg check failed: %s", err)
+		return errors.Wrap(err, "hasArg check failed during UnmarshalBinary")
 	}
 
 	if hasArg == 0 {
@@ -105,26 +107,26 @@ func (o *Op) UnmarshalBinary(data []byte) error {
 
 	var tArg int64
 	if err := binary.Read(buf, binary.LittleEndian, &tArg); err != nil {
-		return fmt.Errorf("error: Op.UnmarshalBinary arg type check failed: %s", err)
+		return errors.Wrap(err, "failed to read argument from buffer during UnmarshalBinary")
 	}
 
 	switch tArg {
 	case 2:
 		var i int64
 		if err := binary.Read(buf, binary.LittleEndian, &i); err != nil {
-			return err
+			return errors.Wrap(err, "failed to read integer argument during UnmarshalBinary")
 		}
 		o.uArg = i
 	case 5:
 		var l int64
 		if err := binary.Read(buf, binary.LittleEndian, &l); err != nil {
-			return err
+			return errors.Wrap(err, "failed to read length argument during UnmarshalBinary")
 		}
 
 		b := make([]byte, l)
 		for i := int64(0); i < l; i++ {
 			if err := binary.Read(buf, binary.LittleEndian, &b[i]); err != nil {
-				return err
+				return errors.Wrap(err, "failed to read bytes from buffer during UnmarshalBinary")
 			}
 		}
 		o.uArg = b
