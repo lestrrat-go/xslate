@@ -1,4 +1,4 @@
-package parser
+package node
 
 import (
 	"strings"

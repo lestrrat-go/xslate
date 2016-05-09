@@ -1,4 +1,4 @@
-package parser
+package node
 
 import (
 	"bytes"
@@ -17,13 +17,12 @@ func (n NodeType) Type() NodeType {
 // Node defines the interface for an AST node
 type Node interface {
 	Type() NodeType
-	String() string
 	Copy() Node
 	Pos() int
 	Visit(chan Node)
 }
 
-type NodeAppender interface {
+type Appender interface {
 	Node
 	Append(Node)
 }
@@ -66,83 +65,6 @@ const (
 	NodeMacro
 	NodeMax
 )
-
-func (n NodeType) String() string {
-	switch n {
-	case NodeNoop:
-		return "Noop"
-	case NodeRoot:
-		return "Root"
-	case NodeText:
-		return "Text"
-	case NodeNumber:
-		return "Number"
-	case NodeInt:
-		return "Int"
-	case NodeFloat:
-		return "Float"
-	case NodeList:
-		return "List"
-	case NodeForeach:
-		return "Foreach"
-	case NodeWhile:
-		return "While"
-	case NodeWrapper:
-		return "Wrapper"
-	case NodeInclude:
-		return "Include"
-	case NodeAssignment:
-		return "Assignment"
-	case NodeLocalVar:
-		return "LocalVar"
-	case NodeFetchField:
-		return "FetchField"
-	case NodeFetchArrayElement:
-		return "FetchArrayElement"
-	case NodeMethodCall:
-		return "MethodCall"
-	case NodeFunCall:
-		return "FunCall"
-	case NodePrint:
-		return "Print"
-	case NodePrintRaw:
-		return "PrintRaw"
-	case NodeFetchSymbol:
-		return "FetchSymbol"
-	case NodeIf:
-		return "If"
-	case NodeElse:
-		return "Else"
-	case NodeRange:
-		return "Range"
-	case NodeMakeArray:
-		return "MakeArray"
-	case NodePlus:
-		return "Plus"
-	case NodeMinus:
-		return "Minus"
-	case NodeMul:
-		return "Multiply"
-	case NodeDiv:
-		return "Divide"
-	case NodeEquals:
-		return "Equals"
-	case NodeNotEquals:
-		return "NotEquals"
-	case NodeLT:
-		return "LessThan"
-	case NodeGT:
-		return "GreaterThan"
-	case NodeGroup:
-		return "Group"
-	case NodeFilter:
-		return "Filter"
-	case NodeMacro:
-		return "Macro"
-	default:
-		return "Unknown Node"
-	}
-}
 
 // BaseNode is the most basic node with no extra data attached to it
 type BaseNode struct {
@@ -302,10 +224,6 @@ func (n *AssignmentNode) Visit(c chan Node) {
 	c <- n
 	c <- n.Assignee
 	c <- n.Expression
-}
-
-func (n *AssignmentNode) String() string {
-	return n.NodeType.String()
 }
 
 type LocalVarNode struct {

@@ -2,6 +2,8 @@ package compiler
 
 import (
 	"fmt"
+
+	"github.com/lestrrat/go-xslate/node"
 	"github.com/lestrrat/go-xslate/parser"
 	"github.com/lestrrat/go-xslate/vm"
 )
@@ -49,19 +51,19 @@ func (c *BasicCompiler) Compile(ast *parser.AST) (*vm.ByteCode, error) {
 	return ctx.ByteCode, nil
 }
 
-func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
+func (c *BasicCompiler) compile(ctx *context, n node.Node) {
 	switch n.Type() {
-	case parser.NodeText:
+	case node.NodeText:
 		// XXX probably not true all the time
-		ctx.AppendOp(vm.TXOPLiteral, n.(*parser.TextNode).Text)
-	case parser.NodeFetchSymbol:
-		ctx.AppendOp(vm.TXOPFetchSymbol, n.(*parser.TextNode).Text)
-	case parser.NodeFetchField:
-		ffnode := n.(*parser.FetchFieldNode)
+		ctx.AppendOp(vm.TXOPLiteral, n.(*node.TextNode).Text)
+	case node.NodeFetchSymbol:
+		ctx.AppendOp(vm.TXOPFetchSymbol, n.(*node.TextNode).Text)
+	case node.NodeFetchField:
+		ffnode := n.(*node.FetchFieldNode)
 		c.compile(ctx, ffnode.Container)
 		ctx.AppendOp(vm.TXOPFetchFieldSymbol, ffnode.FieldName)
-	case parser.NodeFetchArrayElement:
-		faenode := n.(*parser.BinaryNode)
+	case node.NodeFetchArrayElement:
+		faenode := n.(*node.BinaryNode)
 		ctx.AppendOp(vm.TXOPPushmark)
 		c.compile(ctx, faenode.Right)
 		ctx.AppendOp(vm.TXOPPush)
@@ -69,56 +71,56 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
 		ctx.AppendOp(vm.TXOPPush)
 		ctx.AppendOp(vm.TXOPFetchArrayElement)
 		ctx.AppendOp(vm.TXOPPopmark)
-	case parser.NodeLocalVar:
-		l := n.(*parser.LocalVarNode)
+	case node.NodeLocalVar:
+		l := n.(*node.LocalVarNode)
 		ctx.AppendOp(vm.TXOPLoadLvar, l.Offset)
-	case parser.NodeAssignment:
-		c.compile(ctx, n.(*parser.AssignmentNode).Expression)
+	case node.NodeAssignment:
+		c.compile(ctx, n.(*node.AssignmentNode).Expression)
 		ctx.AppendOp(vm.TXOPSaveToLvar, 0) // XXX this 0 must be pre-computed
-	case parser.NodePrint:
-		c.compile(ctx, n.(*parser.ListNode).Nodes[0])
+	case node.NodePrint:
+		c.compile(ctx, n.(*node.ListNode).Nodes[0])
 		ctx.AppendOp(vm.TXOPPrint)
-	case parser.NodePrintRaw:
-		c.compile(ctx, n.(*parser.ListNode).Nodes[0])
+	case node.NodePrintRaw:
+		c.compile(ctx, n.(*node.ListNode).Nodes[0])
 		ctx.AppendOp(vm.TXOPPrintRaw)
-	case parser.NodeForeach:
-		c.compileForeach(ctx, n.(*parser.ForeachNode))
-	case parser.NodeWhile:
-		c.compileWhile(ctx, n.(*parser.WhileNode))
-	case parser.NodeIf:
+	case node.NodeForeach:
+		c.compileForeach(ctx, n.(*node.ForeachNode))
+	case node.NodeWhile:
+		c.compileWhile(ctx, n.(*node.WhileNode))
+	case node.NodeIf:
 		c.compileIf(ctx, n)
-	case parser.NodeElse:
+	case node.NodeElse:
 		gotoOp := ctx.AppendOp(vm.TXOPGoto, 0)
 		pos := ctx.ByteCode.Len()
-		for _, child := range n.(*parser.ElseNode).ListNode.Nodes {
+		for _, child := range n.(*node.ElseNode).ListNode.Nodes {
 			c.compile(ctx, child)
 		}
 		gotoOp.SetArg(ctx.ByteCode.Len() - pos + 1)
-	case parser.NodeMakeArray:
-		x := n.(*parser.UnaryNode)
+	case node.NodeMakeArray:
+		x := n.(*node.UnaryNode)
 		c.compile(ctx, x.Child)
 		ctx.AppendOp(vm.TXOPMakeArray)
-	case parser.NodeRange:
-		x := n.(*parser.BinaryNode)
+	case node.NodeRange:
+		x := n.(*node.BinaryNode)
 		c.compile(ctx, x.Right)
 		ctx.AppendOp(vm.TXOPPush)
 		c.compile(ctx, x.Left)
 		ctx.AppendOp(vm.TXOPMoveToSb)
 		ctx.AppendOp(vm.TXOPPop)
 		ctx.AppendOp(vm.TXOPRange)
-	case parser.NodeInt:
-		x := n.(*parser.NumberNode)
+	case node.NodeInt:
+		x := n.(*node.NumberNode)
 		ctx.AppendOp(vm.TXOPLiteral, x.Value.Int())
-	case parser.NodeList:
-		x := n.(*parser.ListNode)
+	case node.NodeList:
+		x := n.(*node.ListNode)
 		for _, v := range x.Nodes {
 			c.compile(ctx, v)
-			if v.Type() != parser.NodeRange {
+			if v.Type() != node.NodeRange {
 				ctx.AppendOp(vm.TXOPPush)
 			}
 		}
-	case parser.NodeFunCall:
-		x := n.(*parser.FunCallNode)
+	case node.NodeFunCall:
+		x := n.(*node.FunCallNode)
 
 		for _, child := range x.Args.Nodes {
 			c.compile(ctx, child)
@@ -127,8 +129,8 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
 
 		c.compile(ctx, x.Invocant)
 		ctx.AppendOp(vm.TXOPFunCallOmni)
-	case parser.NodeMethodCall:
-		x := n.(*parser.MethodCallNode)
+	case node.NodeMethodCall:
+		x := n.(*node.MethodCallNode)
 
 		c.compile(ctx, x.Invocant)
 		ctx.AppendOp(vm.TXOPPush)
@@ -139,53 +141,53 @@ func (c *BasicCompiler) compile(ctx *context, n parser.Node) {
 		}
 		ctx.AppendOp(vm.TXOPMethodCall, x.MethodName)
 		ctx.AppendOp(vm.TXOPPopmark)
-	case parser.NodeInclude:
-		c.compileInclude(ctx, n.(*parser.IncludeNode))
-	case parser.NodeGroup:
-		c.compile(ctx, n.(*parser.UnaryNode).Child)
-	case parser.NodeEquals, parser.NodeNotEquals, parser.NodeLT, parser.NodeGT:
-		x := n.(*parser.BinaryNode)
+	case node.NodeInclude:
+		c.compileInclude(ctx, n.(*node.IncludeNode))
+	case node.NodeGroup:
+		c.compile(ctx, n.(*node.UnaryNode).Child)
+	case node.NodeEquals, node.NodeNotEquals, node.NodeLT, node.NodeGT:
+		x := n.(*node.BinaryNode)
 
 		c.compileBinaryOperands(ctx, x)
 		switch n.Type() {
-		case parser.NodeEquals:
+		case node.NodeEquals:
 			ctx.AppendOp(vm.TXOPEquals)
-		case parser.NodeNotEquals:
+		case node.NodeNotEquals:
 			ctx.AppendOp(vm.TXOPNotEquals)
-		case parser.NodeLT:
+		case node.NodeLT:
 			ctx.AppendOp(vm.TXOPLessThan)
-		case parser.NodeGT:
+		case node.NodeGT:
 			ctx.AppendOp(vm.TXOPGreaterThan)
 		default:
 			panic("Unknown operator")
 		}
-	case parser.NodePlus, parser.NodeMinus, parser.NodeMul, parser.NodeDiv:
-		c.compileBinaryArithmetic(ctx, n.(*parser.BinaryNode))
-	case parser.NodeFilter:
-		x := n.(*parser.FilterNode)
+	case node.NodePlus, node.NodeMinus, node.NodeMul, node.NodeDiv:
+		c.compileBinaryArithmetic(ctx, n.(*node.BinaryNode))
+	case node.NodeFilter:
+		x := n.(*node.FilterNode)
 
 		c.compile(ctx, x.Child)
 		ctx.AppendOp(vm.TXOPFilter, x.Name)
-	case parser.NodeWrapper:
-		c.compileWrapper(ctx, n.(*parser.WrapperNode))
-	case parser.NodeMacro:
-		c.compileMacro(ctx, n.(*parser.MacroNode))
+	case node.NodeWrapper:
+		c.compileWrapper(ctx, n.(*node.WrapperNode))
+	case node.NodeMacro:
+		c.compileMacro(ctx, n.(*node.MacroNode))
 	default:
 		fmt.Printf("Unknown node: %s\n", n.Type())
 	}
 }
 
-func (c *BasicCompiler) compileIf(ctx *context, n parser.Node) {
-	x := n.(*parser.IfNode)
+func (c *BasicCompiler) compileIf(ctx *context, n node.Node) {
+	x := n.(*node.IfNode)
 	ctx.AppendOp(vm.TXOPPushmark)
 	c.compile(ctx, x.BooleanExpression)
 	ifop := ctx.AppendOp(vm.TXOPAnd, 0)
 	pos := ctx.ByteCode.Len()
 
-	var elseNode parser.Node
+	var elseNode node.Node
 	children := x.ListNode.Nodes
 	for _, child := range children {
-		if child.Type() == parser.NodeElse {
+		if child.Type() == node.NodeElse {
 			elseNode = child
 		} else {
 			c.compile(ctx, child)
@@ -203,8 +205,8 @@ func (c *BasicCompiler) compileIf(ctx *context, n parser.Node) {
 	ctx.AppendOp(vm.TXOPPopmark)
 }
 
-func (c *BasicCompiler) compileBinaryOperands(ctx *context, x *parser.BinaryNode) {
-	if x.Right.Type() == parser.NodeGroup {
+func (c *BasicCompiler) compileBinaryOperands(ctx *context, x *node.BinaryNode) {
+	if x.Right.Type() == node.NodeGroup {
 		// Grouped node
 		c.compile(ctx, x.Right)
 		ctx.AppendOp(vm.TXOPPush)
@@ -218,13 +220,13 @@ func (c *BasicCompiler) compileBinaryOperands(ctx *context, x *parser.BinaryNode
 	}
 }
 
-func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []parser.Node) {
+func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []node.Node) {
 	if len(assignnodes) <= 0 {
 		return
 	}
 	ctx.AppendOp(vm.TXOPPushmark)
 	for _, nv := range assignnodes {
-		v := nv.(*parser.AssignmentNode)
+		v := nv.(*node.AssignmentNode)
 		ctx.AppendOp(vm.TXOPLiteral, v.Assignee.Name)
 		ctx.AppendOp(vm.TXOPPush)
 		c.compile(ctx, v.Expression)
@@ -235,7 +237,7 @@ func (c *BasicCompiler) compileAssignmentNodes(ctx *context, assignnodes []parse
 	ctx.AppendOp(vm.TXOPPopmark)
 }
 
-func (c *BasicCompiler) compileForeach(ctx *context, x *parser.ForeachNode) {
+func (c *BasicCompiler) compileForeach(ctx *context, x *node.ForeachNode) {
 	ctx.AppendOp(vm.TXOPPushmark)
 	ctx.AppendOp(vm.TXOPPushFrame)
 	c.compile(ctx, x.List)
@@ -256,7 +258,7 @@ func (c *BasicCompiler) compileForeach(ctx *context, x *parser.ForeachNode) {
 	ctx.AppendOp(vm.TXOPPopmark)
 }
 
-func (c *BasicCompiler) compileWhile(ctx *context, x *parser.WhileNode) {
+func (c *BasicCompiler) compileWhile(ctx *context, x *node.WhileNode) {
 	ctx.AppendOp(vm.TXOPPushmark)
 	condPos := ctx.ByteCode.Len() + 1 // w/o 1, it's the pushmark, but we want the next one
 
@@ -278,7 +280,7 @@ func (c *BasicCompiler) compileWhile(ctx *context, x *parser.WhileNode) {
 	ctx.AppendOp(vm.TXOPPopmark)
 }
 
-func (c *BasicCompiler) compileWrapper(ctx *context, x *parser.WrapperNode) {
+func (c *BasicCompiler) compileWrapper(ctx *context, x *node.WrapperNode) {
 	// Save the current io.Writer to the stack
 	// This also creates pushes a bytes.Buffer into the stack
 	// so that following operations write to that buffer
@@ -306,7 +308,7 @@ func (c *BasicCompiler) compileWrapper(ctx *context, x *parser.WrapperNode) {
 	ctx.AppendOp(vm.TXOPPopmark)
 }
 
-func (c *BasicCompiler) compileMacro(ctx *context, x *parser.MacroNode) {
+func (c *BasicCompiler) compileMacro(ctx *context, x *node.MacroNode) {
 	// The VM is responsible for passing arguments, which do not need
 	// to be declared as variables in the template. n.Arguments exists,
 	// but it's left untouched
@@ -332,7 +334,7 @@ func (c *BasicCompiler) compileMacro(ctx *context, x *parser.MacroNode) {
 	ctx.AppendOp(vm.TXOPSaveToLvar, x.LocalVar.Offset)
 }
 
-func (c *BasicCompiler) compileInclude(ctx *context, x *parser.IncludeNode) {
+func (c *BasicCompiler) compileInclude(ctx *context, x *node.IncludeNode) {
 	c.compile(ctx, x.IncludeTarget)
 	ctx.AppendOp(vm.TXOPPush)
 	// Arguments to include (WITH foo = "bar") need to be evaulated
@@ -345,16 +347,16 @@ func (c *BasicCompiler) compileInclude(ctx *context, x *parser.IncludeNode) {
 	ctx.AppendOp(vm.TXOPPopmark)
 }
 
-func (c *BasicCompiler) compileBinaryArithmetic(ctx *context, x *parser.BinaryNode) {
+func (c *BasicCompiler) compileBinaryArithmetic(ctx *context, x *node.BinaryNode) {
 	c.compileBinaryOperands(ctx, x)
 	switch x.Type() {
-	case parser.NodePlus:
+	case node.NodePlus:
 		ctx.AppendOp(vm.TXOPAdd)
-	case parser.NodeMinus:
+	case node.NodeMinus:
 		ctx.AppendOp(vm.TXOPSub)
-	case parser.NodeMul:
+	case node.NodeMul:
 		ctx.AppendOp(vm.TXOPMul)
-	case parser.NodeDiv:
+	case node.NodeDiv:
 		ctx.AppendOp(vm.TXOPDiv)
 	default:
 		panic("Unknown arithmetic")

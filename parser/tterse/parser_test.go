@@ -1,8 +1,10 @@
 package tterse
 
 import (
-	"github.com/lestrrat/go-xslate/parser"
 	"testing"
+
+	"github.com/lestrrat/go-xslate/node"
+	"github.com/lestrrat/go-xslate/parser"
 )
 
 func parse(t *testing.T, tmpl string) *parser.AST {
@@ -14,7 +16,7 @@ func parse(t *testing.T, tmpl string) *parser.AST {
 	return ast
 }
 
-func matchNodeTypes(t *testing.T, ast *parser.AST, expected []parser.NodeType) {
+func matchNodeTypes(t *testing.T, ast *parser.AST, expected []node.NodeType) {
 	i := 0
 	for n := range ast.Visit() {
 		t.Logf("n -> %s", n.Type())
@@ -39,10 +41,10 @@ func TestRawString(t *testing.T) {
 	ast := parse(t, tmpl)
 
 	// Expect nodes to be in this order:
-	expected := []parser.NodeType{
-		parser.NodeRoot,
-		parser.NodePrintRaw,
-		parser.NodeText,
+	expected := []node.NodeType{
+		node.NodeRoot,
+		node.NodePrintRaw,
+		node.NodeText,
 	}
 	matchNodeTypes(t, ast, expected)
 }
@@ -51,15 +53,15 @@ func TestGetLocalVariable(t *testing.T) {
 	tmpl := `[% SET name = "Bob" %]Hello World, [% name %]`
 	ast := parse(t, tmpl)
 
-	expected := []parser.NodeType{
-		parser.NodeRoot,
-		parser.NodeAssignment,
-		parser.NodeLocalVar,
-		parser.NodeText,
-		parser.NodePrintRaw,
-		parser.NodeText,
-		parser.NodePrint,
-		parser.NodeLocalVar,
+	expected := []node.NodeType{
+		node.NodeRoot,
+		node.NodeAssignment,
+		node.NodeLocalVar,
+		node.NodeText,
+		node.NodePrintRaw,
+		node.NodeText,
+		node.NodePrint,
+		node.NodeLocalVar,
 	}
 	matchNodeTypes(t, ast, expected)
 }
@@ -67,13 +69,13 @@ func TestGetLocalVariable(t *testing.T) {
 func TestForeachLoop(t *testing.T) {
 	tmpl := `[% FOREACH x IN list %]Hello World, [% x %][% END %]`
 	ast := parse(t, tmpl)
-	expected := []parser.NodeType{
-		parser.NodeRoot,
-		parser.NodeForeach,
-		parser.NodePrintRaw,
-		parser.NodeText,
-		parser.NodePrint,
-		parser.NodeLocalVar,
+	expected := []node.NodeType{
+		node.NodeRoot,
+		node.NodeForeach,
+		node.NodePrintRaw,
+		node.NodeText,
+		node.NodePrint,
+		node.NodeLocalVar,
 	}
 	matchNodeTypes(t, ast, expected)
 }
@@ -101,13 +103,13 @@ func TestSimpleAssign(t *testing.T) {
 	tmpl := `[% SET s = 1 %][% s %]`
 	ast := parse(t, tmpl)
 
-	expected := []parser.NodeType{
-		parser.NodeRoot,
-		parser.NodeAssignment,
-		parser.NodeLocalVar,
-		parser.NodeInt,
-		parser.NodePrint,
-		parser.NodeLocalVar,
+	expected := []node.NodeType{
+		node.NodeRoot,
+		node.NodeAssignment,
+		node.NodeLocalVar,
+		node.NodeInt,
+		node.NodePrint,
+		node.NodeLocalVar,
 	}
 
 	matchNodeTypes(t, ast, expected)
