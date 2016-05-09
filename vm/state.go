@@ -2,38 +2,10 @@ package vm
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/lestrrat/go-xslate/util"
 )
-
-// State keeps track of Xslate Virtual Machine state
-type State struct {
-	opidx int
-	pc    *ByteCode
-
-	stack     *util.Stack
-	markstack *util.Stack
-
-	// output
-	output io.Writer
-	warn   io.Writer
-
-	// template variables
-	vars Vars
-
-	// registers
-	sa   interface{}
-	sb   interface{}
-	targ interface{}
-
-	// Stack used by frames
-	framestack *util.Stack
-	frames     *util.Stack
-
-	Loader byteCodeLoader
-}
 
 // NewState creates a new State struct
 func NewState() *State {

@@ -10,13 +10,6 @@ import (
 	"time"
 )
 
-// HTTPTemplateFetcher is a proof of concept loader that fetches templates
-// from external http servers. Probably not a good thing to use in
-// your production environment
-type HTTPTemplateFetcher struct {
-	URLs []string
-}
-
 // NewHTTPTemplateFetcher creates a new struct. `urls` must give us the
 // base HTTP urls for us to look the templates in (note: do not use trailing slashes)
 func NewHTTPTemplateFetcher(urls []string) (*HTTPTemplateFetcher, error) {
@@ -61,12 +54,6 @@ func (l *HTTPTemplateFetcher) FetchTemplate(path string) (TemplateSource, error)
 		return NewHTTPSource(res)
 	}
 	return nil, ErrTemplateNotFound
-}
-
-// HTTPSource represents a template source fetched via HTTP
-type HTTPSource struct {
-	Buffer           *bytes.Buffer
-	LastModifiedTime time.Time
 }
 
 // NewHTTPSource creates a new HTTPSource instance

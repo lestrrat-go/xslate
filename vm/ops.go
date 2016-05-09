@@ -15,62 +15,6 @@ import (
 	"github.com/lestrrat/go-xslate/functions/hash"
 )
 
-// These TXOP... constants are identifiers for each op
-const (
-	TXOPNoop OpType = iota
-	TXOPNil
-	TXOPMoveToSb
-	TXOPMoveFromSb
-	TXOPLiteral
-	TXOPFetchSymbol
-	TXOPFetchFieldSymbol
-	TXOPFetchArrayElement
-	TXOPMarkRaw
-	TXOPUnmarkRaw
-	TXOPPrint
-	TXOPPrintRaw
-	TXOPPrintRawConst
-	TXOPSaveToLvar
-	TXOPLoadLvar
-	TXOPAdd
-	TXOPSub
-	TXOPMul
-	TXOPDiv
-	TXOPAnd
-	TXOPGoto
-	TXOPForStart
-	TXOPForIter
-	TXOPHTMLEscape
-	TXOPUriEscape
-	TXOPEquals
-	TXOPNotEquals
-	TXOPLessThan
-	TXOPGreaterThan
-	TXOPPopmark
-	TXOPPushmark
-	TXOPPopFrame
-	TXOPPushFrame
-	TXOPPush
-	TXOPPop
-	TXOPFunCall
-	TXOPFunCallSymbol
-	TXOPFunCallOmni
-	TXOPMethodCall
-	TXOPRange
-	TXOPMakeArray
-	TXOPMakeHash
-	TXOPInclude
-	TXOPWrapper
-	TXOPFilter
-	TXOPSaveWriter
-	TXOPRestoreWriter
-	TXOPEnd
-	TXOPMax
-)
-
-var opnames = make([]string, TXOPMax)
-var ophandlers = make([]OpHandler, TXOPMax)
-
 func init() {
 	for i := TXOPNoop; i < TXOPMax; i++ {
 		var h OpHandler
@@ -496,19 +440,6 @@ func txAnd(st *State) {
 
 func txGoto(st *State) {
 	st.AdvanceBy(st.CurrentOp().ArgInt())
-}
-
-// LoopVar is the variable available within FOREACH loops
-type LoopVar struct {
-	Index    int           // 0 origin, current index
-	Count    int           // loop.Index + 1
-	Body     reflect.Value // alias to array
-	Size     int           // len(loop.Body)
-	MaxIndex int           // loop.Size - 1
-	PeekNext interface{}   // previous item. nil if not available
-	PeekPrev interface{}   // next item. nil if not available
-	IsFirst  bool          // true only if Index == 0
-	IsLast   bool          // true only if Index == MaxIndex
 }
 
 // NewLoopVar creates the loop variable

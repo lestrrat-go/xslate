@@ -35,17 +35,6 @@ func init() {
 	DefaultSymbolSet.Set("/", ItemSlash, 0.0)
 }
 
-// LexSymbol holds the pre-defined symbols to be lexed
-type LexSymbol struct {
-	Name     string
-	Type     lex.ItemType
-	Priority float32
-}
-
-// LexSymbolList a list of LexSymbols. Normally you do not need to use it.
-// This is mainly only useful for sorting LexSymbols
-type LexSymbolList []LexSymbol
-
 // Sort returns a sorted list of LexSymbols, sorted by Priority
 func (list LexSymbolList) Sort() LexSymbolList {
 	sorter := LexSymbolSorter{
@@ -53,11 +42,6 @@ func (list LexSymbolList) Sort() LexSymbolList {
 	}
 	sort.Sort(sorter)
 	return sorter.list
-}
-
-// LexSymbolSorter sorts a list of LexSymbols by priority
-type LexSymbolSorter struct {
-	list LexSymbolList
 }
 
 // Len returns the length of the list
@@ -73,12 +57,6 @@ func (s LexSymbolSorter) Less(i, j int) bool {
 // Swap swaps the elements at i and j
 func (s LexSymbolSorter) Swap(i, j int) {
 	s.list[i], s.list[j] = s.list[j], s.list[i]
-}
-
-// LexSymbolSet is the container for symbols.
-type LexSymbolSet struct {
-	Map        map[string]LexSymbol
-	SortedList LexSymbolList
 }
 
 // NewLexSymbolSet creates a new LexSymbolSet
