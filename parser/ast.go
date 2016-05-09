@@ -12,8 +12,8 @@ import (
 func (ast *AST) Visit() <-chan node.Node {
 	c := make(chan node.Node)
 	go func() {
+		defer close(c)
 		ast.Root.Visit(c)
-		close(c)
 	}()
 	return c
 }

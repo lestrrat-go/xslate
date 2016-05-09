@@ -12,85 +12,11 @@ Once tagStart is found, real lexing starts.
 */
 
 import (
-	"github.com/lestrrat/go-lex"
 	"io"
 	"unicode"
 	"unicode/utf8"
-)
 
-const (
-	ItemError lex.ItemType = lex.ItemDefaultMax + 1 + iota
-	ItemEOF
-	ItemRawString
-	ItemComment
-	ItemNumber
-	ItemComplex
-	ItemChar
-	ItemSpace
-	ItemTagStart
-	ItemTagEnd
-	ItemSymbol
-	ItemIdentifier
-	ItemDoubleQuotedString
-	ItemSingleQuotedString
-	ItemBool
-	ItemField
-	ItemComma
-	ItemOpenParen          // '('
-	ItemCloseParen         // ')'
-	ItemOpenSquareBracket  // '['
-	ItemCloseSquareBracket // ']'
-	ItemPeriod             // '.'
-	ItemKeyword            // Delimiter
-	ItemCall               // CALL
-	ItemGet                // GET
-	ItemSet                // SET
-	ItemMacro              // MACRO
-	ItemBlock              // BLOCK
-	ItemForeach            // FOREACH
-	ItemWhile              // WHILE
-	ItemIn                 // IN
-	ItemInclude            // INCLUDE
-	ItemWith               // WITH
-	ItemIf                 // IF
-	ItemElse               // ELSE
-	ItemElseIf             // ELSIF
-	ItemUnless             // UNLESS
-	ItemSwitch             // SWITCH
-	ItemCase               // CASE
-	ItemWrapper            // WRAPPER
-	ItemDefault            // DEFAULT
-	ItemEnd                // END
-	ItemOperator           // Delimiter
-	ItemRange              // ..
-	ItemEquals             // ==
-	ItemNotEquals          // !=
-	ItemGT                 // >
-	ItemLT                 // <
-	ItemCmp                // <=>
-	ItemLE                 // <=
-	ItemGE                 // >=
-	ItemShiftLeft          // <<
-	ItemShiftRight         // >>
-	ItemAssignAdd          // +=
-	ItemAssignSub          // -=
-	ItemAssignMul          // *=
-	ItemAssignDiv          // /=
-	ItemAssignMod          // %=
-	ItemAnd                // &&
-	ItemOr                 // ||
-	ItemFatComma           // =>
-	ItemIncr               // ++
-	ItemDecr               // --
-	ItemPlus
-	ItemMinus
-	ItemAsterisk
-	ItemSlash
-	ItemVerticalSlash
-	ItemMod
-	ItemAssign // =
-
-	DefaultItemTypeMax
+	"github.com/lestrrat/go-lex"
 )
 
 func init() {

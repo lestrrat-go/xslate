@@ -123,7 +123,7 @@ func DefaultParser(tx *Xslate, args Args) error {
 	case "Kolon", "Kolonish":
 		tx.Parser = kolonish.New()
 	default:
-		return fmt.Errorf("error: Syntax '%s' not available", syntax)
+		return errors.New("sytanx '" + syntax.(string) + "' is not available")
 	}
 	return nil
 }
