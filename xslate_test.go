@@ -66,6 +66,7 @@ func ExampleXslate() {
 
 func (c *testctx) renderString(template string, vars Vars) (string, error) {
 	x := c.CreateTx()
+	c.Logf("Rendering template '%s'", template)
 	return x.RenderString(template, vars)
 }
 

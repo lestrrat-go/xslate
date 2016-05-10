@@ -32,7 +32,7 @@ func (vm *VM) SetFunctions(vars Vars) {
 }
 
 // CurrentOp returns the current Op to be executed
-func (vm *VM) CurrentOp() *Op {
+func (vm *VM) CurrentOp() Op {
 	return vm.st.CurrentOp()
 }
 

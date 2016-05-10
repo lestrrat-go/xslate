@@ -2,6 +2,8 @@ package node
 
 import "reflect"
 
+const DefaultMaxIterations = 1000
+
 // NodeType is used to distinguish each AST node
 type NodeType int
 
@@ -98,16 +100,21 @@ type LocalVarNode struct {
 	Offset int
 }
 
+type LoopNode struct {
+	*ListNode         // Body of the loop
+	Condition    Node //
+	MaxIteration int  // Max number of iterations
+}
+
 type ForeachNode struct {
-	*ListNode
+	*LoopNode
 	IndexVarName string
 	IndexVarIdx  int
 	List         Node
 }
 
 type WhileNode struct {
-	*ListNode
-	Condition Node
+	*LoopNode
 }
 
 type MethodCallNode struct {

@@ -338,7 +338,6 @@ func (tx *Xslate) RenderInto(w io.Writer, template string, vars Vars) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf(bc.String())
 	tx.VM.Run(bc, vm.Vars(vars), w)
 	return nil
 }

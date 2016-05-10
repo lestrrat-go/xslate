@@ -7,6 +7,7 @@ import (
 	"html"
 	"io"
 	"reflect"
+	"strconv"
 	"unicode"
 	"unicode/utf8"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/lestrrat/go-xslate/functions/hash"
 	"github.com/lestrrat/go-xslate/internal/rbpool"
 	"github.com/lestrrat/go-xslate/internal/rvpool"
+	"github.com/lestrrat/go-xslate/node"
 )
 
 func init() {
@@ -292,13 +294,19 @@ func txFetchField(st *State) {
 }
 
 func txFetchArrayElement(st *State) {
-	// There should only be items pushed
-	array := reflect.ValueOf(st.StackPop())
-	idx := st.StackPop()
+	defer st.Advance()
 
+	array := reflect.ValueOf(st.StackPop())
+	switch array.Kind() {
+	case reflect.Array, reflect.Slice:
+	default:
+		st.Warnf("cannot index into non-array/slice element")
+		return
+	}
+
+	idx := st.StackPop()
 	v := array.Index(int(idx.(int64)))
 	st.sa = v.Interface()
-	st.Advance()
 }
 
 type rawString string
@@ -364,8 +372,13 @@ func txSaveToLvar(st *State) {
 }
 
 func txLoadLvar(st *State) {
-	idx := st.CurrentOp().ArgInt()
-	st.sa = st.CurrentFrame().GetLvar(idx)
+	n := st.CurrentOp().Arg().(*node.LocalVarNode)
+	v, err := st.CurrentFrame().GetLvar(n.Offset)
+	if err != nil {
+		st.Warnf("failed to load variable '%s': %s\n", n.Name, err)
+	} else {
+		st.sa = v
+	}
 	st.Advance()
 }
 
@@ -461,7 +474,6 @@ func NewLoopVar(idx int, array reflect.Value) *LoopVar {
 }
 
 func txForStart(st *State) {
-	id := st.CurrentOp().ArgInt()
 	array := reflect.ValueOf(st.sa)
 
 	switch array.Kind() {
@@ -474,25 +486,39 @@ func txForStart(st *State) {
 	}
 
 	cf := st.CurrentFrame()
-	cf.SetLvar(id, nil) // item
-	cf.SetLvar(id+1, NewLoopVar(-1, array))
+	cf.SetLvar(0, nil) // item
+	cf.SetLvar(1, NewLoopVar(-1, array))
 
 	st.Advance()
 }
 
 func txForIter(st *State) {
-	id := st.sa.(int)
 	cf := st.CurrentFrame()
-	loop := cf.GetLvar(id + 1).(*LoopVar)
+	var loop *LoopVar
+
+	// The loop variable MUST exist. Not having one is a sure panic
+	v, err := cf.GetLvar(1)
+	if err != nil {
+		panic("loop var not found: " + err.Error())
+	}
+
+	var ok bool
+	if loop, ok = v.(*LoopVar); !ok {
+		panic("failed to convert loop var")
+	}
+
 	slice := loop.Body
 	loop.Index++
 	loop.Count++
+	if loop.Count > st.MaxLoopCount {
+		panic("looped for " + strconv.Itoa(loop.Count) + " times, aborting")
+	}
 
 	loop.IsFirst = loop.Index == 0
 	loop.IsLast = loop.Index == loop.MaxIndex
 
 	if loop.Size > loop.Index {
-		cf.SetLvar(id, slice.Index(loop.Index).Interface())
+		cf.SetLvar(0, slice.Index(loop.Index).Interface())
 
 		if loop.Size > loop.Index+1 {
 			loop.PeekNext = slice.Index(loop.Index + 1).Interface()
@@ -661,7 +687,7 @@ var funcZero = reflect.Zero(reflect.ValueOf(func() {}).Type())
 
 func invokeFuncSingleReturn(st *State, fun reflect.Value, args []reflect.Value) {
 	if fun.Type().NumIn() != len(args) {
-		st.Warnf("Number of arguments for function does not match (expected %d, got %d)", fun.Type().NumIn(), len(args))
+		st.Warnf("Number of arguments for function does not match (expected %d, got %d)\n", fun.Type().NumIn(), len(args))
 		st.sa = ""
 	} else if fun.Type().NumOut() == 0 {
 		// Purely for side effect
@@ -703,7 +729,7 @@ func invokeFuncSingleReturn(st *State, fun reflect.Value, args []reflect.Value) 
 func txFunCall(st *State) {
 	// Everything in our lvars up to the current tip is our argument list
 	mark := st.CurrentMark()
-	tip := st.stack.Cur()
+	tip := st.stack.Size() - 1
 	var args []reflect.Value
 
 	if tip-mark-1 > 0 {
@@ -733,7 +759,7 @@ func txFunCall(st *State) {
 func txFunCallSymbol(st *State) {
 	// Everything in our lvars up to the current tip is our argument list
 	mark := st.CurrentMark()
-	tip := st.stack.Cur()
+	tip := st.stack.Size() - 1
 	var args []reflect.Value
 
 	if tip-mark-1 > 0 {
@@ -763,21 +789,24 @@ func txFunCallSymbol(st *State) {
 }
 
 func txMethodCall(st *State) {
+	defer st.Advance() // We advance, regardless of errors
+
 	name := interfaceToString(st.CurrentOp().Arg())
 	// Uppercase first character of field name
 	r, size := utf8.DecodeRuneInString(name)
 	name = string(unicode.ToUpper(r)) + name[size:]
 
-	// Everything in our lvars up to the current tip is our argument list
 	mark := st.CurrentMark()
-	tip := st.stack.Cur()
+	tip := st.stack.Size()
 
-	v, _ := st.stack.Get(mark)
-	invocant := reflect.ValueOf(v)
-	var args = make([]reflect.Value, tip-mark+1)
-	for i := mark; tip >= i; i++ {
-		v, _ := st.stack.Get(i)
-		args[i-mark] = reflect.ValueOf(v)
+	var invocant reflect.Value
+	args := make([]reflect.Value, tip-mark)
+	for i := mark; i < tip; i++ {
+		v := st.stack.Pop()
+		args[tip-i-1] = reflect.ValueOf(v)
+		if i == mark {
+			invocant = args[tip-i-1]
+		}
 	}
 
 	// For maps, arrays, slices, we call virtual methods, if they are available
@@ -808,7 +837,6 @@ func txMethodCall(st *State) {
 			invokeFuncSingleReturn(st, method.Func, args)
 		}
 	}
-	st.Advance()
 }
 
 // XXX can I just push a []int to st.sa?
