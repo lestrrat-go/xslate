@@ -272,7 +272,14 @@ func TestTTerse_MethodCallVariable(t *testing.T) {
 	c := newTestCtx(t)
 	defer c.Cleanup()
 
-	c.renderStringAndCompare(template, Vars{"t1": time.Unix(0, 0), "t2": time.Unix(100, 0)}, `true`)
+	c.renderStringAndCompare(
+		template,
+		Vars{
+			"t1": time.Unix(0, 0),
+			"t2": time.Unix(100, 0),
+		},
+		`true`,
+	)
 }
 
 func TestTTerse_Arithmetic(t *testing.T) {
@@ -469,5 +476,26 @@ func TestTTerse_Macro(t *testing.T) {
 func TestTTerse_NilOnIfBlock(t *testing.T) {
 	c := newTestCtx(t)
 	defer c.Cleanup()
-	c.renderString(`hello [% IF name %][% name %][% ELSE %]unknown[% END %]!`, Vars{"name":nil})
+	c.renderString(`hello [% IF name %][% name %][% ELSE %]unknown[% END %]!`, Vars{"name": nil})
+}
+
+func TestTTerse_WrapperAndForeach(t *testing.T) {
+	c := newTestCtx(t)
+	defer c.Cleanup()
+
+	// Test without WRAPPER first
+	rawtmpl := `[% greeting %] [% FOREACH item IN names %][% item %], [% END %]`
+	c.File("wrapper/raw.tx").WriteString(rawtmpl)
+
+	c.File("wrapper/index.tx").WriteString(`[% WRAPPER "wrapper/wrapper.tx" %]` + rawtmpl + `[% END %]`)
+
+	c.File("wrapper/wrapper.tx").WriteString(`Hello World! [% content %]Hello World!`)
+
+	tx := c.CreateTx()
+	vars := Vars{
+		"names": []string{"Bob", "Freddie"},
+		"greeting": "Hi!",
+	}
+	c.renderAndCompare(tx, "wrapper/raw.tx", vars, "Hi! Bob, Freddie, ")
+	c.renderAndCompare(tx, "wrapper/index.tx", vars, "Hello World! Hi! Bob, Freddie, Hello World!")
 }

@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/lestrrat/go-xslate/internal/rbpool"
+	"github.com/lestrrat/go-xslate/node"
 	"github.com/pkg/errors"
 )
 
@@ -22,21 +23,33 @@ func (o OpType) String() string {
 	return opnames[o]
 }
 
-// NewOp creates a new Op
-func NewOp(o OpType, args ...interface{}) *Op {
+// NewOp creates a new Op.
+func NewOp(o OpType, args ...interface{}) Op {
 	h := optypeToHandler(o)
+
 	var arg interface{}
 	if len(args) > 0 {
 		arg = args[0]
-	} else {
-		arg = nil
 	}
-	return &Op{o, h, arg}
+
+	return &op{
+		OpType:    o,
+		OpHandler: h,
+		uArg:      arg,
+	}
+}
+
+func (o op) Comment() string {
+	return o.comment
+}
+
+func (o op) Handler() OpHandler {
+	return o.OpHandler
 }
 
 // MarshalBinary is used to serialize an Op into a binary form. This
 // is used to cache the ByteCode
-func (o Op) MarshalBinary() ([]byte, error) {
+func (o op) MarshalBinary() ([]byte, error) {
 	buf := rbpool.Get()
 	defer rbpool.Release(buf)
 
@@ -49,9 +62,9 @@ func (o Op) MarshalBinary() ([]byte, error) {
 	tArg := reflect.TypeOf(o.uArg)
 	hasArg := tArg != nil
 	if hasArg {
-		binary.Write(buf, binary.LittleEndian, int64(1))
+		binary.Write(buf, binary.LittleEndian, int8(1))
 	} else {
-		binary.Write(buf, binary.LittleEndian, int64(0))
+		binary.Write(buf, binary.LittleEndian, int8(0))
 	}
 
 	if hasArg {
@@ -82,11 +95,20 @@ func (o Op) MarshalBinary() ([]byte, error) {
 		}
 	}
 
+	v := o.comment
+	hasComment := v != ""
+	if hasComment {
+		binary.Write(buf, binary.LittleEndian, int8(1))
+		binary.Write(buf, binary.LittleEndian, v)
+	} else {
+		binary.Write(buf, binary.LittleEndian, int8(0))
+	}
+
 	return buf.Bytes(), nil
 }
 
 // UnmarshalBinary is used to deserialize an Op from binary form.
-func (o *Op) UnmarshalBinary(data []byte) error {
+func (o *op) UnmarshalBinary(data []byte) error {
 	buf := bytes.NewReader(data)
 
 	var t int64
@@ -97,71 +119,83 @@ func (o *Op) UnmarshalBinary(data []byte) error {
 	o.OpType = OpType(t)
 	o.OpHandler = optypeToHandler(o.OpType)
 
-	var hasArg int64
+	var hasArg int8
 	if err := binary.Read(buf, binary.LittleEndian, &hasArg); err != nil {
 		return errors.Wrap(err, "hasArg check failed during UnmarshalBinary")
 	}
 
-	if hasArg == 0 {
-		// No args
-		return nil
-	}
-
-	var tArg int64
-	if err := binary.Read(buf, binary.LittleEndian, &tArg); err != nil {
-		return errors.Wrap(err, "failed to read argument from buffer during UnmarshalBinary")
-	}
-
-	switch tArg {
-	case 2:
-		var i int64
-		if err := binary.Read(buf, binary.LittleEndian, &i); err != nil {
-			return errors.Wrap(err, "failed to read integer argument during UnmarshalBinary")
-		}
-		o.uArg = i
-	case 5:
-		var l int64
-		if err := binary.Read(buf, binary.LittleEndian, &l); err != nil {
-			return errors.Wrap(err, "failed to read length argument during UnmarshalBinary")
+	if hasArg == 1 {
+		var tArg int64
+		if err := binary.Read(buf, binary.LittleEndian, &tArg); err != nil {
+			return errors.Wrap(err, "failed to read argument from buffer during UnmarshalBinary")
 		}
 
-		b := make([]byte, l)
-		for i := int64(0); i < l; i++ {
-			if err := binary.Read(buf, binary.LittleEndian, &b[i]); err != nil {
-				return errors.Wrap(err, "failed to read bytes from buffer during UnmarshalBinary")
+		switch tArg {
+		case 2:
+			var i int64
+			if err := binary.Read(buf, binary.LittleEndian, &i); err != nil {
+				return errors.Wrap(err, "failed to read integer argument during UnmarshalBinary")
 			}
+			o.uArg = i
+		case 5:
+			var l int64
+			if err := binary.Read(buf, binary.LittleEndian, &l); err != nil {
+				return errors.Wrap(err, "failed to read length argument during UnmarshalBinary")
+			}
+
+			b := make([]byte, l)
+			for i := int64(0); i < l; i++ {
+				if err := binary.Read(buf, binary.LittleEndian, &b[i]); err != nil {
+					return errors.Wrap(err, "failed to read bytes from buffer during UnmarshalBinary")
+				}
+			}
+			o.uArg = b
+		default:
+			panic(fmt.Sprintf("Unknown tArg: %d", tArg))
 		}
-		o.uArg = b
-	default:
-		panic(fmt.Sprintf("Unknown tArg: %d", tArg))
+	}
+
+	var hasComment int8
+	if err := binary.Read(buf, binary.LittleEndian, &hasComment); err != nil {
+		return errors.Wrap(err, "hasComment check failed during UnmarshalBinary")
+	}
+
+	if hasComment == 1 {
+		if err := binary.Read(buf, binary.LittleEndian, &o.comment); err != nil {
+			return errors.Wrap(err, "failed to read comment bytes during UnmarshalBinary")
+		}
 	}
 
 	return nil
 }
 
 // Call executes the Op code in the context of given vm.State
-func (o *Op) Call(st *State) {
+func (o *op) Call(st *State) {
 	o.OpHandler(st)
 }
 
 // SetArg sets the argument to this Op
-func (o *Op) SetArg(v interface{}) {
+func (o *op) SetArg(v interface{}) {
 	o.uArg = v
 }
 
+func (o *op) SetComment(s string) {
+	o.comment = s
+}
+
 // Arg returns the Op code's argument
-func (o *Op) Arg() interface{} {
+func (o op) Arg() interface{} {
 	return o.uArg
 }
 
 // ArgInt returns the integer representation of the argument
-func (o *Op) ArgInt() int {
+func (o op) ArgInt() int {
 	v := interfaceToNumeric(o.uArg)
 	return int(v.Int())
 }
 
 // ArgString returns the string representatin of the argument
-func (o *Op) ArgString() string {
+func (o op) ArgString() string {
 	// In most cases we do this because it's a sring
 	if v, ok := o.uArg.(string); ok {
 		return v
@@ -169,11 +203,23 @@ func (o *Op) ArgString() string {
 	return interfaceToString(o.uArg)
 }
 
-func (o *Op) String() string {
-	// TODO: also print out register id's and stuff
-	if o.uArg != nil {
-		return fmt.Sprintf("Op[%s] (%q)", o.Type(), o.ArgString())
+func (o *op) String() string {
+	buf := bytes.Buffer{}
+
+	fmt.Fprintf(&buf, "Op[%s]", o.Type())
+
+	if o.Type() == TXOPLoadLvar {
+		n := o.uArg.(*node.LocalVarNode)
+		fmt.Fprintf(&buf, " '%s' (%d)", n.Name, n.Offset)
+	} else {
+		if o.uArg != nil {
+			fmt.Fprintf(&buf, " (%q)", o.ArgString())
+		}
 	}
 
-	return fmt.Sprintf("Op[%s]", o.Type())
+	if v := o.comment; v != "" {
+		fmt.Fprintf(&buf, " // %s", v)
+	}
+
+	return buf.String()
 }

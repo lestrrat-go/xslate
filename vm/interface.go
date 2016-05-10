@@ -11,7 +11,7 @@ import (
 // ByteCode is the collection of op codes that the Xslate Virtual Machine
 // should run. It is created from a compiler.Compiler
 type ByteCode struct {
-	OpList      []*Op
+	OpList      []Op
 	GeneratedOn time.Time
 	Name        string
 	Version     float32
@@ -25,10 +25,24 @@ type OpHandler func(*State)
 
 // Op represents a single op. It has an OpType, OpHandler, and an optional
 // parameter to be used
-type Op struct {
+type Op interface {
+	Arg() interface{}
+	ArgString() string
+	ArgInt() int
+	Call(*State)
+	Comment() string
+	Handler() OpHandler
+	SetArg(interface{})
+	SetComment(string)
+	String() string
+	Type() OpType
+}
+
+type op struct {
 	OpType
 	OpHandler
-	uArg interface{}
+	uArg    interface{}
+	comment string
 }
 
 // State keeps track of Xslate Virtual Machine state
@@ -36,8 +50,8 @@ type State struct {
 	opidx int
 	pc    *ByteCode
 
-	stack     *stack.Stack
-	markstack *stack.Stack
+	stack     stack.Stack
+	markstack stack.Stack
 
 	// output
 	output io.Writer
@@ -52,10 +66,11 @@ type State struct {
 	targ interface{}
 
 	// Stack used by frames
-	framestack *stack.Stack
-	frames     *stack.Stack
+	framestack stack.Stack
+	frames     stack.Stack
 
-	Loader byteCodeLoader
+	Loader       byteCodeLoader
+	MaxLoopCount int
 }
 
 // LoopVar is the variable available within FOREACH loops

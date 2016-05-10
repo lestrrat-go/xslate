@@ -156,12 +156,20 @@ func (n *LocalVarNode) String() string {
 	return fmt.Sprintf("%s %s (%d)", n.NodeType, n.Name, n.Offset)
 }
 
+func NewLoopNode(pos int) *LoopNode {
+	maxiter := DefaultMaxIterations
+	return &LoopNode{
+		ListNode:     NewListNode(pos),
+		MaxIteration: maxiter,
+	}
+}
+
 func NewForeachNode(pos int, symbol string) *ForeachNode {
 	n := &ForeachNode{
-		ListNode:     NewListNode(pos),
 		IndexVarName: symbol,
 		IndexVarIdx:  0,
 		List:         nil,
+		LoopNode:     NewLoopNode(pos),
 	}
 	n.NodeType = Foreach
 	return n
@@ -177,10 +185,10 @@ func (n *ForeachNode) Visit(c chan Node) {
 
 func (n *ForeachNode) Copy() Node {
 	x := &ForeachNode{
-		ListNode:     NewListNode(n.pos),
 		IndexVarName: n.IndexVarName,
 		IndexVarIdx:  n.IndexVarIdx,
 		List:         n.List.Copy(),
+		LoopNode:     n.LoopNode.Copy().(*LoopNode),
 	}
 	x.NodeType = Foreach
 	return n
@@ -192,17 +200,16 @@ func (n *ForeachNode) String() string {
 
 func NewWhileNode(pos int, n Node) *WhileNode {
 	x := &WhileNode{
-		NewListNode(pos),
-		n,
+		LoopNode: NewLoopNode(pos),
 	}
+	x.Condition = n
 	x.NodeType = While
 	return x
 }
 
 func (n *WhileNode) Copy() Node {
 	return &WhileNode{
-		n.ListNode.Copy().(*ListNode),
-		n.Condition.Copy(),
+		LoopNode: n.LoopNode.Copy().(*LoopNode),
 	}
 }
 

@@ -19,6 +19,7 @@ func NewState() *State {
 		frames:     stack.New(5),
 		vars:       make(Vars),
 		warn:       os.Stderr,
+		MaxLoopCount: 1000,
 	}
 
 	st.Pushmark()
@@ -52,7 +53,7 @@ func (st *State) Vars() Vars {
 }
 
 // CurrentOp returns the current op code
-func (st *State) CurrentOp() *Op {
+func (st *State) CurrentOp() Op {
 	return st.pc.Get(st.opidx)
 }
 
@@ -60,7 +61,7 @@ func (st *State) CurrentOp() *Op {
 func (st *State) PushFrame() *frame.Frame {
 	f := frame.New(st.framestack)
 	st.frames.Push(f)
-	f.SetMark(st.frames.Cur())
+	f.SetMark(st.frames.Size())
 	return f
 }
 
@@ -71,7 +72,7 @@ func (st *State) PopFrame() *frame.Frame {
 		return nil
 	}
 	f := x.(*frame.Frame)
-	for i := st.framestack.Cur(); i > f.Mark(); i-- {
+	for i := st.framestack.Size(); i > f.Mark(); i-- {
 		st.framestack.Pop()
 	}
 	return f
@@ -105,11 +106,7 @@ func (st *State) AppendOutputString(o string) {
 // Pushmark records the current stack tip so we can remember
 // where the current context started
 func (st *State) Pushmark() {
-	cur := st.stack.Cur()
-	if cur < 0 {
-		cur = 0
-	}
-	st.markstack.Push(cur)
+	st.markstack.Push(st.stack.Size())
 }
 
 // Popmark pops the mark stored at the top of the mark stack
@@ -129,7 +126,7 @@ func (st *State) CurrentMark() int {
 
 // StackTip returns the index of the top of the stack
 func (st *State) StackTip() int {
-	return st.stack.Cur()
+	return st.stack.Size()-1
 }
 
 // StackPop pops from the stack

@@ -2,22 +2,18 @@ package stack
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"strconv"
 )
 
 // Stack is a simple structure to hold various data
-type Stack struct {
-	cur  int
-	data []interface{}
-}
+type Stack []interface{}
 
 // Reset clears the contents of the stack and pushes back the cursor
 // as if nothing is in the stack
 func (s *Stack) Reset() {
-	for i := 0; i < s.Size(); i++ {
-		s.data[i] = nil
-	}
-	s.cur = -1
+	*s = (*s)[:0]
 }
 
 func calcNewSize(base int) int {
@@ -28,53 +24,33 @@ func calcNewSize(base int) int {
 }
 
 // NewStack creates a new Stack of initial size `size`.
-func New(size int) *Stack {
-	return &Stack{
-		cur:  -1,
-		data: make([]interface{}, size),
-	}
-}
-
-// Cur returns the current stack index. Note that if nothing is stored in
-// the stack, it returns -1
-func (s *Stack) Cur() int {
-	return s.cur
-}
-
-// SetCur sets the current cursor location
-func (s *Stack) SetCur(c int) {
-	s.cur = c
+func New(size int) Stack {
+	return Stack(make([]interface{}, 0, size))
 }
 
 // Top returns the element at the top of the stack or an error if stack is empty
 func (s *Stack) Top() (interface{}, error) {
-	cur := s.Cur()
-	if cur < 0 {
-		return nil, fmt.Errorf("error: nothing in stack")
+	if len(*s) == 0 {
+		return nil, errors.New("nothing on stack")
 	}
-	v, err := s.Get(cur)
-	if err != nil {
-		return nil, err
-	}
-
-	return v, nil
+	return (*s)[len(*s)-1], nil
 }
 
 // BufferSize returns the length of the underlying buffer
 func (s *Stack) BufferSize() int {
-	return len(s.data)
+	return cap(*s)
 }
 
 // Size returns the number of elements stored in this stack
 func (s *Stack) Size() int {
-	return s.cur + 1
+	return len(*s)
 }
 
 // Resize changes the size of the underlying buffer
 func (s *Stack) Resize(size int) {
-	newl := make([]interface{}, size)
-	copy(newl, s.data)
-	s.data = newl
+	newl := make([]interface{}, len(*s), size)
+	copy(newl, *s)
+	*s = newl
 }
 
 // Extend changes the size of the underlying buffer, extending it by `extendBy`
@@ -96,55 +72,58 @@ func (s *Stack) Grow(min int) {
 
 // Get returns the element at position `i`
 func (s *Stack) Get(i int) (interface{}, error) {
-	if i < 0 || i >= len(s.data) {
-		return nil, fmt.Errorf("%d is out of range", i)
+	if i < 0 || i >= len(*s) {
+		return nil, errors.New(strconv.Itoa(i) + " is out of range")
 	}
 
-	d := s.data
-	return d[i], nil
+	return (*s)[i], nil
 }
 
 // Set sets the element at position `i` to `v`. The stack size is automatically
 // adjusted.
-func (s *Stack) Set(i int, v interface{}) {
+func (s *Stack) Set(i int, v interface{}) error {
+	if i < 0 {
+		return errors.New("invalid index into stack")
+	}
+
 	if i >= s.BufferSize() {
 		s.Resize(calcNewSize(i))
 	}
 
-	d := s.data
-	d[i] = v
+	for len(*s) < i + 1 {
+		*s = append(*s, nil)
+	}
+
+	(*s)[i] = v
+	return nil
 }
 
 // Push adds an element at the end of the stack
 func (s *Stack) Push(v interface{}) {
-	s.cur++
-	if s.cur >= s.BufferSize() {
-		s.Resize(calcNewSize(s.cur))
+	if len(*s) >= s.BufferSize() {
+		s.Resize(calcNewSize(cap(*s)))
 	}
-	s.data[s.cur] = v
+
+	*s = append(*s, v)
 }
 
 // Pop removes and returns the item at the end of the stack
 func (s *Stack) Pop() interface{} {
-	if s.cur < 0 {
+	l := len(*s)
+	if l == 0 {
 		return nil
 	}
 
-	v := s.data[s.cur]
-	s.data[s.cur] = nil
-	s.cur--
+	v := (*s)[l-1]
+	*s = (*s)[:l-1]
 	return v
 }
 
 // String returns the textual representation of the stack
 func (s *Stack) String() string {
-	buf := &bytes.Buffer{}
-	for k, v := range s.data {
-		mark := " "
-		if k == s.cur {
-			mark = "*"
-		}
-		fmt.Fprintf(buf, "%s %03d: %q\n", mark, k, v)
+	buf := bytes.Buffer{}
+	for k, v := range *s {
+		fmt.Fprintf(&buf, "%03d: %q\n", k, v)
 	}
 	return buf.String()
 }

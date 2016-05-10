@@ -2,6 +2,8 @@ package stack
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type IntWrap struct{ i int }
@@ -18,16 +20,19 @@ func TestStack_Grow(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		x, err := s.Get(i)
-		if err != nil {
-			t.Fatalf("failed to get %d: %s", i, err)
+		if !assert.NoError(t, err, "s.Get(%d) should succeed", i) {
+			return
 		}
+
 		if i%2 == 0 {
-			if x.(int) != i {
-				t.Errorf("Get(%d): Expected %d, got %s\n", i, i, x)
+			if !assert.Equal(t, i, x, "s.Get(%d) should be %d (got %v)", i, i, x) {
+				t.Logf("%s", s)
+				return
 			}
 		} else {
-			if x.(IntWrap).i != i {
-				t.Errorf("Get(%d): Expected %d, got %s\n", i, x.(IntWrap).i, x)
+			if !assert.Equal(t, IntWrap{i}, x, "s.Get(%d) should be IntWrap{%d} (got %v)", i, i, x) {
+				t.Logf("%s", s)
+				return
 			}
 		}
 	}

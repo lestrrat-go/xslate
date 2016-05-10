@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewFrame(s *stack.Stack) *Frame {
+func NewFrame(s stack.Stack) *Frame {
 	f := &Frame{
 		frame.New(s),
 		nil,
@@ -31,8 +31,8 @@ type builderCtx struct {
 	Tokens          [3]lex.LexItem
 	CurrentStackTop int
 	PostChomp       bool
-	FrameStack      *stack.Stack
-	Frames          *stack.Stack
+	FrameStack      stack.Stack
+	Frames          stack.Stack
 	Error           error
 }
 
@@ -123,7 +123,7 @@ func (b *Builder) Backup2(ctx *builderCtx, t1 lex.LexItem) {
 }
 
 func (ctx *builderCtx) HasLocalVar(symbol string) (pos int, ok bool) {
-	for i := ctx.Frames.Cur(); i >= 0; i-- {
+	for i := ctx.Frames.Size() - 1; i >= 0; i-- {
 		f, _ := ctx.Frames.Get(i)
 		pos, ok = f.(*Frame).LvarNames[symbol]
 		if ok {
@@ -143,7 +143,7 @@ func (ctx *builderCtx) DeclareLocalVar(symbol string) int {
 func (ctx *builderCtx) PushFrame() *Frame {
 	f := NewFrame(ctx.FrameStack)
 	ctx.Frames.Push(f)
-	f.SetMark(ctx.Frames.Cur())
+	f.SetMark(ctx.Frames.Size())
 	return f
 }
 
@@ -154,7 +154,7 @@ func (ctx *builderCtx) PopFrame() *Frame {
 	}
 
 	f := x.(*Frame)
-	for i := ctx.FrameStack.Cur(); i > f.Mark(); i-- {
+	for i := ctx.FrameStack.Size() - 1; i > f.Mark(); i-- {
 		ctx.FrameStack.Pop()
 	}
 	return f
@@ -440,11 +440,13 @@ func (b *Builder) ParseAssignment(ctx *builderCtx) node.Node {
 	default:
 		b.Unexpected(ctx, "Expected assign, got %s", eq)
 	}
+
 	return n
 }
 
 func (b *Builder) DeclareLocalVarIfNew(ctx *builderCtx, symbol lex.LexItem) {
-	if _, ok := ctx.HasLocalVar(symbol.Value()); !ok {
+	_, ok := ctx.HasLocalVar(symbol.Value())
+	if !ok {
 		ctx.DeclareLocalVar(symbol.Value())
 	}
 }
@@ -724,7 +726,6 @@ func (b *Builder) ParseWhile(ctx *builderCtx) node.Node {
 	}
 
 	condition := b.ParseExpression(ctx, false)
-
 	whileNode := node.NewWhileNode(while.Pos(), condition)
 
 	ctx.CurrentParentNode().Append(whileNode)
