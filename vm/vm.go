@@ -24,7 +24,11 @@ import (
 
 // NewVM creates a new VM
 func NewVM() *VM {
-	return &VM{NewState(), nil, nil}
+	return &VM{
+		st:        NewState(),
+		functions: nil,
+		Loader:    nil,
+	}
 }
 
 func (vm *VM) SetFunctions(vars Vars) {
