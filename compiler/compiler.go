@@ -44,11 +44,9 @@ func compile(ctx *context, n node.Node) {
 	case node.Int, node.Text:
 		compileLiteral(ctx, n)
 	case node.FetchSymbol:
-		ctx.AppendOp(vm.TXOPFetchSymbol, n.(*node.TextNode).Text)
+		compileFetchSymbol(ctx, n.(*node.TextNode))
 	case node.FetchField:
-		ffnode := n.(*node.FetchFieldNode)
-		compile(ctx, ffnode.Container)
-		ctx.AppendOp(vm.TXOPFetchFieldSymbol, ffnode.FieldName)
+		compileFetchField(ctx, n.(*node.FetchFieldNode))
 	case node.FetchArrayElement:
 		compileFetchArrayElement(ctx, n.(*node.BinaryNode))
 	case node.LocalVar:
@@ -56,31 +54,21 @@ func compile(ctx *context, n node.Node) {
 	case node.Assignment:
 		compileAssignment(ctx, n.(*node.AssignmentNode))
 	case node.Print:
-		compile(ctx, n.(*node.ListNode).Nodes[0])
-		ctx.AppendOp(vm.TXOPPrint)
+		compilePrint(ctx, n.(*node.ListNode))
 	case node.PrintRaw:
-		compile(ctx, n.(*node.ListNode).Nodes[0])
-		ctx.AppendOp(vm.TXOPPrintRaw)
+		compilePrintRaw(ctx, n.(*node.ListNode))
 	case node.Foreach:
 		compileForeach(ctx, n.(*node.ForeachNode))
 	case node.While:
 		compileWhile(ctx, n.(*node.WhileNode))
 	case node.If:
-		compileIf(ctx, n)
+		compileIf(ctx, n.(*node.IfNode))
 	case node.Else:
 		compileElse(ctx, n.(*node.ElseNode))
 	case node.MakeArray:
-		x := n.(*node.UnaryNode)
-		compile(ctx, x.Child)
-		ctx.AppendOp(vm.TXOPMakeArray)
+		compileMakeArray(ctx, n.(*node.UnaryNode))
 	case node.Range:
-		x := n.(*node.BinaryNode)
-		compile(ctx, x.Right)
-		ctx.AppendOp(vm.TXOPPush)
-		compile(ctx, x.Left)
-		ctx.AppendOp(vm.TXOPMoveToSb)
-		ctx.AppendOp(vm.TXOPPop)
-		ctx.AppendOp(vm.TXOPRange)
+		compileRange(ctx, n.(*node.BinaryNode))
 	case node.List:
 		compileList(ctx, n.(*node.ListNode))
 	case node.FunCall:
@@ -96,10 +84,7 @@ func compile(ctx *context, n node.Node) {
 	case node.Plus, node.Minus, node.Mul, node.Div:
 		compileBinaryArithmetic(ctx, n.(*node.BinaryNode))
 	case node.Filter:
-		x := n.(*node.FilterNode)
-
-		compile(ctx, x.Child)
-		ctx.AppendOp(vm.TXOPFilter, x.Name)
+		compileFilter(ctx, n.(*node.FilterNode))
 	case node.Wrapper:
 		compileWrapper(ctx, n.(*node.WrapperNode))
 	case node.Macro:
@@ -135,6 +120,20 @@ func compileFetchArrayElement(ctx *context, n *node.BinaryNode) {
 	ctx.AppendOp(vm.TXOPPopmark)
 }
 
+func compileFetchField(ctx *context, n *node.FetchFieldNode) {
+	compile(ctx, n.Container)
+	ctx.AppendOp(vm.TXOPFetchFieldSymbol, n.FieldName)
+}
+
+func compileFetchSymbol(ctx *context, n *node.TextNode) {
+	ctx.AppendOp(vm.TXOPFetchSymbol, n.Text)
+}
+
+func compileFilter(ctx *context, n *node.FilterNode) {
+	compile(ctx, n.Child)
+	ctx.AppendOp(vm.TXOPFilter, n.Name)
+}
+
 func compileFunCall(ctx *context, n *node.FunCallNode) {
 	if len(n.Args.Nodes) > 0 {
 		ctx.AppendOp(vm.TXOPNoop).SetComment("Setting up function arguments")
@@ -150,6 +149,11 @@ func compileFunCall(ctx *context, n *node.FunCallNode) {
 	ctx.AppendOp(vm.TXOPFunCallOmni)
 }
 
+func compileMakeArray(ctx *context, n *node.UnaryNode) {
+	compile(ctx, n.Child)
+	ctx.AppendOp(vm.TXOPMakeArray)
+}
+
 func compileMethodCall(ctx *context, n *node.MethodCallNode) {
 	ctx.AppendOp(vm.TXOPPushmark).SetComment("Begin method call")
 	compile(ctx, n.Invocant)
@@ -160,6 +164,25 @@ func compileMethodCall(ctx *context, n *node.MethodCallNode) {
 	}
 	ctx.AppendOp(vm.TXOPMethodCall, n.MethodName)
 	ctx.AppendOp(vm.TXOPPopmark).SetComment("End method call")
+}
+
+func compilePrint(ctx *context, n *node.ListNode) {
+	compile(ctx, n.Nodes[0])
+	ctx.AppendOp(vm.TXOPPrint)
+}
+
+func compilePrintRaw(ctx *context, n *node.ListNode) {
+	compile(ctx, n.Nodes[0])
+	ctx.AppendOp(vm.TXOPPrintRaw)
+}
+
+func compileRange(ctx *context, n *node.BinaryNode) {
+	compile(ctx, n.Right)
+	ctx.AppendOp(vm.TXOPPush)
+	compile(ctx, n.Left)
+	ctx.AppendOp(vm.TXOPMoveToSb)
+	ctx.AppendOp(vm.TXOPPop)
+	ctx.AppendOp(vm.TXOPRange)
 }
 
 func compileList(ctx *context, n *node.ListNode) {
@@ -173,15 +196,14 @@ func compileList(ctx *context, n *node.ListNode) {
 	ctx.AppendOp(vm.TXOPNoop).SetComment("END list")
 }
 
-func compileIf(ctx *context, n node.Node) {
-	x := n.(*node.IfNode)
+func compileIf(ctx *context, n *node.IfNode) {
 	ctx.AppendOp(vm.TXOPPushmark).SetComment("BEGIN IF")
-	compile(ctx, x.BooleanExpression)
+	compile(ctx, n.BooleanExpression)
 	ifop := ctx.AppendOp(vm.TXOPAnd, 0)
 	pos := ctx.ByteCode.Len()
 
 	var elseNode node.Node
-	children := x.ListNode.Nodes
+	children := n.ListNode.Nodes
 	for _, child := range children {
 		if child.Type() == node.Else {
 			elseNode = child
@@ -201,7 +223,6 @@ func compileIf(ctx *context, n node.Node) {
 		compile(ctx, elseNode)
 	}
 	ctx.AppendOp(vm.TXOPPopmark).SetComment("END IF")
-
 }
 
 func compileElse(ctx *context, n *node.ElseNode) {
@@ -265,7 +286,7 @@ func compileForeach(ctx *context, x *node.ForeachNode) {
 
 	// Tell for iter to jump to this position when
 	// the loop is done.
-	iter.SetArg(ctx.ByteCode.Len()-pos)
+	iter.SetArg(ctx.ByteCode.Len() - pos)
 	iter.SetComment("Jump to end of scope at " + strconv.Itoa(ctx.ByteCode.Len()) + " when we're done")
 	ctx.AppendOp(vm.TXOPPopmark).SetComment("END FOREACH")
 }
@@ -293,7 +314,7 @@ func compileWhile(ctx *context, x *node.WhileNode) {
 	// Go back to condPos
 	ctx.AppendOp(vm.TXOPGoto, -1*(ctx.ByteCode.Len()-condPos+1)).SetComment("Jump to " + strconv.Itoa(condPos))
 	ifop.SetArg(ctx.ByteCode.Len() - ifPos + 1)
-	ifop.SetComment("Jump to " + strconv.Itoa(ctx.ByteCode.Len() + 1))
+	ifop.SetComment("Jump to " + strconv.Itoa(ctx.ByteCode.Len()+1))
 	ctx.AppendOp(vm.TXOPPopmark)
 }
 
