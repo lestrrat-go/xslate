@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/lestrrat/go-xslate"
+	"github.com/lestrrat-go/xslate"
 	"os"
 )
 

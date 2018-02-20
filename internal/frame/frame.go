@@ -3,7 +3,7 @@ package frame
 import (
 	"strconv"
 
-	"github.com/lestrrat/go-xslate/internal/stack"
+	"github.com/lestrrat-go/xslate/internal/stack"
 	"github.com/pkg/errors"
 )
 

@@ -3,8 +3,8 @@ package tterse
 import (
 	"testing"
 
-	"github.com/lestrrat/go-xslate/node"
-	"github.com/lestrrat/go-xslate/parser"
+	"github.com/lestrrat-go/xslate/node"
+	"github.com/lestrrat-go/xslate/parser"
 )
 
 func parse(t *testing.T, tmpl string) *parser.AST {

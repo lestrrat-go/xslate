@@ -1,11 +1,11 @@
-go-xslate
+xslate
 =========
 
 Attempt to port Perl5's Text::Xslate to Go
 
-[![Build Status](https://travis-ci.org/lestrrat/go-xslate.png?branch=master)](https://travis-ci.org/lestrrat/go-xslate)
+[![Build Status](https://travis-ci.org/lestrrat-go/xslate.png?branch=master)](https://travis-ci.org/lestrrat-go/xslate)
 
-[![GoDoc](https://godoc.org/github.com/lestrrat/go-xslate?status.png)](https://godoc.org/github.com/lestrrat/go-xslate)
+[![GoDoc](https://godoc.org/github.com/lestrrat-go/xslate?status.png)](https://godoc.org/github.com/lestrrat-go/xslate)
 
 Play with it!
 =============
@@ -51,7 +51,7 @@ Current Status
 Currently:
 
 * I'm aiming for port of most of TTerse syntax
-* See [VM Progress](https://github.com/lestrrat/go-xslate/wiki/VM-Progress) for what the this xslate virtual machine can handle
+* See [VM Progress](https://github.com/lestrrat-go/xslate/wiki/VM-Progress) for what the this xslate virtual machine can handle
 * VM TODO: cleanup, optimization
 * Parser is about 90% finished.
 * Compiler is about 90% finished.
@@ -65,7 +65,7 @@ package main
 
 import (
   "log"
-  "github.com/lestrrat/go-xslate"
+  "github.com/lestrrat-go/xslate"
 )
 
 func main() {
@@ -88,12 +88,12 @@ func main() {
 }
 ```
 
-See [Supported Syntax (TTerse)](https://github.com/lestrrat/go-xslate/wiki/Supported-Syntax-(TTerse)) for what's currently available
+See [Supported Syntax (TTerse)](https://github.com/lestrrat-go/xslate/wiki/Supported-Syntax-(TTerse)) for what's currently available
 
 Debugging
 =========
 
-Currently the [error reporting is a bit weak](https://github.com/lestrrat/go-xslate/issues/4). What you can do when you debug or send me bug reports is to give me a stack trace, and also while you're at it, run your templates with XSLATE_DEBUG=1 environment variable. This will print out the AST and ByteCode structure that is being executed.
+Currently the [error reporting is a bit weak](https://github.com/lestrrat-go/xslate/issues/4). What you can do when you debug or send me bug reports is to give me a stack trace, and also while you're at it, run your templates with XSLATE_DEBUG=1 environment variable. This will print out the AST and ByteCode structure that is being executed.
 
 Caveats
 =======

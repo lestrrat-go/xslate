@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lestrrat/go-xslate/internal/rbpool"
+	"github.com/lestrrat-go/xslate/internal/rbpool"
 )
 
 // NewByteCode creates an empty ByteCode instance.

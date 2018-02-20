@@ -16,7 +16,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/lestrrat/go-lex"
+	"github.com/lestrrat-go/lex"
 )
 
 func init() {

@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lestrrat/go-lex"
-	"github.com/lestrrat/go-xslate/internal/frame"
-	"github.com/lestrrat/go-xslate/internal/stack"
-	"github.com/lestrrat/go-xslate/node"
+	"github.com/lestrrat-go/lex"
+	"github.com/lestrrat-go/xslate/internal/frame"
+	"github.com/lestrrat-go/xslate/internal/stack"
+	"github.com/lestrrat-go/xslate/node"
 	"github.com/pkg/errors"
 )
 

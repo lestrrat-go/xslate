@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/lestrrat/go-xslate/node"
-	"github.com/lestrrat/go-xslate/parser"
-	"github.com/lestrrat/go-xslate/vm"
+	"github.com/lestrrat-go/xslate/node"
+	"github.com/lestrrat-go/xslate/parser"
+	"github.com/lestrrat-go/xslate/vm"
 )
 
 // AppendOp creates and appends a new op to the current set of ByteCode

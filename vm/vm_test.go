@@ -3,7 +3,7 @@ package vm
 import (
 	"bytes"
 	"fmt"
-	txtime "github.com/lestrrat/go-xslate/functions/time"
+	txtime "github.com/lestrrat-go/xslate/functions/time"
 	"reflect"
 	"regexp"
 	"strings"

@@ -11,12 +11,12 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/lestrrat/go-xslate/functions"
-	"github.com/lestrrat/go-xslate/functions/array"
-	"github.com/lestrrat/go-xslate/functions/hash"
-	"github.com/lestrrat/go-xslate/internal/rbpool"
-	"github.com/lestrrat/go-xslate/internal/rvpool"
-	"github.com/lestrrat/go-xslate/node"
+	"github.com/lestrrat-go/xslate/functions"
+	"github.com/lestrrat-go/xslate/functions/array"
+	"github.com/lestrrat-go/xslate/functions/hash"
+	"github.com/lestrrat-go/xslate/internal/rbpool"
+	"github.com/lestrrat-go/xslate/internal/rvpool"
+	"github.com/lestrrat-go/xslate/node"
 )
 
 func init() {

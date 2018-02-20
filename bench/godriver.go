@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	prof "github.com/davecheney/profile"
-	"github.com/lestrrat/go-xslate"
+	"github.com/lestrrat-go/xslate"
 	"io"
 	"io/ioutil"
 	"os"

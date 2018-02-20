@@ -1,8 +1,8 @@
 package compiler
 
 import (
-	"github.com/lestrrat/go-xslate/parser"
-	"github.com/lestrrat/go-xslate/vm"
+	"github.com/lestrrat-go/xslate/parser"
+	"github.com/lestrrat-go/xslate/vm"
 )
 
 // Compiler is the interface to objects that can convert AST trees to

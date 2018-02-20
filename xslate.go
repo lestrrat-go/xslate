@@ -54,13 +54,13 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/lestrrat/go-xslate/compiler"
-	"github.com/lestrrat/go-xslate/internal/rbpool"
-	"github.com/lestrrat/go-xslate/loader"
-	"github.com/lestrrat/go-xslate/parser"
-	"github.com/lestrrat/go-xslate/parser/kolonish"
-	"github.com/lestrrat/go-xslate/parser/tterse"
-	"github.com/lestrrat/go-xslate/vm"
+	"github.com/lestrrat-go/xslate/compiler"
+	"github.com/lestrrat-go/xslate/internal/rbpool"
+	"github.com/lestrrat-go/xslate/loader"
+	"github.com/lestrrat-go/xslate/parser"
+	"github.com/lestrrat-go/xslate/parser/kolonish"
+	"github.com/lestrrat-go/xslate/parser/tterse"
+	"github.com/lestrrat-go/xslate/vm"
 	"github.com/pkg/errors"
 )
 

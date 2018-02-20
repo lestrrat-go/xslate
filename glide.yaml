@@ -1,7 +1,7 @@
-package: github.com/lestrrat/go-xslate
+package: github.com/lestrrat-go/xslate
 import:
 - package: github.com/davecheney/profile
   version: 867e56f7b923dac5d47fd39ac837b329d0313454
-- package: github.com/lestrrat/go-lex
+- package: github.com/lestrrat-go/lex
   version: c1847b3ac9e62f4b1d693f43438c8533f29d7726
 - package: github.com/pkg/errors

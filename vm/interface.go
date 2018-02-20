@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lestrrat/go-xslate/internal/stack"
+	"github.com/lestrrat-go/xslate/internal/stack"
 )
 
 // ByteCode is the collection of op codes that the Xslate Virtual Machine

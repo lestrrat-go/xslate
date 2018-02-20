@@ -3,7 +3,7 @@ package frame
 import (
 	"testing"
 
-	"github.com/lestrrat/go-xslate/internal/stack"
+	"github.com/lestrrat-go/xslate/internal/stack"
 	"github.com/stretchr/testify/assert"
 )
 

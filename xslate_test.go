@@ -2,7 +2,7 @@ package xslate
 
 import (
 	"fmt"
-	"github.com/lestrrat/go-xslate/test"
+	"github.com/lestrrat-go/xslate/test"
 	"log"
 	"os"
 	"reflect"

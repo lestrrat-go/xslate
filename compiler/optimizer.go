@@ -3,7 +3,7 @@ package compiler
 import (
 	"errors"
 
-	"github.com/lestrrat/go-xslate/vm"
+	"github.com/lestrrat-go/xslate/vm"
 )
 
 // Optimize modifies the ByteCode in place to an optimized version

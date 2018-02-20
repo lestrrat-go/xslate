@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"github.com/lestrrat/go-lex"
+	"github.com/lestrrat-go/lex"
 	"sort"
 )
 

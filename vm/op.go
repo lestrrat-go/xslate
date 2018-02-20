@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lestrrat/go-xslate/internal/rbpool"
-	"github.com/lestrrat/go-xslate/node"
+	"github.com/lestrrat-go/xslate/internal/rbpool"
+	"github.com/lestrrat-go/xslate/node"
 	"github.com/pkg/errors"
 )
 

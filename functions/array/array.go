@@ -1,7 +1,7 @@
 package array
 
 import (
-	"github.com/lestrrat/go-xslate/functions"
+	"github.com/lestrrat-go/xslate/functions"
 )
 
 var depot = functions.NewFuncDepot("array")

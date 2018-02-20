@@ -3,8 +3,8 @@ package parser
 import (
 	"fmt"
 
-	"github.com/lestrrat/go-xslate/internal/rbpool"
-	"github.com/lestrrat/go-xslate/node"
+	"github.com/lestrrat-go/xslate/internal/rbpool"
+	"github.com/lestrrat-go/xslate/node"
 )
 
 // Visit returns a channel which you can receive Node structs in order that

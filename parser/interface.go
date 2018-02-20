@@ -4,9 +4,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/lestrrat/go-lex"
-	"github.com/lestrrat/go-xslate/internal/frame"
-	"github.com/lestrrat/go-xslate/node"
+	"github.com/lestrrat-go/lex"
+	"github.com/lestrrat-go/xslate/internal/frame"
+	"github.com/lestrrat-go/xslate/node"
 )
 
 const (

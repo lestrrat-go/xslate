@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lestrrat/go-xslate/internal/frame"
-	"github.com/lestrrat/go-xslate/internal/stack"
+	"github.com/lestrrat-go/xslate/internal/frame"
+	"github.com/lestrrat-go/xslate/internal/stack"
 )
 
 // NewState creates a new State struct

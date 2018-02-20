@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/lestrrat/go-xslate/compiler"
-	"github.com/lestrrat/go-xslate/vm"
-	"github.com/lestrrat/go-xslate/parser"
+	"github.com/lestrrat-go/xslate/compiler"
+	"github.com/lestrrat-go/xslate/vm"
+	"github.com/lestrrat-go/xslate/parser"
 )
 
 // CacheStrategy specifies how the cache should be checked

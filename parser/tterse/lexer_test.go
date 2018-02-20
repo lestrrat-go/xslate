@@ -1,8 +1,8 @@
 package tterse
 
 import (
-	"github.com/lestrrat/go-lex"
-	"github.com/lestrrat/go-xslate/parser"
+	"github.com/lestrrat-go/lex"
+	"github.com/lestrrat-go/xslate/parser"
 	"testing"
 )
 

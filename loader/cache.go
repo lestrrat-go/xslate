@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/lestrrat/go-xslate/compiler"
-	"github.com/lestrrat/go-xslate/parser"
-	"github.com/lestrrat/go-xslate/vm"
+	"github.com/lestrrat-go/xslate/compiler"
+	"github.com/lestrrat-go/xslate/parser"
+	"github.com/lestrrat-go/xslate/vm"
 	"github.com/pkg/errors"
 )
 
